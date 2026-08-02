@@ -1,0 +1,73 @@
+# =============================================================================
+# OPTIONAL: standalone car-presence sensor (only needed with ratgdo v2.5i)
+# =============================================================================
+# The ratgdo32 disco already has vehicle detection built in — skip this file
+# if you use ratgdo-garage.yaml.
+#
+# Hardware: any ESP32 dev board + HC-SR04 (or JSN-SR04T, waterproof) ultrasonic
+# sensor mounted on the garage ceiling pointing down at the car's roof/hood.
+#   VCC -> 5V, GND -> GND, TRIG -> GPIO5, ECHO -> GPIO18 (use a voltage divider
+#   on ECHO: HC-SR04 echoes at 5V, ESP32 pins are 3.3V).
+#
+# Exposes binary_sensor.garage_car_presence_car_present to Home Assistant,
+# mirroring what the disco's "Vehicle detected" sensor provides.
+# =============================================================================
+
+esphome:
+  name: garage-car-presence
+  friendly_name: "Garage Car Presence"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "garage-car-presence"
+
+captive_portal:
+
+logger:
+
+sensor:
+  - platform: ultrasonic
+    id: car_distance
+    trigger_pin: GPIO5
+    echo_pin: GPIO18
+    name: "Car Distance"
+    update_interval: 2s
+    timeout: 4m
+    filters:
+      - median:
+          window_size: 5
+          send_every: 2
+          send_first_at: 2
+
+binary_sensor:
+  - platform: template
+    name: "Car Present"
+    device_class: presence
+    # Tune the threshold: with a car parked below, the ceiling sensor reads a
+    # short distance (~1.0-1.5 m to the roof); with no car it reads the floor
+    # (~2.5 m+). Anything under 2.0 m here means a car is present.
+    lambda: |-
+      if (id(car_distance).state < 2.0) {
+        return true;
+      } else {
+        return false;
+      }
+    filters:
+      # Debounce so a person walking under the sensor doesn't flip presence.
+      - delayed_on: 10s
+      - delayed_off: 30s

@@ -1,0 +1,27 @@
+# =============================================================================
+# Additions for your Home Assistant configuration.yaml
+# =============================================================================
+# Merge these blocks into your existing <config>/configuration.yaml.
+# (A default install already contains `default_config:` — keep it.)
+
+default_config:
+
+# Load every YAML file in <config>/packages/ — this is how packages/garage.yaml
+# gets picked up.
+homeassistant:
+  packages: !include_dir_named packages
+
+# Early-warning zone around your house for the arrival automation. The phone
+# crosses this ring ~30-60 seconds before you pull into the driveway, so the
+# door is already open when you arrive. Tune the radius (meters) to taste:
+# bigger = door opens earlier.
+#
+# Put your coordinates in <config>/secrets.yaml:
+#   home_latitude: 12.345678
+#   home_longitude: -98.765432
+zone:
+  - name: Home Approach
+    icon: mdi:map-marker-radius
+    latitude: !secret home_latitude
+    longitude: !secret home_longitude
+    radius: 250

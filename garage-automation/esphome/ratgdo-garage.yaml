@@ -1,0 +1,172 @@
+# =============================================================================
+# ratgdo32 disco — ESPHome firmware for garage automation
+# =============================================================================
+# Board:    ratgdo32 disco (ESP32) — https://paulwieland.github.io/ratgdo/
+# Protocol: Security+ 2.0 (yellow-learn-button Chamberlain/LiftMaster openers).
+#           For Security+ 1.0 or dry-contact openers, switch the remote package
+#           file per the README.
+# Firmware: Official esphome-ratgdo package, pulled from GitHub at build time.
+#
+# The disco board includes a time-of-flight distance sensor, so it natively
+# exposes "Vehicle detected / arriving / leaving" sensors — these drive the
+# car-presence and departure automations in Home Assistant.
+#
+# Flash: `esphome run ratgdo-garage.yaml` (first flash over USB, then OTA).
+# =============================================================================
+
+substitutions:
+  id_prefix: ratgdo32disco
+  friendly_name: "Garage Door"
+  uart_tx_pin: GPIO17
+  uart_rx_pin: GPIO21
+  input_obst_pin: GPIO4
+  status_door_pin: GPIO26
+  status_obstruction_pin: GPIO25
+  dry_contact_open_pin: GPIO13
+  dry_contact_close_pin: GPIO14
+  dry_contact_light_pin: GPIO27
+
+esphome:
+  # Device name is fixed (no MAC suffix) so Home Assistant entity IDs are
+  # predictable: cover.garage_door_door, binary_sensor.garage_door_vehicle_detected, ...
+  name: garage-door
+  friendly_name: ${friendly_name}
+  min_version: 2026.4.0
+  project:
+    name: ratgdo.v32disco_secplus2
+    version: "32disco"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+packages:
+  remote_package:
+    url: https://github.com/ratgdo/esphome-ratgdo
+    ref: main
+    files: [base.yaml]
+    refresh: 1d
+
+web_server:
+  include_internal: true
+  local: true
+
+# Sync time with Home Assistant.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+api:
+  id: api_server
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+improv_serial:
+
+esp32_improv:
+  authorizer: none
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "ratgdo"
+
+captive_portal:
+
+logger:
+  logs:
+    sensor: NONE
+
+# --- Vehicle presence (ToF distance sensor on the disco board) ---------------
+binary_sensor:
+  - platform: ratgdo
+    id: ${id_prefix}_vehicle_detected
+    type: vehicle_detected
+    name: "Vehicle detected"
+  - platform: ratgdo
+    id: ${id_prefix}_vehicle_arriving
+    type: vehicle_arriving
+    name: "Vehicle arriving"
+  - platform: ratgdo
+    id: ${id_prefix}_vehicle_leaving
+    type: vehicle_leaving
+    name: "Vehicle leaving"
+
+number:
+  # Calibrate this to the distance (mm) from the sensor to your parked car.
+  - platform: ratgdo
+    id: ${id_prefix}_target_distance_measurement
+    type: target_distance_measurement
+    entity_category: config
+    name: "Vehicle distance target"
+    mode: box
+    unit_of_measurement: "mm"
+  # Warning-beep delay before an automation-initiated close (UL325 safety).
+  - platform: ratgdo
+    id: ${id_prefix}_closing_delay
+    type: closing_delay
+    entity_category: config
+    name: "Closing Delay"
+    unit_of_measurement: "s"
+
+output:
+  - platform: ledc
+    pin: GPIO33
+    id: ${id_prefix}_ledc
+  - platform: ratgdo
+    id: ${id_prefix}_beeper
+    type: beeper
+    rtttl: ${id_prefix}_rtttl
+    song: "alert:d=8,o=5,b=120:a,p,a,p,a,p,4b,p"
+
+rtttl:
+  - id: ${id_prefix}_rtttl
+    output: ${id_prefix}_ledc
+    on_finished_playback:
+      then:
+        lambda: !lambda |-
+          id(${id_prefix}_beeper).finished_playback();
+
+switch:
+  - platform: ratgdo
+    id: ${id_prefix}_led
+    type: led
+    pin:
+      number: GPIO2
+      ignore_strapping_warning: true
+    name: "LED"
+    entity_category: config
+  # Parking-assist laser dot.
+  - platform: ratgdo
+    id: ${id_prefix}_laser
+    type: led
+    pin: GPIO23
+    name: "LASER"
+    entity_category: config
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 120s
+  - platform: ratgdo
+    id: ${id_prefix}_vehicle_distance_actual
+    type: distance
+    name: "Vehicle distance actual"
+    unit_of_measurement: "mm"
+    internal: true
+    filters:
+      - throttle: 1ms
+      - heartbeat: 1ms
+  - platform: copy
+    source_id: ${id_prefix}_vehicle_distance_actual
+    name: "Vehicle distance actual filtered"
+    filters:
+      - min:
+          window_size: 5000
+          send_every: 5000

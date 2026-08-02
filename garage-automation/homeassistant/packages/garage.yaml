@@ -1,0 +1,322 @@
+# =============================================================================
+# Garage automation package (ratgdo + Home Assistant)
+# =============================================================================
+# Drop this file in <config>/packages/ and enable packages in
+# configuration.yaml (see ../configuration.yaml).
+#
+# BEFORE USING — replace these placeholders with your real entity/service IDs:
+#   person.alice, person.bob                    -> your person entities
+#   notify.mobile_app_alice_phone / _bob_phone  -> your Companion-app services
+#   zone.home_approach                          -> created in configuration.yaml
+#
+# ratgdo entities below assume the ESPHome device is named "garage-door"
+# (as in esphome/ratgdo-garage.yaml):
+#   cover.garage_door_door
+#   binary_sensor.garage_door_obstruction
+#   binary_sensor.garage_door_vehicle_detected   (ratgdo32 disco only)
+#   binary_sensor.garage_door_vehicle_leaving    (ratgdo32 disco only)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Toggles so each behavior can be disabled from the dashboard (guests, parties,
+# vacations) without editing YAML.
+# -----------------------------------------------------------------------------
+input_boolean:
+  garage_auto_open_on_arrival:
+    name: "Garage: auto-open on arrival"
+    icon: mdi:garage-open
+  garage_auto_close_on_departure:
+    name: "Garage: auto-close on departure"
+    icon: mdi:garage
+  garage_night_auto_close:
+    name: "Garage: auto-close at night"
+    icon: mdi:weather-night
+
+# -----------------------------------------------------------------------------
+# One notify target for the whole household.
+# -----------------------------------------------------------------------------
+notify:
+  - platform: group
+    name: garage_household
+    services:
+      - action: mobile_app_alice_phone
+      - action: mobile_app_bob_phone
+
+# -----------------------------------------------------------------------------
+# Abstraction layer: all automations reference these instead of raw ratgdo
+# entities. If you use a v2.5i board + the standalone ultrasonic sensor (or a
+# car integration like Tesla/BLE), change ONLY these two sensors.
+# -----------------------------------------------------------------------------
+template:
+  - binary_sensor:
+      - name: "Car In Garage"
+        unique_id: garage_car_in_garage
+        device_class: presence
+        state: "{{ is_state('binary_sensor.garage_door_vehicle_detected', 'on') }}"
+        # v2.5i + ultrasonic alternative:
+        # state: "{{ is_state('binary_sensor.garage_car_presence_car_present', 'on') }}"
+      - name: "Anyone Home"
+        unique_id: garage_anyone_home
+        device_class: presence
+        state: >-
+          {{ is_state('person.alice', 'home') or is_state('person.bob', 'home') }}
+
+# =============================================================================
+# AUTOMATIONS
+# =============================================================================
+automation:
+  # ---------------------------------------------------------------------------
+  # 1) ARRIVAL: open the garage when someone's phone (GPS via the Companion
+  #    app) enters the "Home Approach" zone while driving home.
+  # ---------------------------------------------------------------------------
+  - id: garage_open_on_arrival
+    alias: "Garage: open on arrival (GPS)"
+    description: >-
+      Opens the garage when a household member enters the Home Approach zone
+      coming from away. 15-minute cooldown guards against GPS bounce.
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: zone
+        entity_id:
+          - person.alice
+          - person.bob
+        zone: zone.home_approach
+        event: enter
+    conditions:
+      - condition: state
+        entity_id: input_boolean.garage_auto_open_on_arrival
+        state: "on"
+      - condition: state
+        entity_id: cover.garage_door_door
+        state: "closed"
+      # Only a genuine arrival: the person must have been away, not just
+      # drifting across the zone edge while at home.
+      - condition: template
+        value_template: >-
+          {{ trigger.from_state is not none and
+             trigger.from_state.state == 'not_home' }}
+      # Cooldown against repeated zone enter/exit while parked near the edge.
+      - condition: template
+        value_template: >-
+          {{ this.attributes.last_triggered is none or
+             (now() - this.attributes.last_triggered).total_seconds() > 900 }}
+    actions:
+      - action: cover.open_cover
+        target:
+          entity_id: cover.garage_door_door
+      - action: notify.garage_household
+        data:
+          title: "🏠 Welcome home"
+          message: >-
+            {{ trigger.to_state.attributes.friendly_name }} is arriving —
+            opening the garage.
+      # Verify it actually opened; warn if the opener didn't respond.
+      - wait_for_trigger:
+          - trigger: state
+            entity_id: cover.garage_door_door
+            to: "open"
+        timeout: "00:00:45"
+        continue_on_timeout: true
+      - if:
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: cover.garage_door_door
+                state: "open"
+        then:
+          - action: notify.garage_household
+            data:
+              title: "⚠️ Garage problem"
+              message: "Tried to open the garage for arrival but it did not open."
+
+  # ---------------------------------------------------------------------------
+  # 2) DEPARTURE: close the garage once the car has actually left.
+  #    Uses the ratgdo32 disco's distance sensor: "Vehicle leaving" fires as
+  #    the car backs out; "Car In Garage" going off confirms the bay is empty.
+  # ---------------------------------------------------------------------------
+  - id: garage_close_after_car_leaves
+    alias: "Garage: close after car leaves"
+    description: >-
+      When the car pulls out of the garage, wait a grace period for it to
+      clear the door, verify nothing is in the way, then close.
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.garage_door_vehicle_leaving
+        to: "on"
+      # Fallback if the "leaving" event is missed: bay empty for 3 minutes
+      # while the door stands open.
+      - trigger: state
+        entity_id: binary_sensor.car_in_garage
+        to: "off"
+        for: "00:03:00"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.garage_auto_close_on_departure
+        state: "on"
+      - condition: state
+        entity_id: cover.garage_door_door
+        state: "open"
+    actions:
+      # Grace period: let the car finish backing out of the doorway.
+      - delay: "00:01:00"
+      # Re-check the world before closing: door still open, car really gone.
+      - condition: state
+        entity_id: cover.garage_door_door
+        state: "open"
+      - condition: state
+        entity_id: binary_sensor.car_in_garage
+        state: "off"
+      - action: script.garage_close_safely
+      - action: notify.garage_household
+        data:
+          title: "🚗 Car left"
+          message: "The car left the garage — closing the door."
+
+  # ---------------------------------------------------------------------------
+  # 3) DEPARTURE BACKUP: last person leaves home (GPS) with the door open.
+  #    Catches the case where automation 2 was disabled or the car never
+  #    registered (e.g. you left in the second car or on foot/bike).
+  # ---------------------------------------------------------------------------
+  - id: garage_close_when_everyone_leaves
+    alias: "Garage: close when everyone leaves"
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.anyone_home
+        to: "off"
+        for: "00:02:00"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.garage_auto_close_on_departure
+        state: "on"
+      - condition: state
+        entity_id: cover.garage_door_door
+        state: "open"
+    actions:
+      - action: script.garage_close_safely
+      - action: notify.garage_household
+        data:
+          title: "🔒 Securing house"
+          message: "Everyone has left and the garage was open — closing it."
+
+  # ---------------------------------------------------------------------------
+  # 4) SAFETY NET: door left open too long -> actionable phone notification.
+  # ---------------------------------------------------------------------------
+  - id: garage_open_too_long_alert
+    alias: "Garage: open too long alert"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: cover.garage_door_door
+        to: "open"
+        for: "00:20:00"
+    actions:
+      - action: notify.garage_household
+        data:
+          title: "🚨 Garage still open"
+          message: "The garage door has been open for 20 minutes."
+          data:
+            actions:
+              - action: "CLOSE_GARAGE"
+                title: "Close it now"
+
+  # ---------------------------------------------------------------------------
+  # 5) Handle the "Close it now" tap from the notification above.
+  # ---------------------------------------------------------------------------
+  - id: garage_notification_close_action
+    alias: "Garage: close via notification action"
+    mode: single
+    triggers:
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: "CLOSE_GARAGE"
+    actions:
+      - action: script.garage_close_safely
+      - action: notify.garage_household
+        data:
+          title: "✅ Garage"
+          message: "Closing the garage as requested."
+
+  # ---------------------------------------------------------------------------
+  # 6) NIGHT LOCKDOWN: close automatically late at night if still open.
+  # ---------------------------------------------------------------------------
+  - id: garage_night_auto_close
+    alias: "Garage: night auto-close"
+    mode: single
+    triggers:
+      - trigger: time
+        at: "22:30:00"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.garage_night_auto_close
+        state: "on"
+      - condition: state
+        entity_id: cover.garage_door_door
+        state: "open"
+    actions:
+      - action: script.garage_close_safely
+      - action: notify.garage_household
+        data:
+          title: "🌙 Night lockdown"
+          message: "Garage was open at 22:30 — closing it for the night."
+
+# =============================================================================
+# SCRIPTS
+# =============================================================================
+script:
+  garage_close_safely:
+    alias: "Garage: close safely"
+    description: >-
+      Closes the garage only if the obstruction beam is clear, then verifies
+      it reached the closed position. Sends a critical alert on failure.
+    mode: single
+    sequence:
+      # Nothing to do if it's already closed.
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: cover.garage_door_door
+            state: "closed"
+      # Refuse to close over an obstruction; tell the humans instead.
+      - if:
+          - condition: state
+            entity_id: binary_sensor.garage_door_obstruction
+            state: "on"
+        then:
+          - action: notify.garage_household
+            data:
+              title: "⛔ Garage blocked"
+              message: "Won't auto-close: the safety beam reports an obstruction."
+          - stop: "Obstruction detected"
+      - action: cover.close_cover
+        target:
+          entity_id: cover.garage_door_door
+      # The ratgdo "Closing Delay" beeper runs first, then the door moves.
+      - wait_for_trigger:
+          - trigger: state
+            entity_id: cover.garage_door_door
+            to: "closed"
+        timeout: "00:01:30"
+        continue_on_timeout: true
+      - if:
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: cover.garage_door_door
+                state: "closed"
+        then:
+          - action: notify.garage_household
+            data:
+              title: "🚨 GARAGE DID NOT CLOSE"
+              message: "Auto-close failed — the door is NOT confirmed closed. Check it!"
+              data:
+                push:
+                  sound:
+                    name: default
+                    critical: 1
+                    volume: 1.0

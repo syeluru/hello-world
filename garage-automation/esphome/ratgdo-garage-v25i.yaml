@@ -1,0 +1,68 @@
+# =============================================================================
+# ratgdo v2.5i — ESPHome firmware (alternative board)
+# =============================================================================
+# Use this instead of ratgdo-garage.yaml if you have the older ESP8266-based
+# ratgdo v2.5i board. It has no distance sensor, so pair it with the optional
+# garage-car-presence.yaml device (or a car integration) for vehicle presence.
+#
+# Protocol: Security+ 2.0. For Security+ 1.0 change `files:` to
+# [v25iboard_secplusv1.yaml]-style base per the esphome-ratgdo README.
+# =============================================================================
+
+substitutions:
+  id_prefix: ratgdov25i
+  friendly_name: "Garage Door"
+  uart_tx_pin: D1
+  uart_rx_pin: D2
+  input_obst_pin: D7
+  status_door_pin: D0
+  status_obstruction_pin: D8
+  dry_contact_open_pin: D5
+  dry_contact_close_pin: D6
+  dry_contact_light_pin: D3
+
+esphome:
+  name: garage-door
+  friendly_name: ${friendly_name}
+  project:
+    name: ratgdo.v25iboard_secplus2
+    version: "2.5i"
+
+esp8266:
+  board: d1_mini
+  restore_from_flash: true
+
+packages:
+  remote_package:
+    url: https://github.com/ratgdo/esphome-ratgdo
+    ref: main
+    files: [base.yaml]
+    refresh: 1d
+
+web_server:
+  local: true
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+api:
+  id: api_server
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+improv_serial:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "ratgdo"
+
+captive_portal:
+
+logger:
