@@ -20,21 +20,25 @@ game.
   and adds it to your coin total automatically; the coin counter also has
   manual +/− for spending on sheet costs.
 - **12 rounds, 3 seasons.** The round banner tracks Round 1–12 and the current
-  season, and reminds you when a season is about to end so you don't miss
-  season scoring. After round 12 the game flips to "complete."
+  season (rounds 1–5, 6–9, 10–12), shows the five round phases from the guide
+  card (Neighbor → Scoring → Setup → Growth → Task), and reminds you to score
+  season objectives at the start of rounds 6 and 10 and at game end.
+- **Coin programs.** One-tap buttons for the two 3-coin cargo sheet programs:
+  the Intern Program (take any 1 main task) and the Buyback Program (cross out
+  any 1 good) — each deducts the coins and logs the use.
 - **Tasks.** One-tap logging for the four main tasks — Tend, Fish, Mine,
   Chop — plus free-text entries for anything else (watering, fences, etc.).
 - **Ledger and history.** Everything in a round goes into a ledger with undo
   and per-entry delete; ending a round archives it, so you can always answer
   "what did I do in round 5?"
-- **Final scoring pad.** A Score tab with the five victory point sources from
-  the rulebook: three season objectives, Cargo Manifest stalls, badges, the
-  Seasoned Explorer project, and neighbor bonuses — totaled live per player,
-  leader highlighted.
+- **Final scoring pad.** A Score tab mirroring the scoring area on the cargo
+  sheet: Objectives 1–3, Stalls 1–3, neighbor bonuses, and badges (including
+  the Seasoned Explorer doubling) — totaled live per player, leader
+  highlighted.
 
-Default resources (Wood, Fish, Ore, Geode, Crop, Milk) and tasks are all
-editable on the Setup tab — rename, recolor, add, or remove them to match the
-cards in play.
+Default resources (Wood, Exo Wood, Copper, Iron, Fish, Plant, Milk, Geode) and
+tasks are all editable on the Setup tab — rename, recolor, add, or remove them
+to match the cards in play.
 
 ## Hosting it for your game group
 

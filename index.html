@@ -248,6 +248,21 @@
   }
   .endbar button:active { transform: scale(0.98); }
 
+  .phase-strip {
+    font-size: 12px; color: var(--muted); margin-bottom: 12px;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .phase-strip b { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  .program-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .program-row button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 10px;
+    padding: 10px; font-size: 13px; font-weight: 700; min-height: 52px; color: var(--coin);
+  }
+  .program-row button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .program-row button:disabled { opacity: 0.45; cursor: default; }
+
   .season-note {
     background: var(--coin-soft); color: var(--ink); border: 1px solid var(--coin);
     border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600; margin-bottom: 12px;
@@ -341,7 +356,7 @@
 (function () {
   "use strict";
 
-  var STORE_KEY = "tend-companion-v1";
+  var STORE_KEY = "tend-companion-v2";
   var ROUNDS = 12;
   var SWATCHES = ["#8A5A3B", "#4A6FA5", "#6E6A75", "#8E4A8B", "#5B8A3A", "#B0A38E", "#C05B4D", "#3E7C7B"];
   var USES = {
@@ -364,11 +379,13 @@
       coins: {},   // playerId -> n
       resources: [
         { id: uid(), name: "Wood", color: "#8A5A3B" },
+        { id: uid(), name: "Exo Wood", color: "#A34A6B" },
+        { id: uid(), name: "Copper", color: "#B87333" },
+        { id: uid(), name: "Iron", color: "#6E7B85" },
         { id: uid(), name: "Fish", color: "#4A6FA5" },
-        { id: uid(), name: "Ore", color: "#6E6A75" },
-        { id: uid(), name: "Geode", color: "#8E4A8B" },
-        { id: uid(), name: "Crop", color: "#5B8A3A" },
-        { id: uid(), name: "Milk", color: "#B0A38E" }
+        { id: uid(), name: "Plant", color: "#5B8A3A" },
+        { id: uid(), name: "Milk", color: "#B0A38E" },
+        { id: uid(), name: "Geode", color: "#8E4A8B" }
       ],
       tasks: ["Tend", "Fish", "Mine", "Chop"],
       ledger: [],  // entries this round
@@ -409,7 +426,8 @@
     return null;
   }
   function activePlayer() { return player(S.activePlayer) || S.players[0]; }
-  function season(round) { return Math.min(3, Math.floor((round - 1) / 4) + 1); }
+  // Seasons per the round tracker: scoring at the start of rounds 6 and 10, and at game end
+  function season(round) { return round <= 5 ? 1 : round <= 9 ? 2 : 3; }
   function coins(pid) { return S.coins[pid] || 0; }
   function addCoins(pid, d) { S.coins[pid] = Math.max(0, coins(pid) + d); }
 
@@ -463,9 +481,10 @@
     // Denormalized description used for both ledger display and history snapshots
     if (e.kind === "task") return { tag: "Task", cls: "act", txt: e.label };
     if (e.kind === "coin") {
+      var coinTxt = e.label || (e.delta > 0 ? "Coins adjusted" : "Coins spent");
       return e.delta > 0
-        ? { tag: "+" + e.delta + " coin" + (e.delta === 1 ? "" : "s"), cls: "coin", txt: "Coins adjusted" }
-        : { tag: "−" + (-e.delta) + " coin" + (e.delta === -1 ? "" : "s"), cls: "coin", txt: "Coins spent" };
+        ? { tag: "+" + e.delta + " coin" + (e.delta === 1 ? "" : "s"), cls: "coin", txt: coinTxt }
+        : { tag: "−" + (-e.delta) + " coin" + (e.delta === -1 ? "" : "s"), cls: "coin", txt: coinTxt };
     }
     var r = resource(e.resId);
     var name = r ? r.name : "Resource";
@@ -531,9 +550,12 @@
         '<div class="netline">' + gained + " gained · " + tasks + (tasks === 1 ? " task" : " tasks") +
         "<br>+" + coinsIn + " / −" + coinsOut + " coins</div>" +
         "</div>";
-      if (!S.over && S.round % 4 === 0) {
-        h += '<div class="season-note">Season ' + season(S.round) + " ends after this round — check the season objective before scoring.</div>";
+      if (S.round === 6 || S.round === 10) {
+        h += '<div class="season-note">Scoring phase: score the Season ' + (season(S.round) - 1) + " objective at the start of this round.</div>";
+      } else if (S.round === 12) {
+        h += '<div class="season-note">Final round — afterwards, score the Season 3 objective and run final scoring on the Score tab.</div>';
       }
+      h += '<div class="phase-strip">Round phases: <b>1</b> Neighbor &middot; <b>2</b> Scoring &middot; <b>3</b> Setup &middot; <b>4</b> Growth &middot; <b>5</b> Task</div>';
     }
 
     if (S.players.length > 1) {
@@ -551,6 +573,11 @@
       '<div class="n">' + coins(p.id) + "</div>" +
       '<div class="btns"><button class="minus" data-act="coins" data-delta="-1" aria-label="Spend one coin">&minus;</button>' +
       '<button class="plus" data-act="coins" data-delta="1" aria-label="Gain one coin">+</button></div></div>';
+
+    var canProgram = coins(p.id) >= 3 ? "" : " disabled";
+    h += '<div class="program-row">' +
+      '<button data-act="program" data-kind="intern"' + canProgram + ">Intern Program &minus;3<small>take any 1 main task</small></button>" +
+      '<button data-act="program" data-kind="buyback"' + canProgram + ">Buyback Program &minus;3<small>cross out any 1 good</small></button></div>";
 
     h += '<div class="sec-label">Gained a resource? <small>&mdash; tap it, then say how you used it</small></div>';
 
@@ -640,14 +667,16 @@
     app.innerHTML = h;
   }
 
+  // Mirrors the scoring area on the cargo sheet: Obj 1-3, Stalls 1-3, Neighbor, Badges
   var SCORE_FIELDS = [
-    { key: "s1", label: "Season 1 objective", sub: "season scoring at end of season 1" },
-    { key: "s2", label: "Season 2 objective", sub: "season scoring at end of season 2" },
-    { key: "s3", label: "Season 3 objective", sub: "season scoring at end of season 3" },
-    { key: "cargo", label: "Cargo Manifest stalls", sub: "stalls 1, 2 and 3 goods points" },
-    { key: "badges", label: "Badges", sub: "points for each badge earned" },
-    { key: "explorer", label: "Seasoned Explorer", sub: "doubles one badge’s points" },
-    { key: "neighbor", label: "Neighbor bonuses", sub: "3 pts per extra item gifted vs. neighbor" }
+    { key: "obj1", label: "Objective 1", sub: "scored at the start of round 6" },
+    { key: "obj2", label: "Objective 2", sub: "scored at the start of round 10" },
+    { key: "obj3", label: "Objective 3", sub: "scored at the end of the game" },
+    { key: "stall1", label: "Stall 1", sub: "cargo manifest goods points" },
+    { key: "stall2", label: "Stall 2", sub: "cargo manifest goods points" },
+    { key: "stall3", label: "Stall 3", sub: "cargo manifest goods points" },
+    { key: "neighbor", label: "Neighbor bonuses", sub: "3 pts per extra item gifted vs. each neighbor" },
+    { key: "badges", label: "Badges", sub: "incl. Seasoned Explorer doubling one badge" }
   ];
 
   function scoreTotal(pid) {
@@ -745,6 +774,15 @@
     else if (act === "gift-side") gainResource(UI.pending.resId, "gift", b.getAttribute("data-side"));
     else if (act === "cancel-pending") { UI.pending = null; render(); }
     else if (act === "coins") adjustCoins(parseInt(b.getAttribute("data-delta"), 10));
+    else if (act === "program") {
+      var p2 = activePlayer();
+      if (coins(p2.id) < 3) return;
+      addCoins(p2.id, -3);
+      var isIntern = b.getAttribute("data-kind") === "intern";
+      S.ledger.push({ id: uid(), playerId: p2.id, kind: "coin", delta: -3,
+        label: isIntern ? "Intern Program — take any 1 main task" : "Buyback Program — cross out any 1 good" });
+      save(); render();
+    }
     else if (act === "pick-player") { S.activePlayer = id; UI.pending = null; save(); render(); }
     else if (act === "quick") logTask(S.tasks[idx] || "");
     else if (act === "log-task") logTask(document.getElementById("actionInput").value);
