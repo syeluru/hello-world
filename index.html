@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game 10 Turn Companion</title>
+<style>
+  :root {
+    --ground: #EDEFE9;
+    --surface: #FCFDFB;
+    --surface-2: #F3F5F0;
+    --ink: #1C221E;
+    --muted: #5C665F;
+    --line: #D5DAD1;
+    --accent: #2E6B4F;
+    --accent-ink: #F4F8F5;
+    --gain: #25714B;
+    --gain-soft: #DDEBE2;
+    --spend: #A8443A;
+    --spend-soft: #F1E0DD;
+    --coin: #B8860B;
+    --shadow: 0 1px 3px rgba(28, 34, 30, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #121714;
+      --surface: #1B211D;
+      --surface-2: #232A25;
+      --ink: #E7EBE7;
+      --muted: #98A39B;
+      --line: #323B34;
+      --accent: #4E9C77;
+      --accent-ink: #0E1511;
+      --gain: #5CB68C;
+      --gain-soft: #1E3A2C;
+      --spend: #D97B6F;
+      --spend-soft: #40241F;
+      --coin: #D9A93A;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #121714;
+    --surface: #1B211D;
+    --surface-2: #232A25;
+    --ink: #E7EBE7;
+    --muted: #98A39B;
+    --line: #323B34;
+    --accent: #4E9C77;
+    --accent-ink: #0E1511;
+    --gain: #5CB68C;
+    --gain-soft: #1E3A2C;
+    --spend: #D97B6F;
+    --spend-soft: #40241F;
+    --coin: #D9A93A;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  :root[data-theme="light"] {
+    --ground: #EDEFE9;
+    --surface: #FCFDFB;
+    --surface-2: #F3F5F0;
+    --ink: #1C221E;
+    --muted: #5C665F;
+    --line: #D5DAD1;
+    --accent: #2E6B4F;
+    --accent-ink: #F4F8F5;
+    --gain: #25714B;
+    --gain-soft: #DDEBE2;
+    --spend: #A8443A;
+    --spend-soft: #F1E0DD;
+    --coin: #B8860B;
+    --shadow: 0 1px 3px rgba(28, 34, 30, 0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+    min-height: 100vh;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  input, select { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; padding: 16px 16px 96px; }
+
+  /* ---- Header ---- */
+  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; }
+
+  .views { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .views button {
+    border: 0; background: transparent; border-radius: 8px; padding: 6px 12px;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+  }
+  .views button[aria-current="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+  /* ---- Turn banner ---- */
+  .banner {
+    background: var(--accent); color: var(--accent-ink);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .banner .round { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; }
+  .banner .who { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+  .banner .netline { font-size: 13px; font-weight: 600; opacity: 0.9; text-align: right; }
+
+  .player-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .player-tabs button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+    padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--muted);
+  }
+  .player-tabs button[aria-current="true"] {
+    border-color: var(--accent); color: var(--accent);
+    background: var(--surface); font-weight: 700;
+  }
+
+  /* ---- Sections ---- */
+  .sec-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); margin: 20px 0 8px;
+  }
+
+  /* ---- Resource cards ---- */
+  .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 380px) { .res-grid { grid-template-columns: 1fr; } }
+  .res-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px; box-shadow: var(--shadow);
+    border-top: 3px solid var(--res-color, var(--accent));
+  }
+  .res-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .res-dot {
+    width: 12px; height: 12px; border-radius: 50%; flex: none;
+    background: var(--res-color, var(--accent));
+  }
+  .res-name { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+  .res-count {
+    font-size: 34px; font-weight: 800; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .res-delta { font-size: 12px; font-weight: 600; min-height: 18px; font-variant-numeric: tabular-nums; }
+  .res-delta .up { color: var(--gain); }
+  .res-delta .down { color: var(--spend); }
+  .res-delta .none { color: var(--muted); }
+  .res-btns { display: flex; gap: 8px; margin-top: 10px; }
+  .res-btns button {
+    flex: 1; min-height: 44px; border-radius: 10px; border: 1px solid var(--line);
+    font-size: 20px; font-weight: 700; background: var(--surface-2);
+  }
+  .res-btns .minus { color: var(--spend); }
+  .res-btns .plus { color: var(--gain); }
+  .res-btns button:active { transform: scale(0.96); }
+
+  /* ---- Action logger ---- */
+  .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .quick-actions button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+    padding: 8px 14px; font-size: 13px; font-weight: 600; min-height: 40px;
+  }
+  .action-row { display: flex; gap: 8px; }
+  .action-row input {
+    flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; background: var(--surface); font-size: 14px;
+  }
+  .action-row button {
+    border: 0; background: var(--accent); color: var(--accent-ink);
+    border-radius: 10px; padding: 0 18px; font-weight: 700; min-height: 44px;
+  }
+
+  /* ---- Ledger ---- */
+  .ledger { display: flex; flex-direction: column; gap: 6px; }
+  .entry {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 14px;
+  }
+  .entry .tag {
+    flex: none; font-size: 12px; font-weight: 700; border-radius: 6px; padding: 2px 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .entry .tag.gain { background: var(--gain-soft); color: var(--gain); }
+  .entry .tag.spend { background: var(--spend-soft); color: var(--spend); }
+  .entry .tag.act { background: var(--surface-2); color: var(--muted); }
+  .entry .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .entry .sub { color: var(--muted); font-size: 12px; }
+  .entry .del { border: 0; background: none; color: var(--muted); font-size: 16px; padding: 6px; line-height: 1; }
+  .empty { color: var(--muted); font-size: 14px; padding: 10px 2px; }
+
+  .ledger-tools { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-ghost {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 10px;
+    padding: 10px 14px; font-size: 14px; font-weight: 600;
+  }
+  .btn-ghost:disabled { opacity: 0.45; cursor: default; }
+
+  /* ---- End turn bar ---- */
+  .endbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--ground) 65%, transparent);
+    pointer-events: none;
+  }
+  .endbar button {
+    pointer-events: auto; display: block; width: 100%; max-width: 608px; margin: 0 auto;
+    border: 0; background: var(--accent); color: var(--accent-ink);
+    border-radius: 14px; padding: 15px; font-size: 16px; font-weight: 800; letter-spacing: 0.01em;
+    box-shadow: 0 4px 14px rgba(28, 34, 30, 0.25);
+  }
+  .endbar button:active { transform: scale(0.98); }
+
+  /* ---- History ---- */
+  .hist-turn {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+  }
+  .hist-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .hist-head .t { font-weight: 800; font-size: 15px; }
+  .hist-head .r { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .hist-line { font-size: 14px; padding: 3px 0; display: flex; gap: 8px; align-items: baseline; }
+  .hist-line .d { font-weight: 700; font-variant-numeric: tabular-nums; flex: none; min-width: 44px; }
+  .hist-line .d.gain { color: var(--gain); }
+  .hist-line .d.spend { color: var(--spend); }
+  .hist-line .d.act { color: var(--muted); font-weight: 600; }
+
+  /* ---- Setup ---- */
+  .setup-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px; margin-bottom: 14px; box-shadow: var(--shadow);
+  }
+  .setup-card h2 { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+  .setup-card .hint { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .setup-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .setup-row input[type="text"] {
+    flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 10px; background: var(--surface); font-size: 14px;
+  }
+  .setup-row .swatch {
+    width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line);
+    padding: 0; flex: none; background: none; overflow: hidden;
+  }
+  .setup-row .swatch input { width: 200%; height: 200%; transform: translate(-25%, -25%); border: 0; padding: 0; cursor: pointer; }
+  .setup-row .rm { border: 0; background: none; color: var(--spend); font-size: 18px; padding: 6px; line-height: 1; flex: none; }
+  .setup-add {
+    border: 1px dashed var(--line); background: none; border-radius: 8px;
+    padding: 9px 12px; font-size: 13px; font-weight: 600; color: var(--accent); width: 100%;
+  }
+  .danger {
+    border: 1px solid var(--spend); color: var(--spend); background: none;
+    border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 700; width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">IV Studio · Game 10</div>
+      <h1>Turn Companion</h1>
+    </div>
+    <nav class="views" id="viewNav" aria-label="Views">
+      <button data-view="play">Play</button>
+      <button data-view="history">History</button>
+      <button data-view="setup">Setup</button>
+    </nav>
+  </header>
+  <main id="app"></main>
+</div>
+<div class="endbar" id="endbar"><button id="endTurnBtn">End turn</button></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "game10-companion-v1";
+  var SWATCHES = ["#B8860B", "#8A5A3B", "#4A6FA5", "#2E6B4F", "#8E4A8B", "#A8443A", "#3E7C7B", "#6B6F3A"];
+
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+
+  function defaultState() {
+    var pid = uid();
+    return {
+      round: 1,
+      view: "play",
+      activePlayer: pid,
+      players: [{ id: pid, name: "Player 1" }],
+      resources: [
+        { id: uid(), name: "Coins", color: "#B8860B", start: 0 },
+        { id: uid(), name: "Resource A", color: "#4A6FA5", start: 0 },
+        { id: uid(), name: "Resource B", color: "#8A5A3B", start: 0 },
+        { id: uid(), name: "Resource C", color: "#8E4A8B", start: 0 }
+      ],
+      quickActions: ["Draw a card", "Trade", "Build"],
+      bank: {},   // playerId -> resId -> amount
+      ledger: [], // entries since last End Turn
+      history: [] // archived turns, newest first
+    };
+  }
+
+  var S = load();
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && s.players && s.resources) return s;
+      }
+    } catch (e) { /* corrupted or unavailable storage: start fresh */ }
+    return defaultState();
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+  }
+
+  function esc(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function player(id) {
+    for (var i = 0; i < S.players.length; i++) if (S.players[i].id === id) return S.players[i];
+    return null;
+  }
+  function resource(id) {
+    for (var i = 0; i < S.resources.length; i++) if (S.resources[i].id === id) return S.resources[i];
+    return null;
+  }
+  function amount(pid, rid) {
+    var b = S.bank[pid];
+    if (b && typeof b[rid] === "number") return b[rid];
+    var r = resource(rid);
+    return r ? r.start : 0;
+  }
+  function setAmount(pid, rid, val) {
+    if (!S.bank[pid]) S.bank[pid] = {};
+    S.bank[pid][rid] = Math.max(0, val);
+  }
+
+  function activePlayer() {
+    return player(S.activePlayer) || S.players[0];
+  }
+
+  // Delta for a resource this turn, for a given player
+  function turnDelta(pid, rid) {
+    var d = 0;
+    for (var i = 0; i < S.ledger.length; i++) {
+      var e = S.ledger[i];
+      if (e.kind === "res" && e.playerId === pid && e.resId === rid) d += e.delta;
+    }
+    return d;
+  }
+
+  // ---- Mutations ----
+
+  function adjust(rid, delta) {
+    var p = activePlayer();
+    var cur = amount(p.id, rid);
+    if (delta < 0 && cur <= 0) return; // nothing to spend
+    setAmount(p.id, rid, cur + delta);
+    S.ledger.push({ id: uid(), kind: "res", playerId: p.id, resId: rid, delta: delta });
+    save(); render();
+  }
+
+  function logAction(label) {
+    label = label.trim();
+    if (!label) return;
+    var p = activePlayer();
+    S.ledger.push({ id: uid(), kind: "action", playerId: p.id, label: label });
+    save(); render();
+  }
+
+  function removeEntry(eid) {
+    for (var i = S.ledger.length - 1; i >= 0; i--) {
+      if (S.ledger[i].id === eid) {
+        var e = S.ledger[i];
+        if (e.kind === "res") setAmount(e.playerId, e.resId, amount(e.playerId, e.resId) - e.delta);
+        S.ledger.splice(i, 1);
+        break;
+      }
+    }
+    save(); render();
+  }
+
+  function undo() {
+    var e = S.ledger[S.ledger.length - 1];
+    if (e) removeEntry(e.id);
+  }
+
+  function endTurn() {
+    var p = activePlayer();
+    // Snapshot entries with denormalized names so history survives renames/deletes
+    var snap = S.ledger.map(function (e) {
+      if (e.kind === "res") {
+        var r = resource(e.resId);
+        return { kind: "res", delta: e.delta, resName: r ? r.name : "Removed resource",
+                 resColor: r ? r.color : "#888", byName: (player(e.playerId) || {}).name || "?" };
+      }
+      return { kind: "action", label: e.label, byName: (player(e.playerId) || {}).name || "?" };
+    });
+    S.history.unshift({ round: S.round, playerName: p.name, entries: snap });
+    S.ledger = [];
+    var idx = S.players.indexOf(p);
+    var next = (idx + 1) % S.players.length;
+    if (next === 0) S.round++;
+    S.activePlayer = S.players[next].id;
+    save(); render();
+    window.scrollTo(0, 0);
+  }
+
+  // ---- Rendering ----
+
+  var app = document.getElementById("app");
+
+  function render() {
+    var nav = document.getElementById("viewNav");
+    var btns = nav.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute("aria-current", btns[i].getAttribute("data-view") === S.view ? "true" : "false");
+    }
+    document.getElementById("endbar").style.display = S.view === "play" ? "" : "none";
+    if (S.view === "play") renderPlay();
+    else if (S.view === "history") renderHistory();
+    else renderSetup();
+  }
+
+  function renderPlay() {
+    var p = activePlayer();
+    var gains = 0, spends = 0, acts = 0;
+    S.ledger.forEach(function (e) {
+      if (e.kind === "action") acts++;
+      else if (e.delta > 0) gains += e.delta;
+      else spends -= e.delta;
+    });
+
+    var h = "";
+    h += '<div class="banner">' +
+      '<div><div class="round">Round ' + S.round + '</div>' +
+      '<div class="who">' + esc(p.name) + "&rsquo;s turn</div></div>" +
+      '<div class="netline">+' + gains + " gained<br>&minus;" + spends + " spent &middot; " + acts + (acts === 1 ? " action" : " actions") + "</div>" +
+      "</div>";
+
+    if (S.players.length > 1) {
+      h += '<div class="player-tabs" role="tablist">';
+      S.players.forEach(function (pl) {
+        h += '<button role="tab" aria-current="' + (pl.id === S.activePlayer ? "true" : "false") +
+          '" data-act="pick-player" data-id="' + pl.id + '">' + esc(pl.name) + "</button>";
+      });
+      h += "</div>";
+    }
+
+    h += '<div class="sec-label">Resources &amp; coins</div><div class="res-grid">';
+    S.resources.forEach(function (r) {
+      var cur = amount(p.id, r.id);
+      var d = turnDelta(p.id, r.id);
+      var dHtml = d === 0
+        ? '<span class="none">&mdash; this turn</span>'
+        : (d > 0 ? '<span class="up">+' + d + " this turn</span>" : '<span class="down">&minus;' + (-d) + " this turn</span>");
+      h += '<div class="res-card" style="--res-color:' + esc(r.color) + '">' +
+        '<div class="res-head"><span class="res-dot"></span><span class="res-name">' + esc(r.name) + "</span></div>" +
+        '<div class="res-count">' + cur + "</div>" +
+        '<div class="res-delta">' + dHtml + "</div>" +
+        '<div class="res-btns">' +
+        '<button class="minus" data-act="adjust" data-id="' + r.id + '" data-delta="-1" aria-label="Spend one ' + esc(r.name) + '">&minus;</button>' +
+        '<button class="plus" data-act="adjust" data-id="' + r.id + '" data-delta="1" aria-label="Gain one ' + esc(r.name) + '">+</button>' +
+        "</div></div>";
+    });
+    h += "</div>";
+
+    h += '<div class="sec-label">Log an action</div>';
+    if (S.quickActions.length) {
+      h += '<div class="quick-actions">';
+      S.quickActions.forEach(function (a, i) {
+        h += '<button data-act="quick" data-idx="' + i + '">' + esc(a) + "</button>";
+      });
+      h += "</div>";
+    }
+    h += '<div class="action-row">' +
+      '<input id="actionInput" type="text" placeholder="e.g. Moved to the market" aria-label="Action description">' +
+      '<button data-act="log-action">Log</button></div>';
+
+    h += '<div class="sec-label">This turn&rsquo;s ledger</div><div class="ledger">';
+    if (!S.ledger.length) {
+      h += '<div class="empty">Nothing yet &mdash; use + / &minus; on a resource or log an action.</div>';
+    } else {
+      for (var i = S.ledger.length - 1; i >= 0; i--) {
+        var e = S.ledger[i];
+        var by = player(e.playerId);
+        var byNote = (by && by.id !== p.id) ? ' <span class="sub">(' + esc(by.name) + ")</span>" : "";
+        if (e.kind === "action") {
+          h += '<div class="entry"><span class="tag act">Action</span><span class="txt">' + esc(e.label) + byNote + "</span>" +
+            '<button class="del" data-act="remove-entry" data-id="' + e.id + '" aria-label="Delete entry">&times;</button></div>';
+        } else {
+          var r = resource(e.resId);
+          var name = r ? r.name : "Removed resource";
+          var tag = e.delta > 0 ? '<span class="tag gain">+' + e.delta + "</span>" : '<span class="tag spend">&minus;' + (-e.delta) + "</span>";
+          h += '<div class="entry">' + tag + '<span class="txt">' + esc(name) + byNote + "</span>" +
+            '<button class="del" data-act="remove-entry" data-id="' + e.id + '" aria-label="Delete entry">&times;</button></div>';
+        }
+      }
+    }
+    h += "</div>";
+    h += '<div class="ledger-tools"><button class="btn-ghost" data-act="undo"' + (S.ledger.length ? "" : " disabled") + ">Undo last</button></div>";
+
+    app.innerHTML = h;
+  }
+
+  function renderHistory() {
+    var h = "";
+    if (!S.history.length) {
+      h = '<div class="empty">No finished turns yet. End a turn on the Play tab and it will be archived here.</div>';
+    } else {
+      S.history.forEach(function (t) {
+        h += '<div class="hist-turn"><div class="hist-head"><span class="t">' + esc(t.playerName) + "&rsquo;s turn</span>" +
+          '<span class="r">Round ' + t.round + "</span></div>";
+        if (!t.entries.length) {
+          h += '<div class="empty">No activity recorded.</div>';
+        } else {
+          t.entries.forEach(function (e) {
+            if (e.kind === "action") {
+              h += '<div class="hist-line"><span class="d act">&bull;</span><span>' + esc(e.label) + "</span></div>";
+            } else {
+              var cls = e.delta > 0 ? "gain" : "spend";
+              var sign = e.delta > 0 ? "+" + e.delta : "&minus;" + (-e.delta);
+              h += '<div class="hist-line"><span class="d ' + cls + '">' + sign + "</span><span>" + esc(e.resName) + "</span></div>";
+            }
+          });
+        }
+        h += "</div>";
+      });
+    }
+    app.innerHTML = h;
+  }
+
+  function renderSetup() {
+    var h = "";
+
+    h += '<div class="setup-card"><h2>Players</h2><div class="hint">Turn order follows this list.</div>';
+    S.players.forEach(function (pl) {
+      h += '<div class="setup-row">' +
+        '<input type="text" value="' + esc(pl.name) + '" data-act="rename-player" data-id="' + pl.id + '" aria-label="Player name">' +
+        (S.players.length > 1 ? '<button class="rm" data-act="remove-player" data-id="' + pl.id + '" aria-label="Remove player">&times;</button>' : "") +
+        "</div>";
+    });
+    h += '<button class="setup-add" data-act="add-player">+ Add player</button></div>';
+
+    h += '<div class="setup-card"><h2>Resources &amp; coins</h2>' +
+      '<div class="hint">Rename these to match the game &mdash; tap the swatch to change a token&rsquo;s color. Starting amounts apply to new games only.</div>';
+    S.resources.forEach(function (r) {
+      h += '<div class="setup-row">' +
+        '<span class="swatch"><input type="color" value="' + esc(r.color) + '" data-act="recolor-res" data-id="' + r.id + '" aria-label="Color for ' + esc(r.name) + '"></span>' +
+        '<input type="text" value="' + esc(r.name) + '" data-act="rename-res" data-id="' + r.id + '" aria-label="Resource name">' +
+        '<button class="rm" data-act="remove-res" data-id="' + r.id + '" aria-label="Remove resource">&times;</button>' +
+        "</div>";
+    });
+    h += '<button class="setup-add" data-act="add-res">+ Add resource</button></div>';
+
+    h += '<div class="setup-card"><h2>Quick actions</h2>' +
+      '<div class="hint">One-tap buttons for the actions Game 10 lets you take on a turn.</div>';
+    S.quickActions.forEach(function (a, i) {
+      h += '<div class="setup-row">' +
+        '<input type="text" value="' + esc(a) + '" data-act="rename-qa" data-idx="' + i + '" aria-label="Quick action name">' +
+        '<button class="rm" data-act="remove-qa" data-idx="' + i + '" aria-label="Remove quick action">&times;</button>' +
+        "</div>";
+    });
+    h += '<button class="setup-add" data-act="add-qa">+ Add quick action</button></div>';
+
+    h += '<div class="setup-card"><h2>Game</h2>' +
+      '<div class="hint">Clears all counts, the ledger, and turn history. Players, resources, and quick actions are kept.</div>' +
+      '<button class="danger" data-act="reset">Start a new game</button></div>';
+
+    app.innerHTML = h;
+  }
+
+  // ---- Events ----
+
+  document.getElementById("viewNav").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-view]");
+    if (!b) return;
+    S.view = b.getAttribute("data-view");
+    save(); render();
+  });
+
+  document.getElementById("endTurnBtn").addEventListener("click", endTurn);
+
+  app.addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-act]");
+    if (!b || b.tagName === "INPUT") return;
+    var act = b.getAttribute("data-act");
+    var id = b.getAttribute("data-id");
+    var idx = parseInt(b.getAttribute("data-idx"), 10);
+
+    if (act === "adjust") adjust(id, parseInt(b.getAttribute("data-delta"), 10));
+    else if (act === "pick-player") { S.activePlayer = id; save(); render(); }
+    else if (act === "quick") logAction(S.quickActions[idx] || "");
+    else if (act === "log-action") {
+      var inp = document.getElementById("actionInput");
+      logAction(inp.value);
+    }
+    else if (act === "remove-entry") removeEntry(id);
+    else if (act === "undo") undo();
+    else if (act === "add-player") {
+      S.players.push({ id: uid(), name: "Player " + (S.players.length + 1) });
+      save(); render();
+    }
+    else if (act === "remove-player") {
+      if (S.players.length <= 1) return;
+      var pl = player(id);
+      if (!confirm("Remove " + (pl ? pl.name : "this player") + "? Their counts are discarded.")) return;
+      S.players = S.players.filter(function (x) { return x.id !== id; });
+      delete S.bank[id];
+      S.ledger = S.ledger.filter(function (e) { return e.playerId !== id; });
+      if (S.activePlayer === id) S.activePlayer = S.players[0].id;
+      save(); render();
+    }
+    else if (act === "add-res") {
+      S.resources.push({ id: uid(), name: "New resource", color: SWATCHES[S.resources.length % SWATCHES.length], start: 0 });
+      save(); render();
+    }
+    else if (act === "remove-res") {
+      var r = resource(id);
+      if (!confirm("Remove " + (r ? r.name : "this resource") + "? Everyone's count of it is discarded.")) return;
+      S.resources = S.resources.filter(function (x) { return x.id !== id; });
+      S.ledger = S.ledger.filter(function (e) { return !(e.kind === "res" && e.resId === id); });
+      Object.keys(S.bank).forEach(function (pid) { delete S.bank[pid][id]; });
+      save(); render();
+    }
+    else if (act === "add-qa") { S.quickActions.push("New action"); save(); render(); }
+    else if (act === "remove-qa") { S.quickActions.splice(idx, 1); save(); render(); }
+    else if (act === "reset") {
+      if (!confirm("Start a new game? All counts, the current ledger, and history are cleared.")) return;
+      S.round = 1;
+      S.bank = {};
+      S.ledger = [];
+      S.history = [];
+      S.activePlayer = S.players[0].id;
+      S.view = "play";
+      save(); render();
+    }
+  });
+
+  app.addEventListener("change", function (ev) {
+    var t = ev.target;
+    var act = t.getAttribute("data-act");
+    if (!act) return;
+    var id = t.getAttribute("data-id");
+    var idx = parseInt(t.getAttribute("data-idx"), 10);
+    if (act === "rename-player") { var pl = player(id); if (pl) pl.name = t.value.trim() || pl.name; save(); render(); }
+    else if (act === "rename-res") { var r = resource(id); if (r) r.name = t.value.trim() || r.name; save(); render(); }
+    else if (act === "recolor-res") { var r2 = resource(id); if (r2) r2.color = t.value; save(); render(); }
+    else if (act === "rename-qa") { S.quickActions[idx] = t.value.trim() || S.quickActions[idx]; save(); render(); }
+  });
+
+  app.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" && ev.target.id === "actionInput") {
+      logAction(ev.target.value);
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
