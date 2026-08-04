@@ -3,73 +3,77 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Game 10 Turn Companion</title>
+<title>Tend Turn Companion</title>
 <style>
   :root {
-    --ground: #EDEFE9;
+    --ground: #EFF1EC;
     --surface: #FCFDFB;
-    --surface-2: #F3F5F0;
-    --ink: #1C221E;
-    --muted: #5C665F;
-    --line: #D5DAD1;
-    --accent: #2E6B4F;
-    --accent-ink: #F4F8F5;
-    --gain: #25714B;
+    --surface-2: #F2F5F1;
+    --ink: #1E2422;
+    --muted: #5D6763;
+    --line: #D4DAD4;
+    --accent: #2F7A72;
+    --accent-ink: #F2F8F6;
+    --gain: #2A7350;
     --gain-soft: #DDEBE2;
-    --spend: #A8443A;
-    --spend-soft: #F1E0DD;
-    --coin: #B8860B;
-    --shadow: 0 1px 3px rgba(28, 34, 30, 0.10);
+    --spend: #C05B4D;
+    --spend-soft: #F4E2DE;
+    --coin: #A98014;
+    --coin-soft: #F1E8CE;
+    --shadow: 0 1px 3px rgba(30, 36, 34, 0.10);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --ground: #121714;
-      --surface: #1B211D;
-      --surface-2: #232A25;
-      --ink: #E7EBE7;
-      --muted: #98A39B;
-      --line: #323B34;
-      --accent: #4E9C77;
-      --accent-ink: #0E1511;
-      --gain: #5CB68C;
+      --ground: #131816;
+      --surface: #1C2220;
+      --surface-2: #242B28;
+      --ink: #E6EBE8;
+      --muted: #97A29C;
+      --line: #333C38;
+      --accent: #55A89E;
+      --accent-ink: #0E1513;
+      --gain: #5FB88D;
       --gain-soft: #1E3A2C;
-      --spend: #D97B6F;
-      --spend-soft: #40241F;
-      --coin: #D9A93A;
+      --spend: #DD8171;
+      --spend-soft: #422520;
+      --coin: #D8AF3C;
+      --coin-soft: #3A311A;
       --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     }
   }
   :root[data-theme="dark"] {
-    --ground: #121714;
-    --surface: #1B211D;
-    --surface-2: #232A25;
-    --ink: #E7EBE7;
-    --muted: #98A39B;
-    --line: #323B34;
-    --accent: #4E9C77;
-    --accent-ink: #0E1511;
-    --gain: #5CB68C;
+    --ground: #131816;
+    --surface: #1C2220;
+    --surface-2: #242B28;
+    --ink: #E6EBE8;
+    --muted: #97A29C;
+    --line: #333C38;
+    --accent: #55A89E;
+    --accent-ink: #0E1513;
+    --gain: #5FB88D;
     --gain-soft: #1E3A2C;
-    --spend: #D97B6F;
-    --spend-soft: #40241F;
-    --coin: #D9A93A;
+    --spend: #DD8171;
+    --spend-soft: #422520;
+    --coin: #D8AF3C;
+    --coin-soft: #3A311A;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   }
   :root[data-theme="light"] {
-    --ground: #EDEFE9;
+    --ground: #EFF1EC;
     --surface: #FCFDFB;
-    --surface-2: #F3F5F0;
-    --ink: #1C221E;
-    --muted: #5C665F;
-    --line: #D5DAD1;
-    --accent: #2E6B4F;
-    --accent-ink: #F4F8F5;
-    --gain: #25714B;
+    --surface-2: #F2F5F1;
+    --ink: #1E2422;
+    --muted: #5D6763;
+    --line: #D4DAD4;
+    --accent: #2F7A72;
+    --accent-ink: #F2F8F6;
+    --gain: #2A7350;
     --gain-soft: #DDEBE2;
-    --spend: #A8443A;
-    --spend-soft: #F1E0DD;
-    --coin: #B8860B;
-    --shadow: 0 1px 3px rgba(28, 34, 30, 0.10);
+    --spend: #C05B4D;
+    --spend-soft: #F4E2DE;
+    --coin: #A98014;
+    --coin-soft: #F1E8CE;
+    --shadow: 0 1px 3px rgba(30, 36, 34, 0.10);
   }
 
   * { box-sizing: border-box; margin: 0; }
@@ -82,7 +86,7 @@
     min-height: 100vh;
   }
   button { font: inherit; color: inherit; cursor: pointer; }
-  input, select { font: inherit; color: inherit; }
+  input { font: inherit; color: inherit; }
   button:focus-visible, input:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -91,7 +95,7 @@
   .wrap { max-width: 640px; margin: 0 auto; padding: 16px 16px 96px; }
 
   /* ---- Header ---- */
-  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
   .eyebrow {
     font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
     color: var(--accent);
@@ -100,12 +104,12 @@
 
   .views { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
   .views button {
-    border: 0; background: transparent; border-radius: 8px; padding: 6px 12px;
+    border: 0; background: transparent; border-radius: 8px; padding: 6px 10px;
     font-size: 13px; font-weight: 600; color: var(--muted);
   }
   .views button[aria-current="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
 
-  /* ---- Turn banner ---- */
+  /* ---- Round banner ---- */
   .banner {
     background: var(--accent); color: var(--accent-ink);
     border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
@@ -113,56 +117,80 @@
   }
   .banner .round { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; }
   .banner .who { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
-  .banner .netline { font-size: 13px; font-weight: 600; opacity: 0.9; text-align: right; }
+  .banner .netline { font-size: 13px; font-weight: 600; opacity: 0.92; text-align: right; font-variant-numeric: tabular-nums; }
 
   .player-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
   .player-tabs button {
     border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
     padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--muted);
   }
-  .player-tabs button[aria-current="true"] {
-    border-color: var(--accent); color: var(--accent);
-    background: var(--surface); font-weight: 700;
-  }
+  .player-tabs button[aria-current="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 
-  /* ---- Sections ---- */
   .sec-label {
     font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
     color: var(--muted); margin: 20px 0 8px;
   }
+  .sec-label small { font-weight: 600; letter-spacing: 0.02em; text-transform: none; }
 
-  /* ---- Resource cards ---- */
-  .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  @media (max-width: 380px) { .res-grid { grid-template-columns: 1fr; } }
-  .res-card {
+  /* ---- Coins ---- */
+  .coin-card {
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-    padding: 12px; box-shadow: var(--shadow);
-    border-top: 3px solid var(--res-color, var(--accent));
+    border-top: 3px solid var(--coin);
+    padding: 12px 14px; box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 14px;
   }
-  .res-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .res-dot {
-    width: 12px; height: 12px; border-radius: 50%; flex: none;
-    background: var(--res-color, var(--accent));
-  }
-  .res-name { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
-  .res-count {
+  .coin-card .label { font-size: 13px; font-weight: 700; }
+  .coin-card .sub { font-size: 12px; color: var(--muted); }
+  .coin-card .n {
     font-size: 34px; font-weight: 800; letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums; line-height: 1.1;
+    font-variant-numeric: tabular-nums; color: var(--coin); margin-left: auto;
   }
-  .res-delta { font-size: 12px; font-weight: 600; min-height: 18px; font-variant-numeric: tabular-nums; }
-  .res-delta .up { color: var(--gain); }
-  .res-delta .down { color: var(--spend); }
-  .res-delta .none { color: var(--muted); }
-  .res-btns { display: flex; gap: 8px; margin-top: 10px; }
-  .res-btns button {
-    flex: 1; min-height: 44px; border-radius: 10px; border: 1px solid var(--line);
+  .coin-card .btns { display: flex; gap: 8px; }
+  .coin-card .btns button {
+    width: 48px; min-height: 44px; border-radius: 10px; border: 1px solid var(--line);
     font-size: 20px; font-weight: 700; background: var(--surface-2);
   }
-  .res-btns .minus { color: var(--spend); }
-  .res-btns .plus { color: var(--gain); }
-  .res-btns button:active { transform: scale(0.96); }
+  .coin-card .minus { color: var(--spend); }
+  .coin-card .plus { color: var(--gain); }
 
-  /* ---- Action logger ---- */
+  /* ---- Resource chips ---- */
+  .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  @media (max-width: 420px) { .res-grid { grid-template-columns: 1fr 1fr; } }
+  .res-chip {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    border-top: 3px solid var(--res-color, var(--accent));
+    padding: 10px 8px 12px; min-height: 60px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .res-chip:active { transform: scale(0.97); }
+  .res-chip .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--res-color, var(--accent)); }
+  .res-chip .nm { font-size: 13px; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
+
+  /* ---- Pending use panel ---- */
+  .use-panel {
+    background: var(--surface); border: 2px solid var(--accent); border-radius: 14px;
+    padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+  }
+  .use-panel .q { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+  .use-panel .rule { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .use-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .use-grid button {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+    padding: 12px 10px; font-size: 14px; font-weight: 700; min-height: 52px; text-align: center;
+  }
+  .use-grid button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .use-panel .cancel {
+    margin-top: 10px; width: 100%; border: 0; background: none; color: var(--muted);
+    font-size: 13px; font-weight: 600; padding: 8px;
+  }
+  .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .num-grid button {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+    min-height: 48px; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums;
+    color: var(--coin);
+  }
+
+  /* ---- Task chips ---- */
   .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
   .quick-actions button {
     border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
@@ -187,10 +215,11 @@
   }
   .entry .tag {
     flex: none; font-size: 12px; font-weight: 700; border-radius: 6px; padding: 2px 8px;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
   }
   .entry .tag.gain { background: var(--gain-soft); color: var(--gain); }
   .entry .tag.spend { background: var(--spend-soft); color: var(--spend); }
+  .entry .tag.coin { background: var(--coin-soft); color: var(--coin); }
   .entry .tag.act { background: var(--surface-2); color: var(--muted); }
   .entry .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .entry .sub { color: var(--muted); font-size: 12px; }
@@ -204,7 +233,7 @@
   }
   .btn-ghost:disabled { opacity: 0.45; cursor: default; }
 
-  /* ---- End turn bar ---- */
+  /* ---- End round bar ---- */
   .endbar {
     position: fixed; bottom: 0; left: 0; right: 0;
     padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
@@ -215,9 +244,14 @@
     pointer-events: auto; display: block; width: 100%; max-width: 608px; margin: 0 auto;
     border: 0; background: var(--accent); color: var(--accent-ink);
     border-radius: 14px; padding: 15px; font-size: 16px; font-weight: 800; letter-spacing: 0.01em;
-    box-shadow: 0 4px 14px rgba(28, 34, 30, 0.25);
+    box-shadow: 0 4px 14px rgba(30, 36, 34, 0.25);
   }
   .endbar button:active { transform: scale(0.98); }
+
+  .season-note {
+    background: var(--coin-soft); color: var(--ink); border: 1px solid var(--coin);
+    border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600; margin-bottom: 12px;
+  }
 
   /* ---- History ---- */
   .hist-turn {
@@ -231,7 +265,26 @@
   .hist-line .d { font-weight: 700; font-variant-numeric: tabular-nums; flex: none; min-width: 44px; }
   .hist-line .d.gain { color: var(--gain); }
   .hist-line .d.spend { color: var(--spend); }
+  .hist-line .d.coin { color: var(--coin); }
   .hist-line .d.act { color: var(--muted); font-weight: 600; }
+  .hist-line .sub { color: var(--muted); font-size: 12px; }
+
+  /* ---- Score ---- */
+  .score-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .score-card h2 { font-size: 15px; font-weight: 800; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: baseline; }
+  .score-card h2 .total { font-size: 22px; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .score-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  .score-row label { flex: 1; font-size: 13px; }
+  .score-row label small { display: block; color: var(--muted); font-size: 11px; }
+  .score-row input {
+    width: 72px; border: 1px solid var(--line); border-radius: 8px; padding: 8px;
+    background: var(--surface-2); font-size: 15px; font-weight: 700; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .leader { border-color: var(--coin); border-width: 2px; }
 
   /* ---- Setup ---- */
   .setup-card {
@@ -270,25 +323,33 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <div class="eyebrow">IV Studio · Game 10</div>
+      <div class="eyebrow">IV Studio &middot; Tend</div>
       <h1>Turn Companion</h1>
     </div>
     <nav class="views" id="viewNav" aria-label="Views">
       <button data-view="play">Play</button>
       <button data-view="history">History</button>
+      <button data-view="score">Score</button>
       <button data-view="setup">Setup</button>
     </nav>
   </header>
   <main id="app"></main>
 </div>
-<div class="endbar" id="endbar"><button id="endTurnBtn">End turn</button></div>
+<div class="endbar" id="endbar"><button id="endTurnBtn">End round</button></div>
 
 <script>
 (function () {
   "use strict";
 
-  var STORE_KEY = "game10-companion-v1";
-  var SWATCHES = ["#B8860B", "#8A5A3B", "#4A6FA5", "#2E6B4F", "#8E4A8B", "#A8443A", "#3E7C7B", "#6B6F3A"];
+  var STORE_KEY = "tend-companion-v1";
+  var ROUNDS = 12;
+  var SWATCHES = ["#8A5A3B", "#4A6FA5", "#6E6A75", "#8E4A8B", "#5B8A3A", "#B0A38E", "#C05B4D", "#3E7C7B"];
+  var USES = {
+    spend: { label: "Spent on sheet", sub: "badge, upgrade, soil, fence" },
+    sell:  { label: "Sold to commissary", sub: "gain its coin value" },
+    cargo: { label: "Cargo manifest", sub: "fill matching boxes" },
+    gift:  { label: "Gifted to neighbor", sub: "left or right track" }
+  };
 
   function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -296,23 +357,28 @@
     var pid = uid();
     return {
       round: 1,
+      over: false,
       view: "play",
       activePlayer: pid,
       players: [{ id: pid, name: "Player 1" }],
+      coins: {},   // playerId -> n
       resources: [
-        { id: uid(), name: "Coins", color: "#B8860B", start: 0 },
-        { id: uid(), name: "Resource A", color: "#4A6FA5", start: 0 },
-        { id: uid(), name: "Resource B", color: "#8A5A3B", start: 0 },
-        { id: uid(), name: "Resource C", color: "#8E4A8B", start: 0 }
+        { id: uid(), name: "Wood", color: "#8A5A3B" },
+        { id: uid(), name: "Fish", color: "#4A6FA5" },
+        { id: uid(), name: "Ore", color: "#6E6A75" },
+        { id: uid(), name: "Geode", color: "#8E4A8B" },
+        { id: uid(), name: "Crop", color: "#5B8A3A" },
+        { id: uid(), name: "Milk", color: "#B0A38E" }
       ],
-      quickActions: ["Draw a card", "Trade", "Build"],
-      bank: {},   // playerId -> resId -> amount
-      ledger: [], // entries since last End Turn
-      history: [] // archived turns, newest first
+      tasks: ["Tend", "Fish", "Mine", "Chop"],
+      ledger: [],  // entries this round
+      history: [], // archived rounds, newest first
+      scores: {}   // playerId -> {s1,s2,s3,cargo,badges,explorer,neighbor}
     };
   }
 
   var S = load();
+  var UI = { pending: null }; // {resId, step:'use'|'sell'} — not persisted
 
   function load() {
     try {
@@ -342,47 +408,36 @@
     for (var i = 0; i < S.resources.length; i++) if (S.resources[i].id === id) return S.resources[i];
     return null;
   }
-  function amount(pid, rid) {
-    var b = S.bank[pid];
-    if (b && typeof b[rid] === "number") return b[rid];
-    var r = resource(rid);
-    return r ? r.start : 0;
-  }
-  function setAmount(pid, rid, val) {
-    if (!S.bank[pid]) S.bank[pid] = {};
-    S.bank[pid][rid] = Math.max(0, val);
-  }
-
-  function activePlayer() {
-    return player(S.activePlayer) || S.players[0];
-  }
-
-  // Delta for a resource this turn, for a given player
-  function turnDelta(pid, rid) {
-    var d = 0;
-    for (var i = 0; i < S.ledger.length; i++) {
-      var e = S.ledger[i];
-      if (e.kind === "res" && e.playerId === pid && e.resId === rid) d += e.delta;
-    }
-    return d;
-  }
+  function activePlayer() { return player(S.activePlayer) || S.players[0]; }
+  function season(round) { return Math.min(3, Math.floor((round - 1) / 4) + 1); }
+  function coins(pid) { return S.coins[pid] || 0; }
+  function addCoins(pid, d) { S.coins[pid] = Math.max(0, coins(pid) + d); }
 
   // ---- Mutations ----
 
-  function adjust(rid, delta) {
+  function gainResource(resId, use, extra) {
     var p = activePlayer();
-    var cur = amount(p.id, rid);
-    if (delta < 0 && cur <= 0) return; // nothing to spend
-    setAmount(p.id, rid, cur + delta);
-    S.ledger.push({ id: uid(), kind: "res", playerId: p.id, resId: rid, delta: delta });
+    var e = { id: uid(), playerId: p.id, kind: "gain", resId: resId, use: use };
+    if (use === "sell") { e.coins = extra || 0; addCoins(p.id, e.coins); }
+    if (use === "gift") { e.side = extra; }
+    S.ledger.push(e);
+    UI.pending = null;
     save(); render();
   }
 
-  function logAction(label) {
+  function logTask(label) {
     label = label.trim();
     if (!label) return;
     var p = activePlayer();
-    S.ledger.push({ id: uid(), kind: "action", playerId: p.id, label: label });
+    S.ledger.push({ id: uid(), playerId: p.id, kind: "task", label: label });
+    save(); render();
+  }
+
+  function adjustCoins(delta) {
+    var p = activePlayer();
+    if (delta < 0 && coins(p.id) <= 0) return;
+    addCoins(p.id, delta);
+    S.ledger.push({ id: uid(), playerId: p.id, kind: "coin", delta: delta });
     save(); render();
   }
 
@@ -390,7 +445,8 @@
     for (var i = S.ledger.length - 1; i >= 0; i--) {
       if (S.ledger[i].id === eid) {
         var e = S.ledger[i];
-        if (e.kind === "res") setAmount(e.playerId, e.resId, amount(e.playerId, e.resId) - e.delta);
+        if (e.kind === "gain" && e.use === "sell") addCoins(e.playerId, -e.coins);
+        if (e.kind === "coin") addCoins(e.playerId, -e.delta);
         S.ledger.splice(i, 1);
         break;
       }
@@ -403,23 +459,32 @@
     if (e) removeEntry(e.id);
   }
 
-  function endTurn() {
-    var p = activePlayer();
-    // Snapshot entries with denormalized names so history survives renames/deletes
-    var snap = S.ledger.map(function (e) {
-      if (e.kind === "res") {
-        var r = resource(e.resId);
-        return { kind: "res", delta: e.delta, resName: r ? r.name : "Removed resource",
-                 resColor: r ? r.color : "#888", byName: (player(e.playerId) || {}).name || "?" };
-      }
-      return { kind: "action", label: e.label, byName: (player(e.playerId) || {}).name || "?" };
+  function entryText(e) {
+    // Denormalized description used for both ledger display and history snapshots
+    if (e.kind === "task") return { tag: "Task", cls: "act", txt: e.label };
+    if (e.kind === "coin") {
+      return e.delta > 0
+        ? { tag: "+" + e.delta + " coin" + (e.delta === 1 ? "" : "s"), cls: "coin", txt: "Coins adjusted" }
+        : { tag: "−" + (-e.delta) + " coin" + (e.delta === -1 ? "" : "s"), cls: "coin", txt: "Coins spent" };
+    }
+    var r = resource(e.resId);
+    var name = r ? r.name : "Resource";
+    if (e.use === "sell") return { tag: "+" + e.coins + " coins", cls: "coin", txt: name + " → sold to commissary" };
+    if (e.use === "cargo") return { tag: "Cargo", cls: "gain", txt: name + " → cargo manifest" };
+    if (e.use === "gift") return { tag: "Gift", cls: "gain", txt: name + " → gifted to " + (e.side || "a") + " neighbor" };
+    return { tag: "Spent", cls: "spend", txt: name + " → spent on sheet" };
+  }
+
+  function endRound() {
+    var entries = S.ledger.map(function (e) {
+      var t = entryText(e);
+      return { tag: t.tag, cls: t.cls, txt: t.txt, byName: (player(e.playerId) || {}).name || "?" };
     });
-    S.history.unshift({ round: S.round, playerName: p.name, entries: snap });
+    S.history.unshift({ round: S.round, season: season(S.round), entries: entries });
     S.ledger = [];
-    var idx = S.players.indexOf(p);
-    var next = (idx + 1) % S.players.length;
-    if (next === 0) S.round++;
-    S.activePlayer = S.players[next].id;
+    UI.pending = null;
+    if (S.round >= ROUNDS) { S.over = true; }
+    else { S.round++; }
     save(); render();
     window.scrollTo(0, 0);
   }
@@ -434,87 +499,119 @@
     for (var i = 0; i < btns.length; i++) {
       btns[i].setAttribute("aria-current", btns[i].getAttribute("data-view") === S.view ? "true" : "false");
     }
-    document.getElementById("endbar").style.display = S.view === "play" ? "" : "none";
+    var endbar = document.getElementById("endbar");
+    endbar.style.display = (S.view === "play" && !S.over) ? "" : "none";
+    document.getElementById("endTurnBtn").textContent =
+      S.round >= ROUNDS ? "End round 12 · finish game" : "End round " + S.round;
     if (S.view === "play") renderPlay();
     else if (S.view === "history") renderHistory();
+    else if (S.view === "score") renderScore();
     else renderSetup();
   }
 
   function renderPlay() {
     var p = activePlayer();
-    var gains = 0, spends = 0, acts = 0;
+    var gained = 0, coinsIn = 0, coinsOut = 0, tasks = 0;
     S.ledger.forEach(function (e) {
-      if (e.kind === "action") acts++;
-      else if (e.delta > 0) gains += e.delta;
-      else spends -= e.delta;
+      if (e.playerId !== p.id) return;
+      if (e.kind === "gain") { gained++; if (e.use === "sell") coinsIn += e.coins; }
+      else if (e.kind === "task") tasks++;
+      else if (e.kind === "coin") { if (e.delta > 0) coinsIn += e.delta; else coinsOut -= e.delta; }
     });
 
     var h = "";
-    h += '<div class="banner">' +
-      '<div><div class="round">Round ' + S.round + '</div>' +
-      '<div class="who">' + esc(p.name) + "&rsquo;s turn</div></div>" +
-      '<div class="netline">+' + gains + " gained<br>&minus;" + spends + " spent &middot; " + acts + (acts === 1 ? " action" : " actions") + "</div>" +
-      "</div>";
+    if (S.over) {
+      h += '<div class="banner"><div><div class="round">Game complete</div>' +
+        '<div class="who">All 12 rounds played</div></div>' +
+        '<div class="netline">Tally up on the<br>Score tab</div></div>';
+    } else {
+      h += '<div class="banner">' +
+        '<div><div class="round">Round ' + S.round + " of " + ROUNDS + " · Season " + season(S.round) + "</div>" +
+        '<div class="who">' + esc(p.name) + "</div></div>" +
+        '<div class="netline">' + gained + " gained · " + tasks + (tasks === 1 ? " task" : " tasks") +
+        "<br>+" + coinsIn + " / −" + coinsOut + " coins</div>" +
+        "</div>";
+      if (!S.over && S.round % 4 === 0) {
+        h += '<div class="season-note">Season ' + season(S.round) + " ends after this round — check the season objective before scoring.</div>";
+      }
+    }
 
     if (S.players.length > 1) {
       h += '<div class="player-tabs" role="tablist">';
       S.players.forEach(function (pl) {
         h += '<button role="tab" aria-current="' + (pl.id === S.activePlayer ? "true" : "false") +
-          '" data-act="pick-player" data-id="' + pl.id + '">' + esc(pl.name) + "</button>";
+          '" data-act="pick-player" data-id="' + pl.id + '">' + esc(pl.name) + " · " + coins(pl.id) + "c</button>";
       });
       h += "</div>";
     }
 
-    h += '<div class="sec-label">Resources &amp; coins</div><div class="res-grid">';
+    h += '<div class="sec-label">Coins</div>';
+    h += '<div class="coin-card"><div><div class="label">Coins on hand</div>' +
+      '<div class="sub">From commissary sales; spend on sheet costs</div></div>' +
+      '<div class="n">' + coins(p.id) + "</div>" +
+      '<div class="btns"><button class="minus" data-act="coins" data-delta="-1" aria-label="Spend one coin">&minus;</button>' +
+      '<button class="plus" data-act="coins" data-delta="1" aria-label="Gain one coin">+</button></div></div>';
+
+    h += '<div class="sec-label">Gained a resource? <small>&mdash; tap it, then say how you used it</small></div>';
+
+    if (UI.pending) {
+      var pr = resource(UI.pending.resId);
+      var prName = pr ? pr.name : "Resource";
+      if (UI.pending.step === "sell") {
+        h += '<div class="use-panel"><div class="q">' + esc(prName) + " sold — for how many coins?</div>" +
+          '<div class="rule">Check its coin value on the Corporate Commissary board.</div><div class="num-grid">';
+        for (var c = 1; c <= 8; c++) h += '<button data-act="sell-coins" data-n="' + c + '">' + c + "</button>";
+        h += '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
+      } else if (UI.pending.step === "gift") {
+        h += '<div class="use-panel"><div class="q">' + esc(prName) + " gifted — to which neighbor?</div>" +
+          '<div class="rule">Mark the bonus on that side’s neighbor rewards track.</div>' +
+          '<div class="use-grid">' +
+          '<button data-act="gift-side" data-side="left">Left neighbor</button>' +
+          '<button data-act="gift-side" data-side="right">Right neighbor</button>' +
+          '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
+      } else {
+        h += '<div class="use-panel"><div class="q">' + esc(prName) + " gained — how are you using it?</div>" +
+          '<div class="rule">No storage in Tend: every resource must be used immediately.</div>' +
+          '<div class="use-grid">' +
+          '<button data-act="use" data-use="spend">' + USES.spend.label + "<small>" + USES.spend.sub + "</small></button>" +
+          '<button data-act="use" data-use="sell">' + USES.sell.label + "<small>" + USES.sell.sub + "</small></button>" +
+          '<button data-act="use" data-use="cargo">' + USES.cargo.label + "<small>" + USES.cargo.sub + "</small></button>" +
+          '<button data-act="use" data-use="gift">' + USES.gift.label + "<small>" + USES.gift.sub + "</small></button>" +
+          '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
+      }
+    }
+
+    h += '<div class="res-grid">';
     S.resources.forEach(function (r) {
-      var cur = amount(p.id, r.id);
-      var d = turnDelta(p.id, r.id);
-      var dHtml = d === 0
-        ? '<span class="none">&mdash; this turn</span>'
-        : (d > 0 ? '<span class="up">+' + d + " this turn</span>" : '<span class="down">&minus;' + (-d) + " this turn</span>");
-      h += '<div class="res-card" style="--res-color:' + esc(r.color) + '">' +
-        '<div class="res-head"><span class="res-dot"></span><span class="res-name">' + esc(r.name) + "</span></div>" +
-        '<div class="res-count">' + cur + "</div>" +
-        '<div class="res-delta">' + dHtml + "</div>" +
-        '<div class="res-btns">' +
-        '<button class="minus" data-act="adjust" data-id="' + r.id + '" data-delta="-1" aria-label="Spend one ' + esc(r.name) + '">&minus;</button>' +
-        '<button class="plus" data-act="adjust" data-id="' + r.id + '" data-delta="1" aria-label="Gain one ' + esc(r.name) + '">+</button>' +
-        "</div></div>";
+      h += '<button class="res-chip" style="--res-color:' + esc(r.color) + '" data-act="gain" data-id="' + r.id + '">' +
+        '<span class="dot"></span><span class="nm">' + esc(r.name) + "</span></button>";
     });
     h += "</div>";
 
-    h += '<div class="sec-label">Log an action</div>';
-    if (S.quickActions.length) {
+    h += '<div class="sec-label">Log a task or action</div>';
+    if (S.tasks.length) {
       h += '<div class="quick-actions">';
-      S.quickActions.forEach(function (a, i) {
+      S.tasks.forEach(function (a, i) {
         h += '<button data-act="quick" data-idx="' + i + '">' + esc(a) + "</button>";
       });
       h += "</div>";
     }
     h += '<div class="action-row">' +
-      '<input id="actionInput" type="text" placeholder="e.g. Moved to the market" aria-label="Action description">' +
-      '<button data-act="log-action">Log</button></div>';
+      '<input id="actionInput" type="text" placeholder="e.g. Watered crops, built fence" aria-label="Action description">' +
+      '<button data-act="log-task">Log</button></div>';
 
-    h += '<div class="sec-label">This turn&rsquo;s ledger</div><div class="ledger">';
-    if (!S.ledger.length) {
-      h += '<div class="empty">Nothing yet &mdash; use + / &minus; on a resource or log an action.</div>';
-    } else {
-      for (var i = S.ledger.length - 1; i >= 0; i--) {
-        var e = S.ledger[i];
-        var by = player(e.playerId);
-        var byNote = (by && by.id !== p.id) ? ' <span class="sub">(' + esc(by.name) + ")</span>" : "";
-        if (e.kind === "action") {
-          h += '<div class="entry"><span class="tag act">Action</span><span class="txt">' + esc(e.label) + byNote + "</span>" +
-            '<button class="del" data-act="remove-entry" data-id="' + e.id + '" aria-label="Delete entry">&times;</button></div>';
-        } else {
-          var r = resource(e.resId);
-          var name = r ? r.name : "Removed resource";
-          var tag = e.delta > 0 ? '<span class="tag gain">+' + e.delta + "</span>" : '<span class="tag spend">&minus;' + (-e.delta) + "</span>";
-          h += '<div class="entry">' + tag + '<span class="txt">' + esc(name) + byNote + "</span>" +
-            '<button class="del" data-act="remove-entry" data-id="' + e.id + '" aria-label="Delete entry">&times;</button></div>';
-        }
-      }
+    h += '<div class="sec-label">This round&rsquo;s ledger</div><div class="ledger">';
+    var shown = 0;
+    for (var i = S.ledger.length - 1; i >= 0; i--) {
+      var e = S.ledger[i];
+      var by = player(e.playerId);
+      var byNote = (by && by.id !== p.id) ? ' <span class="sub">(' + esc(by.name) + ")</span>" : "";
+      var t = entryText(e);
+      h += '<div class="entry"><span class="tag ' + t.cls + '">' + esc(t.tag) + '</span><span class="txt">' + esc(t.txt) + byNote + "</span>" +
+        '<button class="del" data-act="remove-entry" data-id="' + e.id + '" aria-label="Delete entry">&times;</button></div>';
+      shown++;
     }
+    if (!shown) h += '<div class="empty">Nothing yet &mdash; tap a resource when you gain one, or log a task.</div>';
     h += "</div>";
     h += '<div class="ledger-tools"><button class="btn-ghost" data-act="undo"' + (S.ledger.length ? "" : " disabled") + ">Undo last</button></div>";
 
@@ -524,22 +621,17 @@
   function renderHistory() {
     var h = "";
     if (!S.history.length) {
-      h = '<div class="empty">No finished turns yet. End a turn on the Play tab and it will be archived here.</div>';
+      h = '<div class="empty">No finished rounds yet. End a round on the Play tab and it will be archived here.</div>';
     } else {
       S.history.forEach(function (t) {
-        h += '<div class="hist-turn"><div class="hist-head"><span class="t">' + esc(t.playerName) + "&rsquo;s turn</span>" +
-          '<span class="r">Round ' + t.round + "</span></div>";
+        h += '<div class="hist-turn"><div class="hist-head"><span class="t">Round ' + t.round + "</span>" +
+          '<span class="r">Season ' + t.season + "</span></div>";
         if (!t.entries.length) {
           h += '<div class="empty">No activity recorded.</div>';
         } else {
           t.entries.forEach(function (e) {
-            if (e.kind === "action") {
-              h += '<div class="hist-line"><span class="d act">&bull;</span><span>' + esc(e.label) + "</span></div>";
-            } else {
-              var cls = e.delta > 0 ? "gain" : "spend";
-              var sign = e.delta > 0 ? "+" + e.delta : "&minus;" + (-e.delta);
-              h += '<div class="hist-line"><span class="d ' + cls + '">' + sign + "</span><span>" + esc(e.resName) + "</span></div>";
-            }
+            var by = e.byName && S.players.length > 1 ? ' <span class="sub">(' + esc(e.byName) + ")</span>" : "";
+            h += '<div class="hist-line"><span class="d ' + esc(e.cls) + '">' + esc(e.tag) + "</span><span>" + esc(e.txt) + by + "</span></div>";
           });
         }
         h += "</div>";
@@ -548,10 +640,46 @@
     app.innerHTML = h;
   }
 
+  var SCORE_FIELDS = [
+    { key: "s1", label: "Season 1 objective", sub: "season scoring at end of season 1" },
+    { key: "s2", label: "Season 2 objective", sub: "season scoring at end of season 2" },
+    { key: "s3", label: "Season 3 objective", sub: "season scoring at end of season 3" },
+    { key: "cargo", label: "Cargo Manifest stalls", sub: "stalls 1, 2 and 3 goods points" },
+    { key: "badges", label: "Badges", sub: "points for each badge earned" },
+    { key: "explorer", label: "Seasoned Explorer", sub: "doubles one badge’s points" },
+    { key: "neighbor", label: "Neighbor bonuses", sub: "3 pts per extra item gifted vs. neighbor" }
+  ];
+
+  function scoreTotal(pid) {
+    var sc = S.scores[pid] || {};
+    var t = 0;
+    SCORE_FIELDS.forEach(function (f) { t += sc[f.key] || 0; });
+    return t;
+  }
+
+  function renderScore() {
+    var best = -1;
+    S.players.forEach(function (pl) { best = Math.max(best, scoreTotal(pl.id)); });
+    var h = '<div class="empty" style="padding-top:0">Final scoring &mdash; the five ways to earn victory points in Tend. Fill in each player&rsquo;s totals.</div>';
+    S.players.forEach(function (pl) {
+      var total = scoreTotal(pl.id);
+      var sc = S.scores[pl.id] || {};
+      h += '<div class="score-card' + (S.players.length > 1 && total === best && total > 0 ? " leader" : "") + '">' +
+        "<h2>" + esc(pl.name) + '<span class="total">' + total + " VP</span></h2>";
+      SCORE_FIELDS.forEach(function (f) {
+        h += '<div class="score-row"><label>' + f.label + "<small>" + f.sub + "</small></label>" +
+          '<input type="number" inputmode="numeric" min="0" value="' + (sc[f.key] || 0) +
+          '" data-act="score" data-pid="' + pl.id + '" data-field="' + f.key + '" aria-label="' + esc(pl.name + " " + f.label) + '"></div>';
+      });
+      h += "</div>";
+    });
+    app.innerHTML = h;
+  }
+
   function renderSetup() {
     var h = "";
 
-    h += '<div class="setup-card"><h2>Players</h2><div class="hint">Turn order follows this list.</div>';
+    h += '<div class="setup-card"><h2>Players</h2><div class="hint">Everyone plays simultaneously in Tend &mdash; add the players sharing this device.</div>';
     S.players.forEach(function (pl) {
       h += '<div class="setup-row">' +
         '<input type="text" value="' + esc(pl.name) + '" data-act="rename-player" data-id="' + pl.id + '" aria-label="Player name">' +
@@ -560,8 +688,8 @@
     });
     h += '<button class="setup-add" data-act="add-player">+ Add player</button></div>';
 
-    h += '<div class="setup-card"><h2>Resources &amp; coins</h2>' +
-      '<div class="hint">Rename these to match the game &mdash; tap the swatch to change a token&rsquo;s color. Starting amounts apply to new games only.</div>';
+    h += '<div class="setup-card"><h2>Resources</h2>' +
+      '<div class="hint">The goods you gain from tending, fishing, mining, and chopping. Rename or add to match the cards in play.</div>';
     S.resources.forEach(function (r) {
       h += '<div class="setup-row">' +
         '<span class="swatch"><input type="color" value="' + esc(r.color) + '" data-act="recolor-res" data-id="' + r.id + '" aria-label="Color for ' + esc(r.name) + '"></span>' +
@@ -571,18 +699,18 @@
     });
     h += '<button class="setup-add" data-act="add-res">+ Add resource</button></div>';
 
-    h += '<div class="setup-card"><h2>Quick actions</h2>' +
-      '<div class="hint">One-tap buttons for the actions Game 10 lets you take on a turn.</div>';
-    S.quickActions.forEach(function (a, i) {
+    h += '<div class="setup-card"><h2>Quick tasks</h2>' +
+      '<div class="hint">One-tap buttons for the tasks you take in a round. Tend, Fish, Mine, and Chop are the four main tasks.</div>';
+    S.tasks.forEach(function (a, i) {
       h += '<div class="setup-row">' +
-        '<input type="text" value="' + esc(a) + '" data-act="rename-qa" data-idx="' + i + '" aria-label="Quick action name">' +
-        '<button class="rm" data-act="remove-qa" data-idx="' + i + '" aria-label="Remove quick action">&times;</button>' +
+        '<input type="text" value="' + esc(a) + '" data-act="rename-task" data-idx="' + i + '" aria-label="Task name">' +
+        '<button class="rm" data-act="remove-task" data-idx="' + i + '" aria-label="Remove task">&times;</button>' +
         "</div>";
     });
-    h += '<button class="setup-add" data-act="add-qa">+ Add quick action</button></div>';
+    h += '<button class="setup-add" data-act="add-task">+ Add task</button></div>';
 
     h += '<div class="setup-card"><h2>Game</h2>' +
-      '<div class="hint">Clears all counts, the ledger, and turn history. Players, resources, and quick actions are kept.</div>' +
+      '<div class="hint">Resets to round 1 and clears coins, the ledger, history, and scores. Players, resources, and tasks are kept.</div>' +
       '<button class="danger" data-act="reset">Start a new game</button></div>';
 
     app.innerHTML = h;
@@ -597,7 +725,7 @@
     save(); render();
   });
 
-  document.getElementById("endTurnBtn").addEventListener("click", endTurn);
+  document.getElementById("endTurnBtn").addEventListener("click", endRound);
 
   app.addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-act]");
@@ -606,13 +734,20 @@
     var id = b.getAttribute("data-id");
     var idx = parseInt(b.getAttribute("data-idx"), 10);
 
-    if (act === "adjust") adjust(id, parseInt(b.getAttribute("data-delta"), 10));
-    else if (act === "pick-player") { S.activePlayer = id; save(); render(); }
-    else if (act === "quick") logAction(S.quickActions[idx] || "");
-    else if (act === "log-action") {
-      var inp = document.getElementById("actionInput");
-      logAction(inp.value);
+    if (act === "gain") { UI.pending = { resId: id, step: "use" }; render(); }
+    else if (act === "use") {
+      var use = b.getAttribute("data-use");
+      if (use === "sell") { UI.pending.step = "sell"; render(); }
+      else if (use === "gift") { UI.pending.step = "gift"; render(); }
+      else gainResource(UI.pending.resId, use);
     }
+    else if (act === "sell-coins") gainResource(UI.pending.resId, "sell", parseInt(b.getAttribute("data-n"), 10));
+    else if (act === "gift-side") gainResource(UI.pending.resId, "gift", b.getAttribute("data-side"));
+    else if (act === "cancel-pending") { UI.pending = null; render(); }
+    else if (act === "coins") adjustCoins(parseInt(b.getAttribute("data-delta"), 10));
+    else if (act === "pick-player") { S.activePlayer = id; UI.pending = null; save(); render(); }
+    else if (act === "quick") logTask(S.tasks[idx] || "");
+    else if (act === "log-task") logTask(document.getElementById("actionInput").value);
     else if (act === "remove-entry") removeEntry(id);
     else if (act === "undo") undo();
     else if (act === "add-player") {
@@ -622,35 +757,37 @@
     else if (act === "remove-player") {
       if (S.players.length <= 1) return;
       var pl = player(id);
-      if (!confirm("Remove " + (pl ? pl.name : "this player") + "? Their counts are discarded.")) return;
+      if (!confirm("Remove " + (pl ? pl.name : "this player") + "? Their coins and scores are discarded.")) return;
       S.players = S.players.filter(function (x) { return x.id !== id; });
-      delete S.bank[id];
+      delete S.coins[id];
+      delete S.scores[id];
       S.ledger = S.ledger.filter(function (e) { return e.playerId !== id; });
       if (S.activePlayer === id) S.activePlayer = S.players[0].id;
       save(); render();
     }
     else if (act === "add-res") {
-      S.resources.push({ id: uid(), name: "New resource", color: SWATCHES[S.resources.length % SWATCHES.length], start: 0 });
+      S.resources.push({ id: uid(), name: "New resource", color: SWATCHES[S.resources.length % SWATCHES.length] });
       save(); render();
     }
     else if (act === "remove-res") {
       var r = resource(id);
-      if (!confirm("Remove " + (r ? r.name : "this resource") + "? Everyone's count of it is discarded.")) return;
+      if (!confirm("Remove " + (r ? r.name : "this resource") + "?")) return;
       S.resources = S.resources.filter(function (x) { return x.id !== id; });
-      S.ledger = S.ledger.filter(function (e) { return !(e.kind === "res" && e.resId === id); });
-      Object.keys(S.bank).forEach(function (pid) { delete S.bank[pid][id]; });
       save(); render();
     }
-    else if (act === "add-qa") { S.quickActions.push("New action"); save(); render(); }
-    else if (act === "remove-qa") { S.quickActions.splice(idx, 1); save(); render(); }
+    else if (act === "add-task") { S.tasks.push("New task"); save(); render(); }
+    else if (act === "remove-task") { S.tasks.splice(idx, 1); save(); render(); }
     else if (act === "reset") {
-      if (!confirm("Start a new game? All counts, the current ledger, and history are cleared.")) return;
+      if (!confirm("Start a new game? Round, coins, ledger, history, and scores are cleared.")) return;
       S.round = 1;
-      S.bank = {};
+      S.over = false;
+      S.coins = {};
       S.ledger = [];
       S.history = [];
+      S.scores = {};
       S.activePlayer = S.players[0].id;
       S.view = "play";
+      UI.pending = null;
       save(); render();
     }
   });
@@ -664,12 +801,19 @@
     if (act === "rename-player") { var pl = player(id); if (pl) pl.name = t.value.trim() || pl.name; save(); render(); }
     else if (act === "rename-res") { var r = resource(id); if (r) r.name = t.value.trim() || r.name; save(); render(); }
     else if (act === "recolor-res") { var r2 = resource(id); if (r2) r2.color = t.value; save(); render(); }
-    else if (act === "rename-qa") { S.quickActions[idx] = t.value.trim() || S.quickActions[idx]; save(); render(); }
+    else if (act === "rename-task") { S.tasks[idx] = t.value.trim() || S.tasks[idx]; save(); render(); }
+    else if (act === "score") {
+      var pid = t.getAttribute("data-pid"), field = t.getAttribute("data-field");
+      if (!S.scores[pid]) S.scores[pid] = {};
+      var v = parseInt(t.value, 10);
+      S.scores[pid][field] = isNaN(v) ? 0 : Math.max(0, v);
+      save(); render();
+    }
   });
 
   app.addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" && ev.target.id === "actionInput") {
-      logAction(ev.target.value);
+      logTask(ev.target.value);
     }
   });
 
