@@ -1,0 +1,76 @@
+# =============================================================================
+# Garage entry door (house -> garage) mosquito watch
+# =============================================================================
+# Beeps your phone when the man-door into the garage stays open too long,
+# and keeps nagging every 30 seconds until it's closed.
+#
+# Hardware: any door/window contact sensor on the house->garage door.
+# Replace these placeholders:
+#   binary_sensor.garage_entry_door        -> your contact sensor entity
+#   notify.mobile_app_alice_phone          -> your phone's notify service
+#     (or use notify.garage_household from garage.yaml to ping everyone)
+# =============================================================================
+
+# Tunable threshold so you can adjust from the dashboard without editing YAML.
+# 10 s is aggressive — if you get alert fatigue from normal grocery-carrying
+# trips through that door, bump this to 30-60 s here or via the UI.
+input_number:
+  garage_entry_door_open_seconds:
+    name: "Garage entry door: alert after (seconds)"
+    min: 5
+    max: 300
+    step: 5
+    initial: 10
+    unit_of_measurement: "s"
+    icon: mdi:door-open
+
+automation:
+  - id: garage_entry_door_open_mosquito_watch
+    alias: "Garage entry door: open too long (mosquito watch)"
+    description: >-
+      Notifies when the house->garage door stays open past the threshold,
+      then repeats every 30 s until it's closed. mode: restart means closing
+      and reopening the door starts a fresh countdown.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.garage_entry_door
+        to: "on"
+        for:
+          seconds: "{{ states('input_number.garage_entry_door_open_seconds') | int(10) }}"
+    actions:
+      - repeat:
+          sequence:
+            - action: notify.mobile_app_alice_phone
+              data:
+                title: "🦟 Garage door open"
+                message: >-
+                  The door into the garage has been open for
+                  {{ relative_time(trigger.to_state.last_changed) }} —
+                  mosquitos incoming.
+                data:
+                  # Groups the nags so they stack as one notification thread.
+                  tag: garage-entry-door
+                  # Android: make it beep even in do-not-disturb-ish modes.
+                  channel: Garage Door
+                  importance: high
+                  # iOS: time-sensitive so it breaks through Focus with a sound.
+                  push:
+                    interruption-level: time-sensitive
+                    sound: default
+            - wait_for_trigger:
+                - trigger: state
+                  entity_id: binary_sensor.garage_entry_door
+                  to: "off"
+              timeout: "00:00:30"
+              continue_on_timeout: true
+          until:
+            - condition: state
+              entity_id: binary_sensor.garage_entry_door
+              state: "off"
+      # All-clear so the thread resolves itself on your phone.
+      - action: notify.mobile_app_alice_phone
+        data:
+          message: "clear_notification"
+          data:
+            tag: garage-entry-door
