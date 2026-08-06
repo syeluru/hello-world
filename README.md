@@ -9,6 +9,24 @@ step, no server, no install. Game state is saved in the browser
 (localStorage), so a refresh or an accidentally closed tab doesn't lose the
 game.
 
+## The digital sheets
+
+IV Studio's official companion covers the digital scratch-offs, task cards,
+and objectives — this app is the rest of the table: the sheets you'd normally
+pencil.
+
+- **Farm tab** — the farm sheet from the official printable, in exact shape:
+  the irregular 11×12 grid with its pre-printed fences and tilled soil,
+  paintable with any good, ~ tills, and = fences (tap a fence to rotate it).
+  Below it: the chop and mine 10-step level tracks (tap to set your level;
+  chopping/mining offers the level's yield with one tap), the three energy
+  bars (locked → ready → used), upgrade checkboxes (tools, hatchet, pickaxe,
+  rods, lures — Broken Bridge auto-unlocks River Fishing in the fish flow),
+  the trellis counter, and both 8-step neighbor rewards tracks.
+- **Cargo tab** — the cargo manifest from the printable: a paintable 12×8
+  grid with the three stall sections, row rewards that light up on completed
+  rows, and editable stall labels for the sheet variants.
+
 ## The digital table
 
 The Play tab is now built around **taking tasks**, not just counting. Four

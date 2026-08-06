@@ -342,6 +342,46 @@
   .catch-splash .caughtname { font-size: 17px; font-weight: 800; margin-top: 4px; animation: lightup 0.5s ease 0.45s both; }
   .catch-splash .sub { font-size: 12px; color: var(--muted); }
 
+  /* ---- Farm sheet ---- */
+  .farm-wrap { background: var(--surface); border: 2px solid var(--ink); border-radius: 12px; padding: 8px; box-shadow: var(--shadow); overflow-x: auto; }
+  .farm-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; min-width: 300px; }
+  .farm-grid .cell {
+    aspect-ratio: 1; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2);
+    padding: 0; min-width: 0; font-size: 13px; font-weight: 800; color: var(--muted); line-height: 1;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .farm-grid .cell:active { transform: scale(0.9); }
+  .farm-grid .cell.absent { visibility: hidden; pointer-events: none; }
+  .farm-grid .cell.filled { border-color: transparent; }
+  .farm-grid .cell.till { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface-2)); }
+  .farm-grid .cell.fence { color: var(--ink); background: color-mix(in srgb, var(--ink) 10%, var(--surface-2)); }
+  .track { display: flex; gap: 3px; margin-top: 6px; }
+  .track button {
+    flex: 1; min-width: 0; border: 1.5px dashed var(--line); border-radius: 6px; padding: 4px 0 3px;
+    background: var(--surface-2); display: flex; flex-direction: column; align-items: center; gap: 3px;
+    filter: grayscale(0.9); opacity: 0.6; transition: filter 0.3s ease, opacity 0.3s ease;
+  }
+  .track button .tdot { width: 12px; height: 12px; border-radius: 50%; background: var(--t-color, var(--muted)); }
+  .track button .tn { font-size: 9px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .track button.reached { filter: none; opacity: 1; border-style: solid; }
+  .track button.at { border-color: var(--t-color, var(--accent));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--t-color, var(--accent)) 30%, transparent); }
+  .track-label { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; }
+  .track-label .tl { font-size: 13px; font-weight: 800; }
+  .track-label .tv { font-size: 12px; color: var(--muted); }
+  .energy-row { display: flex; gap: 10px; margin-top: 6px; }
+  .energy-row button {
+    flex: 1; border: 1.5px dashed var(--line); border-radius: 10px; padding: 10px; background: var(--surface-2);
+    font-size: 12px; font-weight: 700; color: var(--muted);
+  }
+  .energy-row button.unlocked { border-style: solid; border-color: var(--spend); color: var(--spend); filter: none; }
+  .energy-row button.spent { border-style: solid; text-decoration: line-through; opacity: 0.5; }
+  .counter-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .counter-row .cl { flex: 1; font-size: 13px; font-weight: 600; }
+  .counter-row .cl small { display: block; font-size: 11px; color: var(--muted); font-weight: 600; }
+  .counter-row .cv { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 34px; text-align: center; }
+  .counter-row button { width: 40px; min-height: 38px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface-2); font-size: 17px; font-weight: 700; }
+
   /* ---- Cargo manifest ---- */
   .palette { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
   .palette button {
@@ -556,6 +596,7 @@
     </div>
     <nav class="views" id="viewNav" aria-label="Views">
       <button data-view="play">Play</button>
+      <button data-view="farm">Farm</button>
       <button data-view="cargo">Cargo</button>
       <button data-view="history">History</button>
       <button data-view="score">Score</button>
@@ -570,7 +611,7 @@
 (function () {
   "use strict";
 
-  var STORE_KEY = "tend-companion-v4";
+  var STORE_KEY = "tend-companion-v5";
   var ROUNDS = 12;
   var SWATCHES = ["#8A5A3B", "#4A6FA5", "#6E6A75", "#8E4A8B", "#5B8A3A", "#B0A38E", "#C05B4D", "#3E7C7B"];
   var USES = {
@@ -635,6 +676,7 @@
       caught: {},     // playerId -> locKey -> ["r,c", ...]
       cargo: {},      // playerId -> {cells: {"r,c": resId}, stalls: [label x3]}
       projects: {},   // playerId -> {projKey: true} single-use coin projects spent
+      farm: {},       // playerId -> farm sheet state (grid, levels, upgrades, tracks)
       ledger: [],     // entries this round
       history: [],    // archived rounds, newest first
       scores: {}      // playerId -> field -> n
@@ -695,6 +737,53 @@
     return S.cargo[pid];
   }
   function projectsOf(pid) { if (!S.projects[pid]) S.projects[pid] = {}; return S.projects[pid]; }
+  function farmOf(pid) {
+    if (!S.farm[pid]) {
+      var cells = {};
+      Object.keys(FARM_PREFILL).forEach(function (k) { cells[k] = JSON.parse(JSON.stringify(FARM_PREFILL[k])); });
+      S.farm[pid] = { cells: cells, chopLvl: 1, mineLvl: 1, energy: [0, 0, 0], upg: {}, trellis: 0, nbL: 0, nbR: 0 };
+    }
+    return S.farm[pid];
+  }
+  function findOrCreateResource(name, color) {
+    var r = resourceByName(name);
+    if (!r) { r = { id: uid(), name: name, color: color || SWATCHES[S.resources.length % SWATCHES.length] }; S.resources.push(r); }
+    return r;
+  }
+
+  // ---- Farm sheet (mapped from the official printable) ----
+  // Grid shape: 11 cols x 12 rows, each row lists [firstCol, lastCol] (1-indexed)
+  var FARM_ROWS = [[1, 9], [1, 9], [1, 10], [1, 10], [1, 10], [1, 9], [1, 11], [1, 11], [3, 11], [3, 11], [5, 9], [5, 9]];
+  // Pre-printed marks: fences along the top-left, tilled soil at the bottom
+  var FARM_PREFILL = {
+    "1,1": { t: "fence", o: "h" }, "1,2": { t: "fence", o: "h" }, "1,3": { t: "fence", o: "h" }, "1,4": { t: "fence", o: "h" },
+    "2,1": { t: "fence", o: "v" }, "3,1": { t: "fence", o: "v" }, "4,1": { t: "fence", o: "v" },
+    "11,5": { t: "till" }, "11,6": { t: "till" }, "11,7": { t: "till" },
+    "12,5": { t: "till" }, "12,6": { t: "till" }, "12,7": { t: "till" }
+  };
+  // Chop and mine level tracks (what a chop/mine action yields at each level)
+  var CHOP_TRACK = [
+    { n: "Coin", c: "#D8AF3C", coin: true }, { n: "Coin", c: "#D8AF3C", coin: true },
+    { n: "Wood", c: "#A34A6B" }, { n: "Wood", c: "#A34A6B" }, { n: "Wood", c: "#A34A6B" }, { n: "Wood", c: "#A34A6B" },
+    { n: "Exo Wood", c: "#8E4A8B" }, { n: "Exo Wood", c: "#8E4A8B" },
+    { n: "Bone", c: "#C9B37E" }, { n: "Jar", c: "#C96FA8" }
+  ];
+  var MINE_TRACK = [
+    { n: "Coin", c: "#D8AF3C", coin: true }, { n: "Coin", c: "#D8AF3C", coin: true },
+    { n: "Ore", c: "#3E9C9C" }, { n: "Ore", c: "#3E9C9C" },
+    { n: "Copper", c: "#B87333" }, { n: "Copper", c: "#B87333" },
+    { n: "Iron", c: "#6E7B85" }, { n: "Iron", c: "#6E7B85" },
+    { n: "Geode", c: "#4A5A9C" }, { n: "Geode", c: "#4A5A9C" }
+  ];
+  var FARM_UPGRADES = [
+    { key: "tools", name: "Upgraded Tools", sub: "+1 tend action" },
+    { key: "hatchet", name: "Upgraded Hatchet", sub: "+1 chop action" },
+    { key: "pickaxe", name: "Upgraded Pickaxe", sub: "+1 mine action" },
+    { key: "rod", name: "Upgraded Rod", sub: "widens the catch area", sync: "rod" },
+    { key: "rod2", name: "Upgraded Rod 2", sub: "widens the catch area further" },
+    { key: "lures", name: "Lures", sub: "+1 fishing action" },
+    { key: "bridge", name: "Broken Bridge repaired", sub: "unlocks River Fishing", sync: "river" }
+  ];
 
   // Single-use coin-purchase projects from the cargo sheet's Projects panel
   var BUY_PROJECTS = [
@@ -868,6 +957,7 @@
     document.getElementById("endTurnBtn").textContent =
       S.round >= ROUNDS ? "End round 12 · finish game" : "End round " + S.round;
     if (S.view === "play") renderPlay();
+    else if (S.view === "farm") renderFarm();
     else if (S.view === "cargo") renderCargo();
     else if (S.view === "history") renderHistory();
     else if (S.view === "score") renderScore();
@@ -881,6 +971,102 @@
     { g: "T", c: "var(--accent)", n: "Tend" }, { g: "F", c: "var(--water)", n: "Fish" },
     { g: "C", c: "var(--chop)", n: "Chop" }, { g: "M", c: "var(--mine)", n: "Mine" }
   ];
+
+  function playerTabsHtml() {
+    if (S.players.length <= 1) return "";
+    var h = '<div class="player-tabs" role="tablist">';
+    S.players.forEach(function (pl) {
+      h += '<button role="tab" aria-current="' + (pl.id === S.activePlayer ? "true" : "false") +
+        '" data-act="pick-player" data-id="' + pl.id + '">' + esc(pl.name) + "</button>";
+    });
+    return h + "</div>";
+  }
+
+  function trackHtml(track, level, act) {
+    var h = '<div class="track">';
+    for (var i = 0; i < track.length; i++) {
+      var cls = (i + 1 <= level ? "reached" : "") + (i + 1 === level ? " at" : "");
+      h += '<button class="' + cls + '" style="--t-color:' + track[i].c + '" data-act="' + act + '" data-lvl="' + (i + 1) +
+        '" title="Level ' + (i + 1) + ": " + track[i].n + '"><span class="tdot"></span><span class="tn">' + (i + 1 < 10 ? "0" : "") + (i + 1) + "</span></button>";
+    }
+    return h + "</div>";
+  }
+
+  function renderFarm() {
+    var p = activePlayer();
+    var f = farmOf(p.id);
+    var h = playerTabsHtml();
+
+    h += '<div class="sec-label">Brush <small>&mdash; crops &amp; goods paint, ~ tills, = fences; tap a mark to change or clear it</small></div>';
+    h += '<div class="palette">';
+    S.resources.forEach(function (r) {
+      h += '<button style="--res-color:' + esc(r.color) + '" class="' + (UI.brush === r.id ? "on" : "") +
+        '" data-act="brush" data-id="' + r.id + '"><span class="dot"></span>' + esc(r.name) + "</button>";
+    });
+    h += '<button style="--res-color:var(--accent)" class="' + (UI.brush === "till" ? "on" : "") + '" data-act="brush" data-id="till">~ Tilled</button>';
+    h += '<button style="--res-color:var(--ink)" class="' + (UI.brush === "fence" ? "on" : "") + '" data-act="brush" data-id="fence">= Fence</button>';
+    h += "</div>";
+
+    h += '<div class="sec-label">Farm &mdash; ' + esc(p.name) + "</div>";
+    h += '<div class="farm-wrap"><div class="farm-grid">';
+    for (var r = 1; r <= 12; r++) {
+      for (var c = 1; c <= 11; c++) {
+        var present = c >= FARM_ROWS[r - 1][0] && c <= FARM_ROWS[r - 1][1];
+        if (!present) { h += '<span class="cell absent"></span>'; continue; }
+        var key = r + "," + c;
+        var v = f.cells[key];
+        var cls = "cell", style = "", glyph = "";
+        var label = "Row " + r + " column " + c;
+        if (v) {
+          if (v.t === "res") {
+            var vr = resource(v.id);
+            cls += " filled"; style = ' style="background:' + esc(vr ? vr.color : "#888") + '"';
+            label += ", " + (vr ? vr.name : "good");
+          } else if (v.t === "till") { cls += " till"; glyph = "~"; label += ", tilled"; }
+          else if (v.t === "fence") { cls += " fence"; glyph = v.o === "v" ? "‖" : "="; label += ", fence"; }
+        } else label += ", empty";
+        h += '<button class="' + cls + '"' + style + ' data-act="farm-cell" data-cell="' + key + '" aria-label="' + label + '">' + glyph + "</button>";
+      }
+    }
+    h += "</div></div>";
+    h += '<div class="cargo-note">Pre-printed fences and tilled squares come with the sheet. Crops need their full square footprint (small 2&times;2, medium 3&times;3, large 4&times;4) on tilled soil; trellis crops need a trellis.</div>';
+
+    h += '<div class="track-label"><span class="tl">Chop level (the Woods)</span><span class="tv">Level ' + f.chopLvl + ": " + CHOP_TRACK[f.chopLvl - 1].n + "</span></div>";
+    h += trackHtml(CHOP_TRACK, f.chopLvl, "chop-lvl");
+    h += '<div class="track-label"><span class="tl">Mine level (the Mines)</span><span class="tv">Level ' + f.mineLvl + ": " + MINE_TRACK[f.mineLvl - 1].n + "</span></div>";
+    h += trackHtml(MINE_TRACK, f.mineLvl, "mine-lvl");
+    h += '<div class="cargo-note">Advance a level when you scratch it free on the Woods/Mines card. A chop or mine action yields the item at your current level.</div>';
+
+    h += '<div class="sec-label">Energy bars <small>&mdash; +1 action, once per task; tap: locked &rarr; unlocked &rarr; used</small></div>';
+    h += '<div class="energy-row">';
+    for (var eb = 0; eb < 3; eb++) {
+      var st = f.energy[eb] || 0;
+      h += '<button class="' + (st === 1 ? "unlocked" : st === 2 ? "spent" : "") + '" data-act="energy" data-idx="' + eb + '">' +
+        (st === 0 ? "Locked" : st === 1 ? "Ready" : "Used") + "</button>";
+    }
+    h += "</div>";
+
+    h += '<div class="sec-label">Upgrades &amp; structures</div><div class="setup-card">';
+    FARM_UPGRADES.forEach(function (u) {
+      h += '<div class="toggle-row"><label>' + u.name + "<small>" + u.sub + "</small></label>" +
+        '<input type="checkbox"' + (f.upg[u.key] ? " checked" : "") + ' data-act="farm-upg" data-key="' + u.key + '" aria-label="' + u.name + '"></div>';
+    });
+    h += '<div class="counter-row"><span class="cl">Trellises built<small>2 wood + 1 coin each; needed for trellis crops</small></span>' +
+      '<button data-act="trellis" data-d="-1">&minus;</button><span class="cv">' + f.trellis + '</span><button data-act="trellis" data-d="1">+</button></div>';
+    h += "</div>";
+
+    h += '<div class="sec-label">Neighbor rewards tracks <small>&mdash; 1 mark per bonus on a gifted card</small></div><div class="setup-card">';
+    h += '<div class="counter-row"><span class="cl">Left neighbor<small>8 steps; +3&#10022; at the end</small></span>' +
+      '<button data-act="nb" data-side="nbL" data-d="-1">&minus;</button><span class="cv">' + f.nbL + '/8</span><button data-act="nb" data-side="nbL" data-d="1">+</button></div>';
+    h += '<div class="counter-row"><span class="cl">Right neighbor<small>8 steps; +3&#10022; at the end</small></span>' +
+      '<button data-act="nb" data-side="nbR" data-d="-1">&minus;</button><span class="cv">' + f.nbR + '/8</span><button data-act="nb" data-side="nbR" data-d="1">+</button></div>';
+    h += "</div>";
+
+    h += '<div class="cargo-note">The pond (basic fishing grid) lives on this sheet too &mdash; it&rsquo;s the Basic Fishing location in the Fish task flow.</div>';
+    h += '<div class="ledger-tools"><button class="btn-ghost" data-act="clear-farm">Reset farm sheet</button></div>';
+
+    app.innerHTML = h;
+  }
 
   function renderCargo() {
     var p = activePlayer();
@@ -1245,8 +1431,13 @@
     if (f.task === "chop" || f.task === "mine") {
       var isChop = f.task === "chop";
       var tcolor = isChop ? "var(--chop)" : "var(--mine)";
+      var fs = farmOf(p.id);
+      var lvl = isChop ? fs.chopLvl : fs.mineLvl;
+      var yieldItem = (isChop ? CHOP_TRACK : MINE_TRACK)[lvl - 1];
       h += '<div class="flow-panel" style="--flow-color:' + tcolor + '"><div class="q">' + (isChop ? "Chop — the Woods" : "Mine — the Mines") + "</div>" +
-        '<div class="rule">Scratch off a square from the top (1 action) or bottom (2 actions) of your physical card, then tap what you revealed.</div>' +
+        '<div class="rule">Scratch off a square from the top (1 action) or bottom (2 actions) of your card. Your level ' + lvl + " yield:</div>" +
+        '<button class="roll-btn" data-act="flow-track-gain" data-task="' + f.task + '">Gain ' + esc(yieldItem.n) + " (level " + lvl + ")</button>" +
+        '<div class="rule" style="margin-top:10px">&hellip;or tap whatever you actually revealed:</div>' +
         '<div class="res-grid">';
       S.resources.forEach(function (r) {
         h += '<button class="res-chip" style="--res-color:' + esc(r.color) + '" data-act="flow-gain" data-id="' + r.id + '">' +
@@ -1508,6 +1699,63 @@
     }
     else if (act === "cancel-pending") { UI.pending = null; UI.chooseUse = null; render(); }
     else if (act === "brush") { UI.brush = id; render(); }
+    else if (act === "farm-cell") {
+      var ff = farmOf(activePlayer().id);
+      var fk = b.getAttribute("data-cell");
+      var cur = ff.cells[fk];
+      var br = UI.brush;
+      if (br === "till") {
+        if (cur && cur.t === "till") delete ff.cells[fk]; else ff.cells[fk] = { t: "till" };
+      } else if (br === "fence") {
+        if (cur && cur.t === "fence") { if (cur.o === "h") cur.o = "v"; else delete ff.cells[fk]; }
+        else ff.cells[fk] = { t: "fence", o: "h" };
+      } else if (br && resource(br)) {
+        if (cur && cur.t === "res" && cur.id === br) delete ff.cells[fk];
+        else ff.cells[fk] = { t: "res", id: br };
+      } else if (cur) delete ff.cells[fk];
+      save(); render();
+    }
+    else if (act === "chop-lvl" || act === "mine-lvl") {
+      var ff2 = farmOf(activePlayer().id);
+      var lv = parseInt(b.getAttribute("data-lvl"), 10);
+      var prop = act === "chop-lvl" ? "chopLvl" : "mineLvl";
+      ff2[prop] = (ff2[prop] === lv && lv > 1) ? lv - 1 : lv; // tap the current level again to step back
+      save(); render();
+    }
+    else if (act === "energy") {
+      var fe = farmOf(activePlayer().id);
+      var ei = parseInt(b.getAttribute("data-idx"), 10);
+      fe.energy[ei] = ((fe.energy[ei] || 0) + 1) % 3;
+      save(); render();
+    }
+    else if (act === "trellis") {
+      var ft = farmOf(activePlayer().id);
+      ft.trellis = Math.max(0, ft.trellis + parseInt(b.getAttribute("data-d"), 10));
+      save(); render();
+    }
+    else if (act === "nb") {
+      var fn = farmOf(activePlayer().id);
+      var sd = b.getAttribute("data-side");
+      fn[sd] = Math.max(0, Math.min(8, (fn[sd] || 0) + parseInt(b.getAttribute("data-d"), 10)));
+      save(); render();
+    }
+    else if (act === "clear-farm") {
+      if (!confirm("Reset " + activePlayer().name + "'s farm sheet? Marks, levels, energy, upgrades, and neighbor tracks all reset.")) return;
+      delete S.farm[activePlayer().id];
+      save(); render();
+    }
+    else if (act === "flow-track-gain") {
+      var isChopT = b.getAttribute("data-task") === "chop";
+      var fs2 = farmOf(activePlayer().id);
+      var it2 = (isChopT ? CHOP_TRACK : MINE_TRACK)[(isChopT ? fs2.chopLvl : fs2.mineLvl) - 1];
+      UI.flow = null;
+      if (it2.coin) { adjustCoins(1); }
+      else {
+        var rr2 = findOrCreateResource(it2.n, it2.c);
+        UI.pending = { resId: rr2.id, step: "use" };
+        save(); render();
+      }
+    }
     else if (act === "cargo-cell") {
       var cgP = activePlayer();
       var cg2 = cargoOf(cgP.id);
@@ -1568,6 +1816,7 @@
       delete S.caught[id];
       delete S.cargo[id];
       delete S.projects[id];
+      delete S.farm[id];
       S.ledger = S.ledger.filter(function (e) { return e.playerId !== id; });
       if (S.activePlayer === id) S.activePlayer = S.players[0].id;
       save(); render();
@@ -1591,6 +1840,7 @@
       S.caught = {};
       S.cargo = {};
       S.projects = {};
+      S.farm = {};
       S.ledger = [];
       S.history = [];
       S.scores = {};
@@ -1610,7 +1860,22 @@
     if (act === "rename-player") { var pl = player(id); if (pl) pl.name = t.value.trim() || pl.name; save(); render(); }
     else if (act === "rename-res") { var r = resource(id); if (r) r.name = t.value.trim() || r.name; save(); render(); }
     else if (act === "recolor-res") { var r2 = resource(id); if (r2) r2.color = t.value; save(); render(); }
-    else if (act === "toggle-unlock") { unlocks(activePlayer().id)[t.getAttribute("data-key")] = t.checked; save(); render(); }
+    else if (act === "toggle-unlock") {
+      var uk = t.getAttribute("data-key");
+      unlocks(activePlayer().id)[uk] = t.checked;
+      // keep the farm sheet's matching upgrade in step
+      var fu0 = farmOf(activePlayer().id);
+      if (uk === "rod") fu0.upg.rod = t.checked;
+      if (uk === "river") fu0.upg.bridge = t.checked;
+      save(); render();
+    }
+    else if (act === "farm-upg") {
+      var fuk = t.getAttribute("data-key");
+      var fu = farmOf(activePlayer().id);
+      fu.upg[fuk] = t.checked;
+      FARM_UPGRADES.forEach(function (u) { if (u.key === fuk && u.sync) unlocks(activePlayer().id)[u.sync] = t.checked; });
+      save(); render();
+    }
     else if (act === "stall-label") { cargoOf(activePlayer().id).stalls[parseInt(t.getAttribute("data-idx"), 10)] = t.value; save(); }
     else if (act === "score") {
       var pid = t.getAttribute("data-pid"), field = t.getAttribute("data-field");
