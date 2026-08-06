@@ -248,14 +248,41 @@
   }
   .use-grid button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
   .use-grid .wide { grid-column: 1 / -1; border-style: dashed; animation-delay: 0.24s; }
-  .held-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .held-chip {
-    border: 1px dashed var(--res-color, var(--accent)); background: var(--surface); border-radius: 999px;
-    padding: 8px 14px; font-size: 13px; font-weight: 700; min-height: 40px;
-    display: inline-flex; align-items: center; gap: 8px;
-    animation: lightup 0.4s ease both;
+
+  /* ---- Gained this round: lit while in hand, black & white once used ---- */
+  .gained-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gained-chip {
+    border: 1.5px solid var(--res-color, var(--accent)); background: var(--surface); border-radius: 12px;
+    padding: 7px 12px; font-size: 13px; font-weight: 700; min-height: 44px;
+    display: inline-flex; align-items: center; gap: 8px; text-align: left;
+    transition: filter 0.5s ease, opacity 0.5s ease, transform 0.15s ease;
   }
-  .held-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--res-color, var(--accent)); }
+  .gained-chip .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--res-color, var(--accent)); flex: none; }
+  .gained-chip small { display: block; font-size: 10px; font-weight: 600; color: var(--muted); }
+  .gained-chip.lit {
+    animation: lightup 0.45s ease both;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--res-color, var(--accent)) 22%, transparent);
+  }
+  .gained-chip.lit:hover { transform: translateY(-2px); }
+  .gained-chip.used { filter: grayscale(1); opacity: 0.5; cursor: default; }
+  .gained-chip.target { animation: beckon 0.9s ease-in-out infinite; }
+  @keyframes beckon {
+    0%,100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--res-color, var(--accent)) 22%, transparent); }
+    50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--res-color, var(--accent)) 38%, transparent); transform: translateY(-2px); }
+  }
+
+  /* ---- Can-do board: options light up when currently possible ---- */
+  .cando-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cando {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
+    padding: 11px 10px; font-size: 13px; font-weight: 700; min-height: 56px; text-align: center;
+    transition: filter 0.5s ease, opacity 0.5s ease, transform 0.15s ease, box-shadow 0.3s ease;
+  }
+  .cando small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .cando.lit { border-color: var(--cando-color, var(--accent)); color: var(--cando-color, var(--accent));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cando-color, var(--accent)) 16%, transparent); }
+  .cando.lit:hover { transform: translateY(-2px); }
+  .cando.dim { filter: grayscale(1); opacity: 0.45; cursor: default; }
   .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .num-grid button {
     border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
@@ -573,8 +600,9 @@
   }
 
   var S = load();
-  // Transient UI state (never persisted): active task flow + pending resource use
-  var UI = { flow: null, pending: null };
+  // Transient UI state (never persisted): active task flow, pending resource use,
+  // and a use picked from the can-do board awaiting a target resource
+  var UI = { flow: null, pending: null, chooseUse: null };
 
   function load() {
     try {
@@ -721,6 +749,7 @@
     S.ledger = [];
     UI.flow = null;
     UI.pending = null;
+    UI.chooseUse = null;
     if (S.round >= ROUNDS) { S.over = true; }
     else { S.round++; }
     save(); render();
@@ -869,16 +898,49 @@
     if (UI.flow) h += renderFlow(p);
     else if (UI.pending) h += renderUsePanel();
 
-    var held = S.ledger.filter(function (e) { return e.kind === "gain" && e.use === "hold" && e.playerId === p.id; });
-    if (held.length) {
-      h += '<div class="sec-label">In hand this round <small>&mdash; tap one to use it</small></div><div class="held-row">';
-      held.forEach(function (e) {
+    // Gained this round: every gain stays visible — lit while in hand, black & white once used
+    var gains = S.ledger.filter(function (e) { return e.kind === "gain" && e.playerId === p.id; });
+    var heldCount = 0;
+    gains.forEach(function (e) { if (e.use === "hold") heldCount++; });
+    if (gains.length) {
+      var gLabel = UI.chooseUse
+        ? "Pick which resource to " + USES[UI.chooseUse].label.toLowerCase()
+        : 'Gained this round <small>&mdash; lit = in hand, tap to use</small>';
+      h += '<div class="sec-label">' + gLabel + '</div><div class="gained-row">';
+      gains.forEach(function (e) {
         var r = resource(e.resId);
-        h += '<button class="held-chip" style="--res-color:' + esc(r ? r.color : "#888") + '" data-act="resolve-hold" data-id="' + e.id + '">' +
-          '<span class="dot"></span>' + esc(e.detail || (r ? r.name : "Resource")) + "</button>";
+        var nm = e.detail || (r ? r.name : "Resource");
+        var isHeld = e.use === "hold";
+        var sub;
+        if (isHeld) sub = "in hand";
+        else if (e.use === "sell") sub = "sold +" + e.coins + "c";
+        else if (e.use === "cargo") sub = "→ cargo";
+        else if (e.use === "gift") sub = "→ gift " + (e.side === "left" ? "L" : "R");
+        else sub = "→ sheet";
+        var cls = "gained-chip " + (isHeld ? "lit" : "used") + (isHeld && UI.chooseUse ? " target" : "");
+        h += '<button class="' + cls + '" style="--res-color:' + esc(r ? r.color : "#888") + '"' +
+          (isHeld ? ' data-act="gained-chip" data-id="' + e.id + '"' : " disabled") + ">" +
+          '<span class="dot"></span><span>' + esc(nm) + "<small>" + esc(sub) + "</small></span></button>";
       });
       h += "</div>";
     }
+
+    // Can-do board: what is possible right now, given what's in hand and coins
+    var canP = coins(p.id) >= 3;
+    function cando(use, color, subWhenDim) {
+      var lit = heldCount > 0;
+      return '<button class="cando ' + (lit ? "lit" : "dim") + '" style="--cando-color:' + color + '"' +
+        (lit ? ' data-act="cando" data-use="' + use + '"' : " disabled") + ">" +
+        USES[use].label + "<small>" + (lit ? USES[use].sub : subWhenDim) + "</small></button>";
+    }
+    h += '<div class="sec-label">What you can do now</div><div class="cando-grid">';
+    h += cando("spend", "var(--spend)", "needs a resource in hand");
+    h += cando("sell", "var(--coin)", "needs a resource in hand");
+    h += cando("cargo", "var(--gain)", "needs a resource in hand");
+    h += cando("gift", "var(--accent)", "needs a resource in hand");
+    h += '<button class="cando ' + (canP ? "lit" : "dim") + '" style="--cando-color:var(--coin)" data-act="program" data-kind="intern"' + (canP ? "" : " disabled") + ">Intern Program &minus;3<small>" + (canP ? "take any 1 main task" : "needs 3 coins") + "</small></button>";
+    h += '<button class="cando ' + (canP ? "lit" : "dim") + '" style="--cando-color:var(--coin)" data-act="program" data-kind="buyback"' + (canP ? "" : " disabled") + ">Buyback Program &minus;3<small>" + (canP ? "cross out any 1 good" : "needs 3 coins") + "</small></button>";
+    h += "</div>";
 
     h += '<div class="sec-label">Take a task</div><div class="task-grid">';
     h += taskCardHtml("fish", "Fish", "roll the dice, pick your catch", "var(--water)");
@@ -893,11 +955,6 @@
       '<div class="n">' + coins(p.id) + "</div>" +
       '<div class="btns"><button class="minus" data-act="coins" data-delta="-1" aria-label="Spend one coin">&minus;</button>' +
       '<button class="plus" data-act="coins" data-delta="1" aria-label="Gain one coin">+</button></div></div>';
-
-    var canProgram = coins(p.id) >= 3 ? "" : " disabled";
-    h += '<div class="program-row">' +
-      '<button data-act="program" data-kind="intern"' + canProgram + ">Intern Program &minus;3<small>take any 1 main task</small></button>" +
-      '<button data-act="program" data-kind="buyback"' + canProgram + ">Buyback Program &minus;3<small>cross out any 1 good</small></button></div>";
 
     h += '<div class="sec-label">Gained something else? <small>&mdash; neighbor rewards, geodes, trades</small></div>';
     h += '<div class="res-grid">';
@@ -1182,6 +1239,7 @@
 
   function startFlow(kind) {
     UI.pending = null;
+    UI.chooseUse = null;
     if (kind === "fish") UI.flow = { task: "fish", step: "location" };
     else UI.flow = { task: kind, step: "gain" };
     logTaskSilent(kind);
@@ -1244,16 +1302,39 @@
     else if (act === "flow-nothing") { UI.flow = null; render(); }
     else if (act === "cancel-flow") { UI.flow = null; render(); }
     else if (act === "gain") { UI.flow = null; UI.pending = { resId: id, step: "use" }; render(); }
-    else if (act === "resolve-hold") {
-      for (var hi = 0; hi < S.ledger.length; hi++) {
-        if (S.ledger[hi].id === id) {
-          var he = S.ledger[hi];
-          UI.flow = null;
-          UI.pending = { entryId: he.id, resId: he.resId, detail: he.detail, step: "use" };
-          break;
-        }
+    else if (act === "gained-chip") {
+      var he = null;
+      for (var hi = 0; hi < S.ledger.length; hi++) if (S.ledger[hi].id === id) { he = S.ledger[hi]; break; }
+      if (!he || he.use !== "hold") return;
+      UI.flow = null;
+      if (UI.chooseUse) {
+        var cu = UI.chooseUse;
+        UI.chooseUse = null;
+        if (cu === "sell") UI.pending = { entryId: he.id, resId: he.resId, detail: he.detail, step: "sell" };
+        else if (cu === "gift") UI.pending = { entryId: he.id, resId: he.resId, detail: he.detail, step: "gift" };
+        else { resolveHold(he.id, cu); return; }
+      } else {
+        UI.pending = { entryId: he.id, resId: he.resId, detail: he.detail, step: "use" };
       }
       render();
+    }
+    else if (act === "cando") {
+      var cuse = b.getAttribute("data-use");
+      var heldEntries = S.ledger.filter(function (e) { return e.kind === "gain" && e.use === "hold" && e.playerId === activePlayer().id; });
+      if (!heldEntries.length) return;
+      UI.flow = null;
+      if (heldEntries.length === 1) {
+        var only = heldEntries[0];
+        if (cuse === "sell") UI.pending = { entryId: only.id, resId: only.resId, detail: only.detail, step: "sell" };
+        else if (cuse === "gift") UI.pending = { entryId: only.id, resId: only.resId, detail: only.detail, step: "gift" };
+        else { resolveHold(only.id, cuse); return; }
+        render();
+      } else {
+        // several in hand: light them up and let the player pick which one
+        UI.chooseUse = UI.chooseUse === cuse ? null : cuse;
+        UI.pending = null;
+        render();
+      }
     }
     else if (act === "use") {
       var use = b.getAttribute("data-use");
@@ -1272,7 +1353,7 @@
       if (UI.pending.entryId) resolveHold(UI.pending.entryId, "gift", side);
       else gainResource(UI.pending.resId, "gift", side);
     }
-    else if (act === "cancel-pending") { UI.pending = null; render(); }
+    else if (act === "cancel-pending") { UI.pending = null; UI.chooseUse = null; render(); }
     else if (act === "coins") adjustCoins(parseInt(b.getAttribute("data-delta"), 10));
     else if (act === "program") {
       var p2 = activePlayer();
@@ -1283,7 +1364,7 @@
         label: isIntern ? "Intern Program — take any 1 main task" : "Buyback Program — cross out any 1 good" });
       save(); render();
     }
-    else if (act === "pick-player") { S.activePlayer = id; UI.flow = null; UI.pending = null; save(); render(); }
+    else if (act === "pick-player") { S.activePlayer = id; UI.flow = null; UI.pending = null; UI.chooseUse = null; save(); render(); }
     else if (act === "log-task") logTask(document.getElementById("actionInput").value);
     else if (act === "remove-entry") removeEntry(id);
     else if (act === "undo") undo();
