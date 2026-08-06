@@ -28,11 +28,12 @@ from PIL import Image, ImageChops
 # then cargo page 1; colorful CMYK images only). If IV Studio reissues the
 # PDFs these indices may shift — regenerate the contact sheet to remap.
 ICON_INDEX = {
-    "coin": 8, "wood": 0, "exo": 2, "ore": 20, "copper": 11, "iron": 12,
-    "geode": 22, "bone": 19, "jar": 6, "redbp": 4, "purplebp": 1, "heart": 5,
-    "crystal": 56, "egg": 62, "milk": 32, "crop_s": 26, "crop_m": 27,
-    "crop_l": 28, "special_crop": 29, "plant": 49, "fish": 25, "lure": 60,
-    "squid": 35, "energy": 7, "medal": 42, "rod": 33, "rod2": 34,
+    "coin": 8, "wood": 0, "exo": 2, "stone": 20, "copper": 11, "iron": 12,
+    "geode": 22, "bone": 19, "treesap": 6, "redbp": 4, "purplebp": 1,
+    "heart": 5, "crystal": 56, "artifact": 3, "rainbow": 21, "egg": 62,
+    "wool": 31, "milk": 32, "pineapple": 26, "wildfruit": 27, "pumpkin": 28,
+    "berries": 29, "crop_s": 26, "crop_m": 27, "crop_l": 28, "fish": 25,
+    "lure": 60, "squid": 35, "energy": 7, "medal": 42, "rod": 33, "rod2": 34,
     "fishrod": 15, "tendtool": 16, "hatchet": 14, "pickaxe": 13, "tools": 18,
     "x2": 44,
 }

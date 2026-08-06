@@ -771,7 +771,7 @@
   // your machine; without it the app renders its own color-matched chips.
   var TA = (typeof window !== "undefined" && window.TEND_ART) || null;
 
-  var STORE_KEY = "tend-companion-v5";
+  var STORE_KEY = "tend-companion-v6";
   var ROUNDS = 12;
   var SWATCHES = ["#8A5A3B", "#4A6FA5", "#6E6A75", "#8E4A8B", "#5B8A3A", "#B0A38E", "#C05B4D", "#3E7C7B"];
   var USES = {
@@ -788,10 +788,14 @@
   // cards are photographed. Swap each grid below with the card's
   // real 5x5 contents (row = black die, column = white die).
   // ============================================================
-  // Species tiers map to the commissary's four fish rows (tier = coins; shape by tier)
+  // The 12 real species from the resource listing. Tiers map to the commissary's
+  // four fish rows (tier = coins; shape by tier) — tier assignments are best-guess
+  // from the placard photo until confirmed.
   var FISH_SPECIES = [
-    { n: "Shimmerpuff", t: 1 }, { n: "Glimmer Eel", t: 3 }, { n: "Mosskoi", t: 2 }, { n: "Pebble Bass", t: 2 },
-    { n: "Duskfin", t: 3 }, { n: "Bubble Ray", t: 4 }, { n: "Sunny Guppy", t: 1 }, { n: "Star Carp", t: 4 }
+    { n: "Mamble", t: 1 }, { n: "Geojell", t: 1 },
+    { n: "Sunpop", t: 2 }, { n: "Blobber", t: 2 }, { n: "Crankle", t: 2 }, { n: "Gribble", t: 2 },
+    { n: "Pebblepuff", t: 3 }, { n: "Nessel", t: 3 }, { n: "Lillybloom", t: 3 }, { n: "Orbble", t: 3 },
+    { n: "Plumfish", t: 4 }, { n: "Shimmerpuff", t: 4 }
   ];
   function makeGrid(offset) {
     var g = [];
@@ -820,18 +824,29 @@
   // value: sell price (null = cannot be sold); shape: manifest shape (null = cannot be placed)
   var COMMISSARY = {
     "Egg": { type: "farm", value: 1, shape: "s1" },
-    "Plant": { type: "farm", value: 3, shape: "r3" },
+    "Pineapple": { type: "farm", value: 2, shape: "s1" },
+    "Wool": { type: "farm", value: 2, shape: "c3" },
+    "Berries": { type: "farm", value: 2, shape: "c3" },
+    "Wild Fruit": { type: "farm", value: 3, shape: "r3" },
+    "Pumpkin": { type: "farm", value: 4, shape: "u5" },
     "Milk": { type: "farm", value: 4, shape: "u5" },
     "Fish": { type: "fish", value: 2, shape: "r2" },
-    "Ore": { type: "mining", value: 1, shape: "s1" },
+    "Stone": { type: "mining", value: 1, shape: "s1" },
     "Copper": { type: "mining", value: 1, shape: "s1" },
     "Iron": { type: "mining", value: 1, shape: "s1" },
-    "Geode": { type: "mining", value: 2, shape: "r2" },
+    "Artifact": { type: "mining", value: 2, shape: "r2" },
     "Bone": { type: "mining", value: 2, shape: "r3" },
+    "Ruby": { type: "mining", value: 2, shape: "r3" },
     "Crystal": { type: "mining", value: 3, shape: "j4" },
-    "Jar": { type: "mining", value: 4, shape: "sq4" },
+    "Rainbow Rock": { type: "mining", value: 4, shape: "sq4" },
+    "Tree Sap": { type: "mining", value: 4, shape: "sq4" },
+    "Geode": { type: "mining", value: 2, shape: "r2" },
     "Wood": { type: "badge", value: 1, shape: null },
     "Exo Wood": { type: "badge", value: 2, shape: null },
+    "Copper Badge": { type: "badge", value: 3, shape: "r2" },
+    "Silver Badge": { type: "badge", value: 4, shape: "r3" },
+    "Gold Badge": { type: "badge", value: 5, shape: "j4" },
+    "Platinum Badge": { type: "badge", value: 6, shape: "u5" },
     "Red Blueprint": { type: "social", value: 1, shape: "s1" },
     "Purple Blueprint": { type: "social", value: 2, shape: "r2" },
     "Heart": { type: "social", value: null, shape: "sq4" }
@@ -876,14 +891,20 @@
       players: [{ id: pid, name: "Player 1" }],
       coins: {},      // playerId -> n
       resources: [
-        { id: uid(), name: "Wood", color: "#8A5A3B" },
-        { id: uid(), name: "Exo Wood", color: "#A34A6B" },
-        { id: uid(), name: "Copper", color: "#B87333" },
-        { id: uid(), name: "Iron", color: "#6E7B85" },
-        { id: uid(), name: "Fish", color: "#4A6FA5" },
-        { id: uid(), name: "Plant", color: "#5B8A3A" },
-        { id: uid(), name: "Milk", color: "#B0A38E" },
-        { id: uid(), name: "Geode", color: "#8E4A8B" },
+        { id: uid(), name: "Wood", color: "#A34A6B" },
+        { id: uid(), name: "Exo Wood", color: "#7E3A6E" },
+        { id: uid(), name: "Stone", color: "#3E9C9C" },
+        { id: uid(), name: "Copper", color: "#D4693B" },
+        { id: uid(), name: "Iron", color: "#7C8BA0" },
+        { id: uid(), name: "Fish", color: "#4FA8B8" },
+        { id: uid(), name: "Pineapple", color: "#E8B33C" },
+        { id: uid(), name: "Wild Fruit", color: "#C2497B" },
+        { id: uid(), name: "Pumpkin", color: "#E8763C" },
+        { id: uid(), name: "Berries", color: "#3E7CB8" },
+        { id: uid(), name: "Egg", color: "#9C7EB8" },
+        { id: uid(), name: "Wool", color: "#7E4E8E" },
+        { id: uid(), name: "Milk", color: "#5FA8A0" },
+        { id: uid(), name: "Geode", color: "#4A5A9C" },
         { id: uid(), name: "Red Blueprint", color: "#D96A8A" },
         { id: uid(), name: "Purple Blueprint", color: "#7B5EA7" }
       ],
@@ -993,26 +1014,33 @@
   var CHOP_TRACK = [
     { n: "Coin", c: "#D8AF3C", coin: true }, { n: "Coin", c: "#D8AF3C", coin: true },
     { n: "Wood", c: "#A34A6B" }, { n: "Wood", c: "#A34A6B" }, { n: "Wood", c: "#A34A6B" }, { n: "Wood", c: "#A34A6B" },
-    { n: "Exo Wood", c: "#8E4A8B" }, { n: "Exo Wood", c: "#8E4A8B" },
-    { n: "Bone", c: "#C9B37E" }, { n: "Jar", c: "#C96FA8" }
+    { n: "Exo Wood", c: "#7E3A6E" }, { n: "Exo Wood", c: "#7E3A6E" },
+    { n: "Bone", c: "#C9B37E" }, { n: "Tree Sap", c: "#C96FA8" }
   ];
   var MINE_TRACK = [
     { n: "Coin", c: "#D8AF3C", coin: true }, { n: "Coin", c: "#D8AF3C", coin: true },
-    { n: "Ore", c: "#3E9C9C" }, { n: "Ore", c: "#3E9C9C" },
-    { n: "Copper", c: "#B87333" }, { n: "Copper", c: "#B87333" },
-    { n: "Iron", c: "#6E7B85" }, { n: "Iron", c: "#6E7B85" },
+    { n: "Stone", c: "#3E9C9C" }, { n: "Stone", c: "#3E9C9C" },
+    { n: "Copper", c: "#D4693B" }, { n: "Copper", c: "#D4693B" },
+    { n: "Iron", c: "#7C8BA0" }, { n: "Iron", c: "#7C8BA0" },
     { n: "Geode", c: "#4A5A9C" }, { n: "Geode", c: "#4A5A9C" }
   ];
   // Icon chips echoing the sheet's item colors: [background, letter]
   var IC = {
     coin: ["#F0C948", "Z"], wood: ["#A34A6B", "W"], exo: ["#7E3A6E", "X"],
-    ore: ["#3E9C9C", "O"], copper: ["#D4693B", "C"], iron: ["#7C8BA0", "I"],
-    geode: ["#4A5A9C", "G"], bone: ["#C9B37E", "B"], jar: ["#D06FA0", "J"],
+    stone: ["#3E9C9C", "S"], copper: ["#D4693B", "C"], iron: ["#7C8BA0", "I"],
+    geode: ["#4A5A9C", "G"], bone: ["#C9B37E", "B"], treesap: ["#D06FA0", "T"],
+    artifact: ["#B5483C", "A"], ruby: ["#C43B4E", "R"], crystal: ["#5BA8D4", "C"],
+    rainbow: ["#C77DB5", "R"],
     redbp: ["#D96A8A", "R"], purplebp: ["#7B5EA7", "P"], heart: ["#D64F4F", "♥"],
     fish: ["#4FA8B8", "F"], plant: ["#6FA84C", "✿"], egg: ["#9C7EB8", "E"],
-    milk: ["#5FA8A0", "M"], crop_s: ["#E8B33C", "S"], crop_m: ["#C2497B", "M"],
-    crop_l: ["#E8763C", "L"], trellis: ["#FFFFFF", "A"], medal: ["#E8663C", "◉"],
-    lure: ["#7CC24C", "❋"], squid: ["#C24C6E", "❋"]
+    wool: ["#7E4E8E", "W"], milk: ["#5FA8A0", "M"],
+    pineapple: ["#E8B33C", "P"], wildfruit: ["#C2497B", "W"], pumpkin: ["#E8763C", "P"],
+    berries: ["#3E7CB8", "B"],
+    crop_s: ["#E8B33C", "S"], crop_m: ["#C2497B", "M"], crop_l: ["#E8763C", "L"],
+    trellis: ["#FFFFFF", "A"], medal: ["#E8663C", "◉"],
+    lure: ["#7CC24C", "❋"], squid: ["#C24C6E", "❋"],
+    // legacy aliases
+    ore: ["#3E9C9C", "S"], jar: ["#D06FA0", "T"]
   };
   function ic(kind, dashed) {
     if (!dashed && TA && TA.icons && TA.icons[kind]) {
@@ -1033,9 +1061,9 @@
     ["yellowfish", "kelp", "none", "yellowfish", "none"]
   ];
   var POND_KINDS = {
-    kelp: { name: "Kelp", res: "Fish", tier: 1, chip: "plant" },
-    redfish: { name: "Red fish", res: "Fish", tier: 3, chip: "fish" },
-    yellowfish: { name: "Yellow fish", res: "Fish", tier: 2, chip: "fish" },
+    kelp: { name: "Mamble", res: "Fish", tier: 1, chip: "fish" },
+    redfish: { name: "Pebblepuff", res: "Fish", tier: 3, chip: "fish" },
+    yellowfish: { name: "Blobber", res: "Fish", tier: 2, chip: "fish" },
     wood: { name: "Wood", res: "Wood", chip: "wood" }
   };
   function pondKind(r, c) { // 1-indexed
@@ -1046,18 +1074,18 @@
   // Badge projects on the cargo sheet: vp + 3 rows of 3 goods (icons approximate)
   var BADGES = [
     { key: "bwoods", name: "Basic Woods", vp: 5, glyph: "🌲", rows: [["wood", "wood", "wood"], ["wood", "exo", "wood"], ["wood", "wood", "wood"]] },
-    { key: "bmines", name: "Basic Mines", vp: 5, glyph: "⛰", rows: [["ore", "ore", "copper"], ["ore", "ore", "copper"], ["ore", "ore", "copper"]] },
+    { key: "bmines", name: "Basic Mines", vp: 5, glyph: "⛰", rows: [["stone", "stone", "copper"], ["stone", "stone", "copper"], ["stone", "stone", "copper"]] },
     { key: "bfish", name: "Basic Fishing", vp: 5, glyph: "🐟", rows: [["fish", "fish", "fish"], ["fish", "fish", "fish"], ["fish", "fish", "fish"]] },
-    { key: "awoods", name: "Adv. Woods", vp: 10, glyph: "🌳", rows: [["exo", "exo", "exo"], ["exo", "exo", "bone"], ["exo", "exo", "jar"]] },
+    { key: "awoods", name: "Adv. Woods", vp: 10, glyph: "🌳", rows: [["exo", "exo", "exo"], ["exo", "exo", "bone"], ["exo", "exo", "treesap"]] },
     { key: "amines", name: "Adv. Mines", vp: 10, glyph: "⛏", rows: [["iron", "iron", "iron"], ["iron", "iron", "geode"], ["iron", "iron", "geode"]] },
     { key: "afish", name: "Adv. Fishing", vp: 10, glyph: "🎣", rows: [["fish", "fish", "fish"], ["fish", "fish", "fish"], ["fish", "fish", "fish"]] },
-    { key: "plants", name: "Plants", vp: 15, glyph: "🌿", rows: [["plant", "plant", "plant"], ["plant", "plant", "plant"], ["plant", "plant", "plant"]] },
-    { key: "animals", name: "Animals", vp: 15, glyph: "🐾", rows: [["egg", "egg", "egg"], ["egg", "milk", "jar"], ["egg", "egg", "milk"]] },
-    { key: "generalist", name: "Generalist", vp: 20, glyph: "❖", rows: [["plant", "exo", "bone"], ["fish", "geode", "egg"], ["wood", "iron", "jar"]] }
+    { key: "plants", name: "Plants", vp: 15, glyph: "🌿", rows: [["pineapple", "wildfruit", "pumpkin"], ["pineapple", "wildfruit", "berries"], ["pineapple", "wildfruit", "pumpkin"]] },
+    { key: "animals", name: "Animals", vp: 15, glyph: "🐾", rows: [["egg", "egg", "wool"], ["egg", "wool", "treesap"], ["egg", "wool", "milk"]] },
+    { key: "generalist", name: "Generalist", vp: 20, glyph: "❖", rows: [["wildfruit", "exo", "bone"], ["fish", "geode", "egg"], ["wood", "iron", "treesap"]] }
   ];
   // Neighbor rewards tracks, 8 steps each (icons approximate)
-  var NB_LEFT = ["wood", "redbp", "exo", "plant", "bone", "redbp", "heart", "jar"];
-  var NB_RIGHT = ["ore", "redbp", "copper", "iron", "geode", "heart", "plant", "jar"];
+  var NB_LEFT = ["wood", "redbp", "exo", "wildfruit", "bone", "redbp", "heart", "treesap"];
+  var NB_RIGHT = ["stone", "redbp", "copper", "iron", "geode", "heart", "wildfruit", "treesap"];
 
   var FARM_UPGRADES = [
     { key: "tools", name: "Upgraded Tools", sub: "+1 tend action" },
@@ -1395,12 +1423,12 @@
     h += "</div></div></div>";
     h += sbox("Groundskeeping", "", "<p>Pay the cost to till or build fences.</p>" +
       "<p>" + ic("coin") + " : <span class='ic dashed'>~</span>/<span class='ic dashed'>=</span> &nbsp;&nbsp; " + ic("copper") + " : <span class='ic dashed'>=</span>&times;4</p>" +
-      "<p>" + ic("ore") + "/" + ic("wood") + " : <span class='ic dashed'>=</span>&times;3 &nbsp;&nbsp; " + ic("exo") + "/" + ic("iron") + " : <span class='ic dashed'>=</span>&times;5</p>");
+      "<p>" + ic("stone") + "/" + ic("wood") + " : <span class='ic dashed'>=</span>&times;3 &nbsp;&nbsp; " + ic("exo") + "/" + ic("iron") + " : <span class='ic dashed'>=</span>&times;5</p>");
     var eqBody = "";
     [["tools", "Upgraded Tools", "+1 ✎ Tend Action"], ["hatchet", "Upgraded Hatchet", "+1 ⚒ Chop Action"], ["pickaxe", "Upgraded Pick Axe", "+1 ⛏ Mine Action"]].forEach(function (eq) {
       eqBody += "<p style='margin-bottom:0'><b>" + eq[1] + "</b> &mdash; " + eq[2] + "</p>" +
         costRow("upg-row", 'data-key="' + eq[0] + '"', u[eq[0]],
-          ics(["ore", "redbp", "coin", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["iron", "purplebp", "coin", "coin"]) + '<span class="arr">▶</span><b style="font-size:10px">+1</b>');
+          ics(["stone", "redbp", "coin", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["iron", "purplebp", "coin", "coin"]) + '<span class="arr">▶</span><b style="font-size:10px">+1</b>');
     });
     h += sbox("Equipment Upgrades", "", eqBody);
     h += "</div>";
@@ -1428,7 +1456,7 @@
     pondBody += "</table>";
     h += sbox("Pond Fishing", "", pondBody);
     var bridgeBody = "<p>Unlocks River Fishing.</p>";
-    [["wood", "coin", "ore"], ["wood", "coin", "copper"]].forEach(function (br, i) {
+    [["wood", "coin", "stone"], ["wood", "coin", "copper"]].forEach(function (br, i) {
       bridgeBody += costRow("bridge-row", 'data-idx="' + i + '"', f.bridgeRows[i], ics(br) + '<span class="arr">▶</span>');
     });
     if (f.bridgeRows[0] && f.bridgeRows[1]) bridgeBody += '<p><span class="snote">River Fishing unlocked</span></p>';
@@ -1438,7 +1466,7 @@
       "<p style='margin-bottom:0'><b>Upgraded Rod 2</b> &mdash; modifies catch area.</p>" +
       costRow("upg-row", 'data-key="rod2"', u.rod2, ics(["exo", "coin", "coin"]) + '<span class="arr">▶</span>' + catchMini(true)) +
       "<p style='margin-bottom:0'><b>Lures</b> &mdash; +1 ⚓ fishing action. <span class='snote'>choose 1 to unlock</span></p>" +
-      costRow("upg-row", 'data-key="lures"', u.lures, ics(["jar", "coin", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["bone", "coin", "coin"]) + '<span class="arr">▶</span>' + ic("lure"));
+      costRow("upg-row", 'data-key="lures"', u.lures, ics(["treesap", "coin", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["bone", "coin", "coin"]) + '<span class="arr">▶</span>' + ic("lure"));
     h += sbox("Fishing Upgrades", "", fuBody);
     h += "</div>";
 
@@ -1516,7 +1544,7 @@
     // Special projects (single use)
     var sprojects = [
       { key: "intern", name: "Intern Program", sub: "Perform any 1 of the 4 main tasks.", cost: ["coin", "coin", "coin"], result: "✎⚓⚒⛏", coins: 3 },
-      { key: "seasoned", name: "Seasoned Explorer", sub: "Double the point value of one of your badges.", cost: ["exo", "bone", "jar"], result: "&times;2" },
+      { key: "seasoned", name: "Seasoned Explorer", sub: "Double the point value of one of your badges.", cost: ["ruby", "bone", "treesap"], result: "&times;2" },
       { key: "buyback", name: "Buyback Program", sub: "Purchase any one wild good to be used on a badge.", cost: ["coin", "coin", "coin"], result: "✦", coins: 3 }
     ];
     sprojects.forEach(function (sp) {
