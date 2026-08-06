@@ -350,6 +350,148 @@
   .catch-splash .caughtname { font-size: 17px; font-weight: 800; margin-top: 4px; animation: lightup 0.5s ease 0.45s both; }
   .catch-splash .sub { font-size: 12px; color: var(--muted); }
 
+  /* ---- Sheet replica design system (paper stays paper in both themes) ---- */
+  .sheet {
+    background: #F7F7F2; color: #15161A; border: 2px solid #15161A; border-radius: 12px;
+    padding: 10px; overflow-x: auto; box-shadow: var(--shadow);
+  }
+  .sheet-cols { display: grid; gap: 10px; align-items: start; }
+  .sheet-cols.four { grid-template-columns: repeat(4, minmax(225px, 1fr)); min-width: 960px; }
+  .sheet-cols.two { grid-template-columns: minmax(430px, 1.05fr) minmax(360px, 1fr); min-width: 820px; }
+  .sbox { border: 2px solid #15161A; border-radius: 9px; background: #FFFFFF; margin-bottom: 10px; overflow: hidden; }
+  .sbox > h3 {
+    background: #D9D9D4; color: #15161A; padding: 4px 8px;
+    font-family: ui-monospace, "Cascadia Mono", "Roboto Mono", Menlo, monospace;
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+  }
+  .sbox > h3 .hact { font-size: 11px; white-space: nowrap; }
+  .sbox .bd { padding: 7px 8px; font-size: 11px; line-height: 1.35; color: #15161A; }
+  .sbox .bd p { margin: 0 0 4px; }
+  .snote {
+    background: #15161A; color: #F7F7F2; font-size: 10px; font-weight: 600;
+    border-radius: 6px; padding: 3px 8px; display: inline-block; margin: 2px 0;
+  }
+  .ic {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 17px; height: 17px; border-radius: 4px; flex: none;
+    font-size: 10px; font-weight: 800; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+    border: 1px solid rgba(0,0,0,0.35);
+  }
+  .ic.dashed { background: #fff !important; border: 1.5px dashed #15161A; color: #15161A; text-shadow: none; }
+  .cost-row {
+    display: flex; align-items: center; gap: 3px; padding: 3px 2px; border-radius: 6px;
+    cursor: pointer; border: 0; background: none; width: 100%; text-align: left; font-size: 11px;
+    transition: opacity 0.3s ease;
+  }
+  .cost-row:hover { background: rgba(0,0,0,0.05); }
+  .cost-row .arr { font-size: 10px; margin: 0 1px; color: #15161A; }
+  .cost-row.done { opacity: 0.45; }
+  .cost-row.done .ic { position: relative; }
+  .cost-row.done .strike { text-decoration: line-through; }
+  .cost-row .ok { margin-left: auto; font-size: 12px; font-weight: 800; color: var(--gain); opacity: 0; transform: scale(0.5); transition: all 0.25s ease; }
+  .cost-row.done .ok { opacity: 1; transform: scale(1); }
+  .sgrid-cell { background: #FFFFFF; border: 1px solid #15161A; }
+  .lvl-track { display: flex; gap: 2px; padding: 4px 2px 2px; }
+  .lvl-track button {
+    flex: 1; min-width: 0; border: 1.5px dashed #9C8AA5; border-radius: 4px; background: #EFE7F2;
+    padding: 3px 0 2px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    opacity: 0.55; transition: opacity 0.3s ease, box-shadow 0.3s ease;
+  }
+  .lvl-track.gold button { border-color: #C2A244; background: #F6EED3; }
+  .lvl-track button .tdot { width: 11px; height: 11px; border-radius: 3px; background: var(--t-color, #999); border: 1px solid rgba(0,0,0,0.3); }
+  .lvl-track button .tn { font-size: 8px; font-weight: 700; color: #15161A; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+  .lvl-track button.reached { opacity: 1; border-style: solid; }
+  .lvl-track button.at { box-shadow: 0 0 0 2px color-mix(in srgb, var(--t-color, #333) 45%, transparent); }
+  .pond { border-collapse: collapse; margin: 2px auto; }
+  .pond th { font-family: ui-monospace, monospace; font-size: 10px; background: #15161A; color: #fff; width: 18px; height: 18px; text-align: center; border-radius: 3px; }
+  .pond th.blank { background: none; }
+  .pond td button {
+    width: 34px; height: 30px; background: #fff; border: 1px solid #B9C4C0; border-radius: 3px;
+    font-size: 8.5px; font-weight: 700; color: #4A6E78; padding: 1px; line-height: 1.1; overflow: hidden;
+  }
+  .pond td button.caught { text-decoration: line-through; opacity: 0.4; }
+  .pond td button.hit { border-color: var(--water); background: #DFF0F4; box-shadow: 0 0 0 2px rgba(79,168,184,0.35); }
+  .catch-mini { display: grid; grid-template-columns: repeat(3, 10px); gap: 1px; margin-left: auto; }
+  .catch-mini span { width: 10px; height: 10px; border: 1px solid #15161A; background: #fff; }
+  .catch-mini span.on { background: #15161A; }
+  .energy-circles { display: flex; gap: 10px; justify-content: space-around; padding: 4px 0; }
+  .energy-circles .ecol { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .energy-circles button {
+    width: 40px; height: 40px; border-radius: 50%; border: 1.5px dashed #15161A; background: #fff;
+    font-size: 10px; font-weight: 800; color: #15161A; transition: all 0.25s ease;
+  }
+  .energy-circles button.unlocked { border-style: solid; border-width: 2.5px; border-color: var(--spend); color: var(--spend); box-shadow: 0 0 0 3px color-mix(in srgb, var(--spend) 25%, transparent); }
+  .energy-circles button.spent { border-style: solid; background: repeating-linear-gradient(45deg, #fff, #fff 3px, #ddd 3px, #ddd 6px); opacity: 0.6; }
+  .nbtrack { display: flex; gap: 2px; align-items: center; padding: 3px 0; }
+  .nbtrack button {
+    flex: 1; min-width: 0; aspect-ratio: 0.8; border: 1.5px dashed #15161A; border-radius: 4px; background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    opacity: 0.6; transition: all 0.25s ease; padding: 1px;
+  }
+  .nbtrack button.got { opacity: 1; border-style: solid; background: #FDF3F3; box-shadow: 0 0 0 1.5px rgba(214,79,79,0.3); }
+  .nbtrack button .tn { font-size: 7px; font-family: ui-monospace, monospace; font-weight: 700; color: #15161A; }
+  .badge-box { border: 1.5px dashed #15161A; border-radius: 8px; padding: 5px 6px; margin-bottom: 7px; }
+  .badge-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .badge-head .bicon {
+    width: 26px; height: 34px; border: 2px solid #15161A; border-radius: 13px; background: #fff; flex: none;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.3s ease;
+  }
+  .badge-box.earned .bicon { background: #15161A; color: #F0C948; box-shadow: 0 0 0 3px rgba(240,201,72,0.5); }
+  .badge-head .bn { font-family: ui-monospace, monospace; font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
+  .badge-head .bvp { margin-left: auto; font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700; background: #15161A; color: #fff; border-radius: 4px; padding: 1px 5px; }
+  .badge-row { display: flex; align-items: center; gap: 3px; padding: 2px 0; }
+  .badge-row .medal {
+    margin-left: auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px dashed #B85C38;
+    display: flex; align-items: center; justify-content: center; font-size: 9px; color: #B85C38;
+    opacity: 0.5; transition: all 0.3s ease;
+  }
+  .badge-row.full .medal { opacity: 1; border-style: solid; background: #E8663C; color: #fff; box-shadow: 0 0 0 2px rgba(232,102,60,0.35); }
+  .badge-row .gcell {
+    width: 20px; height: 20px; border-radius: 4px; border: 0; padding: 0; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .badge-row .gcell .ic { width: 18px; height: 18px; }
+  .badge-row .gcell.x::after {
+    content: "✕"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 900; color: #15161A; text-shadow: 0 0 2px #fff;
+  }
+  .rtrack { display: flex; gap: 4px; }
+  .rtrack .tube {
+    flex: 1; border: 2px solid #15161A; border-radius: 4px 4px 6px 6px; background: #fff;
+    display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+  }
+  .rtrack .tube .fillp { height: 14px; background: transparent; transition: background 0.4s ease; }
+  .rtrack .tube .num {
+    font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 700; text-align: center;
+    padding: 2px 0; color: #15161A; border-top: 1.5px solid #15161A;
+  }
+  .rtrack .tube.past .fillp { background: var(--tube-c); }
+  .rtrack .tube.now { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--tube-c) 60%, transparent); }
+  .rtrack .tube.now .fillp { background: color-mix(in srgb, var(--tube-c) 45%, #fff); animation: pulse-t 1.4s ease-in-out infinite; }
+  @keyframes pulse-t { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .num .tube-num { }
+  .score-strip { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+  .score-strip .slabel { font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700; color: #6B6F6D; text-transform: uppercase; }
+  .score-strip input {
+    width: 100%; min-width: 0; border: 1.5px solid #15161A; border-radius: 6px; background: #fff; color: #15161A;
+    padding: 5px 4px; font-size: 13px; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  .score-strip .op { font-weight: 900; font-size: 13px; }
+  .score-strip .sum {
+    border: 2px solid #15161A; border-radius: 6px; background: #15161A; color: #fff;
+    padding: 5px 8px; font-size: 13px; font-weight: 800; min-width: 40px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  .type-legend { display: flex; gap: 6px; align-items: center; justify-content: center; border: 1.5px solid #15161A; border-radius: 6px; padding: 3px 6px; margin-bottom: 6px; font-size: 10px; font-weight: 700; color: #15161A; }
+  .sheet .farm-grid .cell, .sheet .cargo-grid .cell { background: #FFFFFF; border: 1px solid #8A918D; color: #15161A; border-radius: 2px; }
+  .sheet .farm-grid .cell.till { background: #DDEBE2; color: #2A7350; }
+  .sheet .farm-grid .cell.fence { background: #E7E7E2; color: #15161A; }
+  .sheet .farm-grid .cell.filled, .sheet .cargo-grid .cell.filled { border-color: rgba(0,0,0,0.4); }
+  .sheet .cargo-grid .cell.stall-b { border-left: 2px dashed #15161A; }
+  .sheet .row-rewards .rr { border-color: #8A918D; color: #8A918D; }
+  .sheet .stall-inputs input { background: #fff; color: #15161A; border: 1.5px solid #15161A; font-family: ui-monospace, monospace; }
+  .sheet .manifest { border: 2px solid #15161A; border-radius: 8px; padding: 5px; background: #fff; }
+
   /* ---- Farm sheet ---- */
   .farm-wrap { background: var(--surface); border: 2px solid var(--ink); border-radius: 12px; padding: 8px; box-shadow: var(--shadow); overflow-x: auto; }
   .farm-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; min-width: 300px; }
@@ -806,7 +948,20 @@
       Object.keys(FARM_PREFILL).forEach(function (k) { cells[k] = JSON.parse(JSON.stringify(FARM_PREFILL[k])); });
       S.farm[pid] = { cells: cells, chopLvl: 1, mineLvl: 1, energy: [0, 0, 0], upg: {}, trellis: 0, nbL: 0, nbR: 0 };
     }
-    return S.farm[pid];
+    var f = S.farm[pid];
+    if (!f.trellisRows) f.trellisRows = [false, false, false, false];
+    if (!f.animalRows) f.animalRows = [false, false, false, false, false, false, false, false];
+    if (!f.bridgeRows) f.bridgeRows = [false, false];
+    return f;
+  }
+  function badgesOf(pid) {
+    if (!S.badgeState) S.badgeState = {};
+    if (!S.badgeState[pid]) S.badgeState[pid] = {};
+    var bs = S.badgeState[pid];
+    BADGES.forEach(function (b) {
+      if (!bs[b.key]) bs[b.key] = [[false, false, false], [false, false, false], [false, false, false]];
+    });
+    return bs;
   }
   function findOrCreateResource(name, color) {
     var r = resourceByName(name);
@@ -838,6 +993,39 @@
     { n: "Iron", c: "#6E7B85" }, { n: "Iron", c: "#6E7B85" },
     { n: "Geode", c: "#4A5A9C" }, { n: "Geode", c: "#4A5A9C" }
   ];
+  // Icon chips echoing the sheet's item colors: [background, letter]
+  var IC = {
+    coin: ["#F0C948", "Z"], wood: ["#A34A6B", "W"], exo: ["#7E3A6E", "X"],
+    ore: ["#3E9C9C", "O"], copper: ["#D4693B", "C"], iron: ["#7C8BA0", "I"],
+    geode: ["#4A5A9C", "G"], bone: ["#C9B37E", "B"], jar: ["#D06FA0", "J"],
+    redbp: ["#D96A8A", "R"], purplebp: ["#7B5EA7", "P"], heart: ["#D64F4F", "♥"],
+    fish: ["#4FA8B8", "F"], plant: ["#6FA84C", "✿"], egg: ["#9C7EB8", "E"],
+    milk: ["#5FA8A0", "M"], crop_s: ["#E8B33C", "S"], crop_m: ["#C2497B", "M"],
+    crop_l: ["#E8763C", "L"], trellis: ["#FFFFFF", "A"], medal: ["#E8663C", "◉"],
+    lure: ["#7CC24C", "❋"], squid: ["#C24C6E", "❋"]
+  };
+  function ic(kind, dashed) {
+    var d = IC[kind] || ["#999", "?"];
+    return '<span class="ic' + (dashed ? " dashed" : "") + '" style="background:' + d[0] + '">' + d[1] + "</span>";
+  }
+  function ics(list) { return list.map(function (k) { return ic(k); }).join(""); }
+
+  // Badge projects on the cargo sheet: vp + 3 rows of 3 goods (icons approximate)
+  var BADGES = [
+    { key: "bwoods", name: "Basic Woods", vp: 5, glyph: "🌲", rows: [["wood", "wood", "wood"], ["wood", "exo", "wood"], ["wood", "wood", "wood"]] },
+    { key: "bmines", name: "Basic Mines", vp: 5, glyph: "⛰", rows: [["ore", "ore", "copper"], ["ore", "ore", "copper"], ["ore", "ore", "copper"]] },
+    { key: "bfish", name: "Basic Fishing", vp: 5, glyph: "🐟", rows: [["fish", "fish", "fish"], ["fish", "fish", "fish"], ["fish", "fish", "fish"]] },
+    { key: "awoods", name: "Adv. Woods", vp: 10, glyph: "🌳", rows: [["exo", "exo", "exo"], ["exo", "exo", "bone"], ["exo", "exo", "jar"]] },
+    { key: "amines", name: "Adv. Mines", vp: 10, glyph: "⛏", rows: [["iron", "iron", "iron"], ["iron", "iron", "geode"], ["iron", "iron", "geode"]] },
+    { key: "afish", name: "Adv. Fishing", vp: 10, glyph: "🎣", rows: [["fish", "fish", "fish"], ["fish", "fish", "fish"], ["fish", "fish", "fish"]] },
+    { key: "plants", name: "Plants", vp: 15, glyph: "🌿", rows: [["plant", "plant", "plant"], ["plant", "plant", "plant"], ["plant", "plant", "plant"]] },
+    { key: "animals", name: "Animals", vp: 15, glyph: "🐾", rows: [["egg", "egg", "egg"], ["egg", "milk", "jar"], ["egg", "egg", "milk"]] },
+    { key: "generalist", name: "Generalist", vp: 20, glyph: "❖", rows: [["plant", "exo", "bone"], ["fish", "geode", "egg"], ["wood", "iron", "jar"]] }
+  ];
+  // Neighbor rewards tracks, 8 steps each (icons approximate)
+  var NB_LEFT = ["wood", "redbp", "exo", "plant", "bone", "redbp", "heart", "jar"];
+  var NB_RIGHT = ["ore", "redbp", "copper", "iron", "geode", "heart", "plant", "jar"];
+
   var FARM_UPGRADES = [
     { key: "tools", name: "Upgraded Tools", sub: "+1 tend action" },
     { key: "hatchet", name: "Upgraded Hatchet", sub: "+1 chop action" },
@@ -927,7 +1115,10 @@
           addCoins(e.playerId, e.bought.cost);
           delete projectsOf(e.playerId)[e.bought.key];
         }
-        if (e.kind === "coin") addCoins(e.playerId, -e.delta);
+        if (e.kind === "coin") {
+          addCoins(e.playerId, -e.delta);
+          if (e.progKey) projectsOf(e.playerId)[e.progKey] = false; // restore the single-use project
+        }
         if (e.loc && e.cell) { // un-catch the fishing square
           var set = caughtSet(e.playerId, e.loc);
           var ix = set.indexOf(e.cell);
@@ -1070,8 +1261,8 @@
     return h + "</div>";
   }
 
-  function trackHtml(track, level, act) {
-    var h = '<div class="track">';
+  function lvlTrackHtml(track, level, act, gold) {
+    var h = '<div class="lvl-track' + (gold ? " gold" : "") + '">';
     for (var i = 0; i < track.length; i++) {
       var cls = (i + 1 <= level ? "reached" : "") + (i + 1 === level ? " at" : "");
       h += '<button class="' + cls + '" style="--t-color:' + track[i].c + '" data-act="' + act + '" data-lvl="' + (i + 1) +
@@ -1079,24 +1270,78 @@
     }
     return h + "</div>";
   }
+  function sbox(title, right, body) {
+    return '<div class="sbox"><h3>' + title + (right ? '<span class="hact">' + right + "</span>" : "") + "</h3>" +
+      '<div class="bd">' + body + "</div></div>";
+  }
+  function costRow(act, dataAttrs, done, inner) {
+    return '<button class="cost-row' + (done ? " done" : "") + '" data-act="' + act + '" ' + dataAttrs + ">" +
+      inner + '<span class="ok">✔</span></button>';
+  }
+  function nbTrackHtml(icons, val, side) {
+    var h = '<div class="nbtrack">';
+    for (var i = 0; i < 8; i++) {
+      h += '<button class="' + (val >= i + 1 ? "got" : "") + '" data-act="nb-step" data-side="' + side + '" data-n="' + (i + 1) + '">' +
+        ic(icons[i]) + '<span class="tn">0' + (i + 1) + "</span></button>";
+    }
+    return h + '<span style="font-size:10px;font-weight:800;white-space:nowrap">3✦</span></div>';
+  }
+  function catchMini(full) {
+    var h = '<span class="catch-mini">';
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var on = full ? true : (r === 1 || c === 1);
+      h += '<span class="' + (on ? "on" : "") + '"></span>';
+    }
+    return h + "</span>";
+  }
 
   function renderFarm() {
     var p = activePlayer();
     var f = farmOf(p.id);
+    var u = f.upg;
     var h = playerTabsHtml();
 
-    h += '<div class="sec-label">Brush <small>&mdash; crops &amp; goods paint, ~ tills, = fences; tap a mark to change or clear it</small></div>';
     h += '<div class="palette">';
     S.resources.forEach(function (r) {
       h += '<button style="--res-color:' + esc(r.color) + '" class="' + (UI.brush === r.id ? "on" : "") +
         '" data-act="brush" data-id="' + r.id + '"><span class="dot"></span>' + esc(r.name) + "</button>";
     });
-    h += '<button style="--res-color:var(--accent)" class="' + (UI.brush === "till" ? "on" : "") + '" data-act="brush" data-id="till">~ Tilled</button>';
+    h += '<button style="--res-color:var(--accent)" class="' + (UI.brush === "till" ? "on" : "") + '" data-act="brush" data-id="till">~ Till</button>';
     h += '<button style="--res-color:var(--ink)" class="' + (UI.brush === "fence" ? "on" : "") + '" data-act="brush" data-id="fence">= Fence</button>';
     h += "</div>";
 
-    h += '<div class="sec-label">Farm &mdash; ' + esc(p.name) + "</div>";
-    h += '<div class="farm-wrap"><div class="farm-grid">';
+    h += '<div class="sheet"><div class="sheet-cols four">';
+
+    // ---- Column 1 ----
+    h += "<div>";
+    h += sbox("Tend", "1✎", "<p><b>✎ Tend actions, choose 1:</b></p><p>&bull; Plant a crop.<br>&bull; Tick up a crop and adjacent.<br>&bull; Till (~) 6 times.</p>");
+    h += sbox("Crops", "", "<p>Tick up during the growth phase.</p><p>" +
+      ic("crop_s") + " 2&times;2 &nbsp; " + ic("crop_m") + " 3&times;3 &nbsp; " + ic("crop_l") + " 4&times;4</p>");
+    var trellisBody = "<p>Required to plant a special crop.</p>";
+    for (var tr = 0; tr < 4; tr++) {
+      trellisBody += costRow("trellis-row", 'data-idx="' + tr + '"', f.trellisRows[tr],
+        ics(["wood", "wood", "coin"]) + '<span class="arr">▶</span>' + ic("trellis", true));
+    }
+    trellisBody += "<p style='margin-top:4px'>" + ic("trellis", true) + " built: <b>" + f.trellisRows.filter(Boolean).length + "</b></p>";
+    h += sbox("Trellis", "", trellisBody);
+    var animalDefs = [
+      ["coin,coin", "S"], ["coin,coin", "S"], ["coin,coin", "S"], ["coin,coin", "S"],
+      ["coin,coin,coin", "M"], ["coin,coin,coin", "M"], ["coin,coin,coin", "M"],
+      ["coin,coin,coin,coin,coin", "L"]
+    ];
+    var animalBody = "<p>Tick up during the growth phase.</p>";
+    animalDefs.forEach(function (ad, i) {
+      animalBody += costRow("animal-row", 'data-idx="' + i + '"', f.animalRows[i],
+        ics(ad[0].split(",")) + '<span class="arr">▶</span><span class="ic dashed">' + ad[1] + "</span>");
+    });
+    animalBody += "<p style='margin-top:4px'>" + ic("egg") + " S 2&times;2 &nbsp; " + ic("crop_m") + " M 3&times;3 &nbsp; " + ic("milk") + " L 4&times;4</p>";
+    h += sbox("Animals", "", animalBody);
+    h += sbox("Left Neighbor Rewards", "◀◀◀", "<p>Gain resources for every left neighbor bonus.</p>" + nbTrackHtml(NB_LEFT, f.nbL, "nbL"));
+    h += "</div>";
+
+    // ---- Column 2 ----
+    h += "<div>";
+    h += '<div class="sbox"><div class="bd" style="padding:6px"><div class="farm-grid">';
     for (var r = 1; r <= 12; r++) {
       for (var c = 1; c <= 11; c++) {
         var present = c >= FARM_ROWS[r - 1][0] && c <= FARM_ROWS[r - 1][1];
@@ -1104,53 +1349,83 @@
         var key = r + "," + c;
         var v = f.cells[key];
         var cls = "cell", style = "", glyph = "";
-        var label = "Row " + r + " column " + c;
         if (v) {
           if (v.t === "res") {
             var vr = resource(v.id);
             cls += " filled"; style = ' style="background:' + esc(vr ? vr.color : "#888") + '"';
-            label += ", " + (vr ? vr.name : "good");
-          } else if (v.t === "till") { cls += " till"; glyph = "~"; label += ", tilled"; }
-          else if (v.t === "fence") { cls += " fence"; glyph = v.o === "v" ? "‖" : "="; label += ", fence"; }
-        } else label += ", empty";
-        h += '<button class="' + cls + '"' + style + ' data-act="farm-cell" data-cell="' + key + '" aria-label="' + label + '">' + glyph + "</button>";
+          } else if (v.t === "till") { cls += " till"; glyph = "~"; }
+          else if (v.t === "fence") { cls += " fence"; glyph = v.o === "v" ? "‖" : "="; }
+        }
+        h += '<button class="' + cls + '"' + style + ' data-act="farm-cell" data-cell="' + key + '" aria-label="Farm ' + key + '">' + glyph + "</button>";
       }
     }
-    h += "</div></div>";
-    h += '<div class="cargo-note">Pre-printed fences and tilled squares come with the sheet. Crops need their full square footprint (small 2&times;2, medium 3&times;3, large 4&times;4) on tilled soil; trellis crops need a trellis.</div>';
+    h += "</div></div></div>";
+    h += sbox("Groundskeeping", "", "<p>Pay the cost to till or build fences.</p>" +
+      "<p>" + ic("coin") + " : <span class='ic dashed'>~</span>/<span class='ic dashed'>=</span> &nbsp;&nbsp; " + ic("copper") + " : <span class='ic dashed'>=</span>&times;4</p>" +
+      "<p>" + ic("ore") + "/" + ic("wood") + " : <span class='ic dashed'>=</span>&times;3 &nbsp;&nbsp; " + ic("exo") + "/" + ic("iron") + " : <span class='ic dashed'>=</span>&times;5</p>");
+    var eqBody = "";
+    [["tools", "Upgraded Tools", "+1 ✎ Tend Action"], ["hatchet", "Upgraded Hatchet", "+1 ⚒ Chop Action"], ["pickaxe", "Upgraded Pick Axe", "+1 ⛏ Mine Action"]].forEach(function (eq) {
+      eqBody += "<p style='margin-bottom:0'><b>" + eq[1] + "</b> &mdash; " + eq[2] + "</p>" +
+        costRow("upg-row", 'data-key="' + eq[0] + '"', u[eq[0]],
+          ics(["ore", "redbp", "coin", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["iron", "purplebp", "coin", "coin"]) + '<span class="arr">▶</span><b style="font-size:10px">+1</b>');
+    });
+    h += sbox("Equipment Upgrades", "", eqBody);
+    h += "</div>";
 
-    h += '<div class="track-label"><span class="tl">Chop level (the Woods)</span><span class="tv">Level ' + f.chopLvl + ": " + CHOP_TRACK[f.chopLvl - 1].n + "</span></div>";
-    h += trackHtml(CHOP_TRACK, f.chopLvl, "chop-lvl");
-    h += '<div class="track-label"><span class="tl">Mine level (the Mines)</span><span class="tv">Level ' + f.mineLvl + ": " + MINE_TRACK[f.mineLvl - 1].n + "</span></div>";
-    h += trackHtml(MINE_TRACK, f.mineLvl, "mine-lvl");
-    h += '<div class="cargo-note">Advance a level when you scratch it free on the Woods/Mines card. A chop or mine action yields the item at your current level.</div>';
+    // ---- Column 3 ----
+    h += "<div>";
+    h += sbox("Fish", "1⚓", "<p>Roll 2 dice. ✦ are wild.<br>Use ⚓ Fishing Action(s) to gain an item or fish.</p>");
+    var pond = fishLocation("basic");
+    var pondBody = '<table class="pond"><tr><th class="blank"></th>';
+    for (var pc = 1; pc <= 5; pc++) pondBody += "<th>" + pc + "</th>";
+    pondBody += "</tr>";
+    for (var prr = 1; prr <= 5; prr++) {
+      pondBody += "<tr><th>" + prr + "</th>";
+      for (var pcc = 1; pcc <= 5; pcc++) {
+        var pcaught = isCaught(p.id, "basic", prr, pcc);
+        pondBody += '<td><button class="' + (pcaught ? "caught" : "") + '" data-act="pond-cell" data-cell="' + prr + "," + pcc + '">' +
+          esc(pond.grid[prr - 1][pcc - 1]) + "</button></td>";
+      }
+      pondBody += "</tr>";
+    }
+    pondBody += "</table>";
+    h += sbox("Pond Fishing", "", pondBody);
+    var bridgeBody = "<p>Unlocks River Fishing.</p>";
+    [["wood", "coin", "ore"], ["wood", "coin", "copper"]].forEach(function (br, i) {
+      bridgeBody += costRow("bridge-row", 'data-idx="' + i + '"', f.bridgeRows[i], ics(br) + '<span class="arr">▶</span>');
+    });
+    if (f.bridgeRows[0] && f.bridgeRows[1]) bridgeBody += '<p><span class="snote">River Fishing unlocked</span></p>';
+    h += sbox("Broken Bridge", "", bridgeBody);
+    var fuBody = "<p style='margin-bottom:0'><b>Upgraded Rod</b> &mdash; modifies catch area.</p>" +
+      costRow("upg-row", 'data-key="rod"', u.rod, ics(["wood", "coin", "coin"]) + '<span class="arr">▶</span>' + catchMini(false)) +
+      "<p style='margin-bottom:0'><b>Upgraded Rod 2</b> &mdash; modifies catch area.</p>" +
+      costRow("upg-row", 'data-key="rod2"', u.rod2, ics(["exo", "coin", "coin"]) + '<span class="arr">▶</span>' + catchMini(true)) +
+      "<p style='margin-bottom:0'><b>Lures</b> &mdash; +1 ⚓ fishing action. <span class='snote'>choose 1 to unlock</span></p>" +
+      costRow("upg-row", 'data-key="lures"', u.lures, ics(["jar", "coin", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["bone", "coin", "coin"]) + '<span class="arr">▶</span>' + ic("lure"));
+    h += sbox("Fishing Upgrades", "", fuBody);
+    h += "</div>";
 
-    h += '<div class="sec-label">Energy bars <small>&mdash; +1 action, once per task; tap: locked &rarr; unlocked &rarr; used</small></div>';
-    h += '<div class="energy-row">';
+    // ---- Column 4 ----
+    h += "<div>";
+    h += sbox("Chop", "1⚒", "<p>Use ⚒ Chop Action(s) to reveal and gain resources in the woods. Level up if applicable.</p>" +
+      "<p style='margin-bottom:0'><b>▲ LVL</b> &mdash; now: " + CHOP_TRACK[f.chopLvl - 1].n + "</p>" + lvlTrackHtml(CHOP_TRACK, f.chopLvl, "chop-lvl", false));
+    h += sbox("Mine", "1⛏", "<p>Use ⛏ Mine Action(s) to reveal and gain resources in the mine. Level up if applicable.</p>" +
+      "<p style='margin-bottom:0'><b>▲ LVL</b> &mdash; now: " + MINE_TRACK[f.mineLvl - 1].n + "</p>" + lvlTrackHtml(MINE_TRACK, f.mineLvl, "mine-lvl", true));
+    var enBody = "<p>+1 ✎/⚓/⚒/⛏ action per use. 1 use per task.</p><div class='energy-circles'>";
     for (var eb = 0; eb < 3; eb++) {
       var st = f.energy[eb] || 0;
-      h += '<button class="' + (st === 1 ? "unlocked" : st === 2 ? "spent" : "") + '" data-act="energy" data-idx="' + eb + '">' +
-        (st === 0 ? "Locked" : st === 1 ? "Ready" : "Used") + "</button>";
+      enBody += '<span class="ecol"><button class="' + (st === 1 ? "unlocked" : st === 2 ? "spent" : "") +
+        '" data-act="energy" data-idx="' + eb + '">' + (st === 0 ? "🔒" : st === 1 ? "⚡" : "✕") + "</button>" +
+        '<span>' + ics(Array(eb + 1).fill("coin")) + "</span></span>";
     }
+    enBody += "</div><p>Circle once owned. Slash per use.</p>";
+    h += sbox("Energy Bars", "", enBody);
+    h += sbox("Right Neighbor Rewards", "▶▶▶", "<p>Gain resources for every right neighbor bonus.</p>" + nbTrackHtml(NB_RIGHT, f.nbR, "nbR"));
     h += "</div>";
 
-    h += '<div class="sec-label">Upgrades &amp; structures</div><div class="setup-card">';
-    FARM_UPGRADES.forEach(function (u) {
-      h += '<div class="toggle-row"><label>' + u.name + "<small>" + u.sub + "</small></label>" +
-        '<input type="checkbox"' + (f.upg[u.key] ? " checked" : "") + ' data-act="farm-upg" data-key="' + u.key + '" aria-label="' + u.name + '"></div>';
-    });
-    h += '<div class="counter-row"><span class="cl">Trellises built<small>2 wood + 1 coin each; needed for trellis crops</small></span>' +
-      '<button data-act="trellis" data-d="-1">&minus;</button><span class="cv">' + f.trellis + '</span><button data-act="trellis" data-d="1">+</button></div>';
-    h += "</div>";
+    h += "</div></div>"; // sheet-cols, sheet
 
-    h += '<div class="sec-label">Neighbor rewards tracks <small>&mdash; 1 mark per bonus on a gifted card</small></div><div class="setup-card">';
-    h += '<div class="counter-row"><span class="cl">Left neighbor<small>8 steps; +3&#10022; at the end</small></span>' +
-      '<button data-act="nb" data-side="nbL" data-d="-1">&minus;</button><span class="cv">' + f.nbL + '/8</span><button data-act="nb" data-side="nbL" data-d="1">+</button></div>';
-    h += '<div class="counter-row"><span class="cl">Right neighbor<small>8 steps; +3&#10022; at the end</small></span>' +
-      '<button data-act="nb" data-side="nbR" data-d="-1">&minus;</button><span class="cv">' + f.nbR + '/8</span><button data-act="nb" data-side="nbR" data-d="1">+</button></div>';
-    h += "</div>";
-
-    h += '<div class="cargo-note">The pond (basic fishing grid) lives on this sheet too &mdash; it&rsquo;s the Basic Fishing location in the Fish task flow.</div>';
+    h += '<div class="cargo-note">Faithful to the printed farm sheet &mdash; pond species and some reward icons are placeholders until the real cards are photographed. Scroll sideways on a phone, like panning the paper.</div>';
     h += '<div class="ledger-tools"><button class="btn-ghost" data-act="clear-farm">Reset farm sheet</button></div>';
 
     app.innerHTML = h;
@@ -1191,8 +1466,64 @@
         '<button class="cancel" data-act="stamp-off">Paint square-by-square instead</button></div>';
     }
 
-    h += '<div class="sec-label">Cargo manifest &mdash; ' + esc(p.name) + "</div>";
-    h += '<div class="manifest-wrap"><div class="manifest"><div class="cargo-grid">';
+    var proj = projectsOf(p.id);
+    var bs = badgesOf(p.id);
+    var sc = S.scores[p.id] || {};
+    function sv(k) { return sc[k] || 0; }
+
+    h += '<div class="sheet"><div class="sheet-cols two">';
+
+    // ---- Left half: PROJECTS ----
+    h += '<div><div class="sbox"><h3>Projects &mdash; The Tend Initiative<span class="hact">' + esc(p.name) + "</span></h3>" + '<div class="bd">';
+
+    // Special projects (single use)
+    var sprojects = [
+      { key: "intern", name: "Intern Program", sub: "Perform any 1 of the 4 main tasks.", cost: ["coin", "coin", "coin"], result: "✎⚓⚒⛏", coins: 3 },
+      { key: "seasoned", name: "Seasoned Explorer", sub: "Double the point value of one of your badges.", cost: ["exo", "bone", "jar"], result: "&times;2" },
+      { key: "buyback", name: "Buyback Program", sub: "Purchase any one wild good to be used on a badge.", cost: ["coin", "coin", "coin"], result: "✦", coins: 3 }
+    ];
+    sprojects.forEach(function (sp) {
+      h += "<p style='margin-bottom:0'><b>" + sp.name + "</b> <span style='font-size:9.5px;color:#555'>" + sp.sub + "</span></p>" +
+        costRow("sproject", 'data-key="' + sp.key + '"', proj[sp.key],
+          ics(sp.cost) + '<span class="arr">▶</span><span style="font-size:10px;font-weight:800">' + sp.result + "</span>");
+    });
+    BUY_PROJECTS.forEach(function (bp) {
+      var bicKey = { wood: "wood", copper: "copper", exowood: "exo", iron: "iron", redbp: "redbp", purplebp: "purplebp" }[bp.key];
+      h += costRow("buy-project", 'data-key="' + bp.key + '"', proj[bp.key],
+        '<b style="min-width:86px;font-size:10px;text-transform:uppercase">' + esc(bp.name) + "</b>" +
+        ics(Array(bp.cost).fill("coin")) + '<span class="arr">▶</span>' + ic(bicKey, true));
+    });
+    h += '<p><span class="snote">special projects above are single use.</span></p>';
+
+    // Badge projects, 3x3 like the sheet
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">';
+    BADGES.forEach(function (bg) {
+      var rowsState = bs[bg.key];
+      var fullRows = 0;
+      rowsState.forEach(function (row) { if (row.every(Boolean)) fullRows++; });
+      var earned = fullRows >= 2;
+      h += '<div class="badge-box' + (earned ? " earned" : "") + '">' +
+        '<div class="badge-head"><span class="bicon">' + bg.glyph + '</span><span class="bn">' + esc(bg.name) + '</span><span class="bvp">' + bg.vp + "✦</span></div>";
+      bg.rows.forEach(function (goods, ri) {
+        var rowFull = rowsState[ri].every(Boolean);
+        h += '<div class="badge-row' + (rowFull ? " full" : "") + '">';
+        goods.forEach(function (g, ci) {
+          h += '<button class="gcell' + (rowsState[ri][ci] ? " x" : "") + '" data-act="badge-cell" data-key="' + bg.key +
+            '" data-r="' + ri + '" data-c="' + ci + '">' + ic(g) + "</button>";
+        });
+        h += '<span class="medal">◉</span></div>';
+      });
+      h += "</div>";
+    });
+    h += "</div>";
+    h += '<p><span class="snote">medal delivery for every line completed, badge awarded for 2 lines completed.</span></p>';
+    h += "</div></div></div>";
+
+    // ---- Right half: CARGO MANIFEST ----
+    h += '<div><div class="sbox"><h3>Cargo Manifest</h3><div class="bd">';
+    h += "<p style='font-size:10px'>The company appreciates your ongoing participation.</p>";
+    h += '<div class="type-legend">' + ic("plant") + ic("ore") + ic("fish") + ic("copper") + ic("heart") + " :1</div>";
+    h += '<div class="manifest"><div class="cargo-grid">';
     for (var r = 0; r < 8; r++) {
       for (var c = 0; c < 12; c++) {
         var key = r + "," + c;
@@ -1205,7 +1536,6 @@
       }
     }
     h += "</div>";
-
     h += '<div class="row-rewards">';
     for (var rr = 0; rr < 8; rr++) {
       var full = true;
@@ -1214,19 +1544,51 @@
         '" title="Row ' + (rr + 1) + " reward: " + ROW_REWARDS[rr].n + ' action">' + ROW_REWARDS[rr].g + "</div>";
     }
     h += "</div></div>";
-
     h += '<div class="stall-inputs">';
     for (var st = 0; st < 3; st++) {
       h += '<input type="text" value="' + esc(cg.stalls[st] || "") + '" data-act="stall-label" data-idx="' + st +
         '" aria-label="Stall ' + (st + 1) + ' label">';
     }
+    h += "</div>";
+
+    // Scoring area, mirroring the sheet's OBJ / STALL / NEIGHBOR+BADGES strips
+    var objSum = sv("obj1") + sv("obj2") + sv("obj3");
+    var stallSum = sv("stall1") + sv("stall2") + sv("stall3");
+    var nbSum = sv("neighbor") + sv("badges");
+    function scoreInput(field, label) {
+      return '<span style="flex:1;min-width:0"><span class="slabel">' + label + '</span>' +
+        '<input type="number" inputmode="numeric" min="0" value="' + sv(field) + '" data-act="score" data-pid="' + p.id + '" data-field="' + field + '"></span>';
+    }
+    h += '<div style="margin-top:10px">';
+    h += '<div class="score-strip">' + scoreInput("obj1", "obj.1") + '<span class="op">+</span>' + scoreInput("obj2", "obj.2") + '<span class="op">+</span>' + scoreInput("obj3", "obj.3") + '<span class="op">=</span><span class="sum">' + objSum + "</span></div>";
+    h += '<div class="score-strip">' + scoreInput("stall1", "stall.1") + '<span class="op">+</span>' + scoreInput("stall2", "stall.2") + '<span class="op">+</span>' + scoreInput("stall3", "stall.3") + '<span class="op">=</span><span class="sum">' + stallSum + "</span></div>";
+    h += '<div class="score-strip">' + scoreInput("neighbor", "neighbor") + '<span class="op">+</span>' + scoreInput("badges", "badges") + '<span class="op">=</span><span class="sum">' + nbSum + "</span></div>";
+    var earnedVp = 0;
+    BADGES.forEach(function (bg) {
+      var fr = 0;
+      bs[bg.key].forEach(function (row) { if (row.every(Boolean)) fr++; });
+      if (fr >= 2) earnedVp += bg.vp;
+    });
+    h += "<p style='font-size:10px;margin:2px 0'>badges earned on this sheet: <b>" + earnedVp + "✦</b>" + (proj.seasoned ? " (Seasoned Explorer doubles one)" : "") + "</p>";
+    h += '<div class="score-strip"><span style="flex:1;text-align:right;font-size:10px">You are a star, ready to S.H.I.N.E.&trade;</span><span class="snote">TOTAL &gt;&gt;&gt;</span><span class="sum" style="font-size:16px">' + (objSum + stallSum + nbSum) + "</span></div>";
+    h += "</div>";
     h += "</div></div>";
 
-    h += '<div class="cargo-note">Filling a full row lights its reward &mdash; take that bonus task. ' +
-      "Goods must not touch another good of the same type on orthogonal sides. " +
-      "Stall labels are editable to match your sheet variant (e.g. &ldquo;⛏:2&rdquo;).</div>";
+    // Round tracker synced to the game
+    h += '<div class="sbox"><h3>Round Tracker</h3><div class="bd"><div class="rtrack">';
+    for (var rt = 1; rt <= 12; rt++) {
+      var tubeC = rt <= 5 ? "#8CC152" : rt <= 9 ? "#F0B429" : "#E8663C";
+      var cls2 = "tube" + (rt < S.round || S.over ? " past" : "") + (rt === S.round && !S.over ? " now" : "");
+      h += '<div class="' + cls2 + '" style="--tube-c:' + tubeC + '"><div class="fillp"></div><div class="num">' + (rt < 10 ? "0" : "") + rt + "</div></div>";
+    }
+    h += "</div></div></div>";
+    h += "</div>";
 
-    h += '<div class="ledger-tools"><button class="btn-ghost" data-act="clear-cargo">Clear sheet</button></div>';
+    h += "</div></div>"; // sheet-cols, sheet
+
+    h += '<div class="cargo-note">Faithful to the printed cargo sheet &mdash; badge goods icons are approximate pending a close-up photo. ' +
+      "Full manifest rows light their task reward. Same-type goods must not touch orthogonally. Stall labels are editable to match your sheet variant.</div>";
+    h += '<div class="ledger-tools"><button class="btn-ghost" data-act="clear-cargo">Clear manifest grid</button></div>';
 
     app.innerHTML = h;
   }
@@ -1826,6 +2188,75 @@
       } else if (cur) delete ff.cells[fk];
       save(); render();
     }
+    else if (act === "trellis-row") {
+      var ftr = farmOf(activePlayer().id);
+      var ti = parseInt(b.getAttribute("data-idx"), 10);
+      ftr.trellisRows[ti] = !ftr.trellisRows[ti];
+      save(); render();
+    }
+    else if (act === "animal-row") {
+      var fan = farmOf(activePlayer().id);
+      var ai = parseInt(b.getAttribute("data-idx"), 10);
+      fan.animalRows[ai] = !fan.animalRows[ai];
+      save(); render();
+    }
+    else if (act === "bridge-row") {
+      var fbr = farmOf(activePlayer().id);
+      var bi = parseInt(b.getAttribute("data-idx"), 10);
+      fbr.bridgeRows[bi] = !fbr.bridgeRows[bi];
+      var open = fbr.bridgeRows[0] && fbr.bridgeRows[1];
+      fbr.upg.bridge = open;
+      unlocks(activePlayer().id).river = open;
+      save(); render();
+    }
+    else if (act === "upg-row") {
+      var fur = farmOf(activePlayer().id);
+      var ukey = b.getAttribute("data-key");
+      fur.upg[ukey] = !fur.upg[ukey];
+      if (ukey === "rod") unlocks(activePlayer().id).rod = fur.upg.rod;
+      save(); render();
+    }
+    else if (act === "nb-step") {
+      var fnb = farmOf(activePlayer().id);
+      var nside = b.getAttribute("data-side");
+      var nval = parseInt(b.getAttribute("data-n"), 10);
+      fnb[nside] = (fnb[nside] === nval) ? nval - 1 : nval;
+      save(); render();
+    }
+    else if (act === "pond-cell") {
+      var pcell = b.getAttribute("data-cell").split(",");
+      var pset = caughtSet(activePlayer().id, "basic");
+      var pk = pcell[0] + "," + pcell[1];
+      var pix = pset.indexOf(pk);
+      if (pix >= 0) pset.splice(pix, 1); else pset.push(pk);
+      save(); render();
+    }
+    else if (act === "sproject") {
+      var spk = b.getAttribute("data-key");
+      var spp = activePlayer();
+      var sproj = projectsOf(spp.id);
+      if (sproj[spk]) { // undo: restore single use, refund coins if it cost coins
+        sproj[spk] = false;
+        if (spk === "intern" || spk === "buyback") addCoins(spp.id, 3);
+      } else {
+        if (spk === "intern" || spk === "buyback") {
+          if (coins(spp.id) < 3) return;
+          addCoins(spp.id, -3);
+          S.ledger.push({ id: uid(), playerId: spp.id, kind: "coin", delta: -3, progKey: spk,
+            label: spk === "intern" ? "Intern Program — take any 1 main task" : "Buyback Program — wild good for a badge" });
+        }
+        sproj[spk] = true;
+      }
+      save(); render();
+    }
+    else if (act === "badge-cell") {
+      var bkey = b.getAttribute("data-key");
+      var brr = parseInt(b.getAttribute("data-r"), 10);
+      var bcc = parseInt(b.getAttribute("data-c"), 10);
+      var bstate = badgesOf(activePlayer().id);
+      bstate[bkey][brr][bcc] = !bstate[bkey][brr][bcc];
+      save(); render();
+    }
     else if (act === "chop-lvl" || act === "mine-lvl") {
       var ff2 = farmOf(activePlayer().id);
       var lv = parseInt(b.getAttribute("data-lvl"), 10);
@@ -1944,6 +2375,7 @@
       delete S.cargo[id];
       delete S.projects[id];
       delete S.farm[id];
+      if (S.badgeState) delete S.badgeState[id];
       S.ledger = S.ledger.filter(function (e) { return e.playerId !== id; });
       if (S.activePlayer === id) S.activePlayer = S.players[0].id;
       save(); render();
@@ -1968,6 +2400,7 @@
       S.cargo = {};
       S.projects = {};
       S.farm = {};
+      S.badgeState = {};
       S.ledger = [];
       S.history = [];
       S.scores = {};
