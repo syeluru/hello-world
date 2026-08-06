@@ -448,8 +448,9 @@
   .badge-row .medal {
     margin-left: auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px dashed #B85C38;
     display: flex; align-items: center; justify-content: center; font-size: 9px; color: #B85C38;
-    opacity: 0.5; transition: all 0.3s ease;
+    opacity: 0.5; transition: all 0.3s ease; background: none; padding: 0;
   }
+  button.medal { cursor: pointer; }
   .badge-row.full .medal { opacity: 1; border-style: solid; background: #E8663C; color: #fff; box-shadow: 0 0 0 2px rgba(232,102,60,0.35); }
   .badge-row .gcell {
     width: 20px; height: 20px; border-radius: 4px; border: 0; padding: 0; position: relative;
@@ -780,7 +781,13 @@
     cargo: { label: "Cargo manifest", sub: "fill matching boxes" },
     gift:  { label: "Gift to neighbor", sub: "left or right track" }
   };
-  var DIE_FACES = [1, 2, 3, 4, 5, "W"]; // PLACEHOLDER die faces — confirm from the rolling dice
+  // Rolling dice (fishing/geode), confirmed: faces 1-5 plus a wild on both the
+  // black and white die; a wild is any number of the roller's choice (the app
+  // lights every matching square and you pick).
+  var DIE_FACES = [1, 2, 3, 4, 5, "W"];
+  // Farming dice growth (confirmed): 2x2 crops/animals tick 1 -> 2 (harvest) ->
+  // 3 -> 4 (harvest, then clear). 3x3 and 4x4 tick 1 -> 2 -> 3 (harvest).
+  var GROWTH_RULES = { small: "1 → 2✳ → 3 → 4✳ then clear", large: "1 → 2 → 3✳" };
 
   // ============================================================
   // PLACEHOLDER fishing data. The engine is real; the fish and
@@ -870,6 +877,7 @@
     c3: [[0, 0], [1, 0], [1, 1]],
     sq4: [[0, 0], [0, 1], [1, 0], [1, 1]],
     j4: [[0, 2], [1, 0], [1, 1], [1, 2]],
+    t4: [[0, 1], [1, 0], [1, 1], [1, 2]],
     u5: [[0, 0], [0, 2], [1, 0], [1, 1], [1, 2]]
   };
   // value: sell price (null = the placard shows a dash); shape: manifest shape
@@ -898,9 +906,9 @@
     "Wood": { type: "badge", value: 1, shape: null },
     "Exo Wood": { type: "badge", value: 2, shape: null },
     "Copper Badge": { type: "badge", value: 3, shape: "r2" },
-    "Silver Badge": { type: "badge", value: 4, shape: "r3", unv: true },
-    "Gold Badge": { type: "badge", value: 5, shape: "c3", unv: true },
-    "Platinum Badge": { type: "badge", value: 6, shape: "u5", unv: true },
+    "Silver Badge": { type: "badge", value: 3, shape: "r3" },
+    "Gold Badge": { type: "badge", value: 5, shape: "t4" },
+    "Platinum Badge": { type: "badge", value: 6, shape: "u5" },
     "Red Blueprint": { type: "social", value: 1, shape: "s1" },
     "Purple Blueprint": { type: "social", value: 2, shape: "r2" },
     "Heart": { type: "social", value: null, shape: "sq4" }
@@ -1116,7 +1124,7 @@
   var BADGES = [
     { key: "bwoods", name: "Basic Woods", vp: 5, rows: [["wood", "wood", "wood"], ["wood", "wood", "artifact"], ["wood", "wood", "artifact"]] },
     { key: "bmines", name: "Basic Mines", vp: 5, rows: [["stone", "stone", "stone"], ["stone", "copper", "copper"], ["stone", "copper", "copper"]] },
-    { key: "bfish", name: "Basic Fishing", vp: 5, rows: [["sp_mamble", "sp_mamble", "sp_sunpop"], ["sp_mamble", "sp_mamble", "sp_pebblepuff"], ["sp_geojell", "sp_geojell", "sp_crankle"]] },
+    { key: "bfish", name: "Basic Fishing", vp: 5, rows: [["sp_mamble", "sp_mamble", "sp_sunpop"], ["sp_mamble", "sp_mamble", "sp_pebblepuff"], ["sp_geojell", "sp_geojell", "sp_gribble"]] },
     { key: "awoods", name: "Adv. Woods", vp: 10, rows: [["exo", "exo", "exo"], ["exo", "exo", "bone"], ["exo", "exo", "treesap"]] },
     { key: "amines", name: "Adv. Mines", vp: 10, rows: [["iron", "iron", "iron"], ["iron", "iron", "ruby"], ["iron", "iron", "crystal"]] },
     { key: "afish", name: "Adv. Fishing", vp: 10, rows: [["sp_pebblepuff", "sp_pebblepuff", "sp_crankle"], ["sp_lillybloom", "sp_lillybloom", "sp_orbble"], ["sp_shimmerpuff", "sp_shimmerpuff", "sp_gribble"]] },
@@ -1124,8 +1132,9 @@
     { key: "animals", name: "Animals", vp: 15, rows: [["egg", "egg", "egg"], ["wool", "wool", "wool"], ["egg", "wool", "milk"]] },
     { key: "generalist", name: "Generalist", vp: 20, unv: true, rows: [["wool", "wildfruit", "berries"], ["artifact", "sp_crankle", "bone"], ["sp_geojell", "sp_plumfish", "sp_nessel"]] }
   ];
-  // Neighbor rewards tracks: 8 steps each per the farm sheet; the per-step
-  // reward icons aren't legible in the photos yet, so steps are numbered only.
+  // Neighbor rewards tracks, transcribed from the farm sheet close-ups
+  var NB_LEFT = ["wood", "purplebp", "exo", "artifact", "bone", "redbp", "heart", "treesap"];
+  var NB_RIGHT = ["stone", "redbp", "copper", "iron", "geode", "purplebp", "heart", "rainbow"];
   var NB_STEPS = 8;
 
   var FARM_UPGRADES = [
@@ -1382,10 +1391,11 @@
       inner + '<span class="ok">✔</span></button>';
   }
   function nbTrackHtml(val, side) {
+    var icons = side === "nbL" ? NB_LEFT : NB_RIGHT;
     var h = '<div class="nbtrack">';
     for (var i = 0; i < NB_STEPS; i++) {
       h += '<button class="' + (val >= i + 1 ? "got" : "") + '" data-act="nb-step" data-side="' + side + '" data-n="' + (i + 1) + '">' +
-        '<span class="ic dashed">?</span><span class="tn">0' + (i + 1) + "</span></button>";
+        ic(icons[i]) + '<span class="tn">0' + (i + 1) + "</span></button>";
     }
     return h + '<span style="font-size:10px;font-weight:800;white-space:nowrap">3✦</span></div>';
   }
@@ -1419,7 +1429,8 @@
     h += "<div>";
     h += sbox("Tend", "1✎", "<p><b>✎ Tend actions, choose 1:</b></p><p>&bull; Plant a crop.<br>&bull; Tick up a crop and adjacent.<br>&bull; Till (~) 6 times.</p>");
     h += sbox("Crops", "", "<p>Tick up during the growth phase.</p><p>" +
-      ic("crop_s") + " 2&times;2 &nbsp; " + ic("crop_m") + " 3&times;3 &nbsp; " + ic("crop_l") + " 4&times;4</p>");
+      ic("crop_s") + " 2&times;2 &nbsp; " + ic("crop_m") + " 3&times;3 &nbsp; " + ic("crop_l") + " 4&times;4</p>" +
+      "<p>2&times;2 die: " + GROWTH_RULES.small + "<br>3&times;3 / 4&times;4 die: " + GROWTH_RULES.large + "<br>✳ = harvest</p>");
     var trellisBody = "<p>Required to plant a special crop.</p>";
     for (var tr = 0; tr < 4; tr++) {
       trellisBody += costRow("trellis-row", 'data-idx="' + tr + '"', f.trellisRows[tr],
@@ -1430,7 +1441,7 @@
     var animalDefs = [
       ["coin,coin", "S"], ["coin,coin", "S"], ["coin,coin", "S"], ["coin,coin", "S"],
       ["coin,coin,coin", "M"], ["coin,coin,coin", "M"], ["coin,coin,coin", "M"],
-      ["coin,coin,coin,coin,coin", "L"]
+      ["coin,coin,coin,coin", "L"]
     ];
     var animalBody = "<p>Tick up during the growth phase.</p>";
     animalDefs.forEach(function (ad, i) {
@@ -1470,7 +1481,7 @@
     [["tools", "Upgraded Tools", "+1 ✎ Tend Action"], ["hatchet", "Upgraded Hatchet", "+1 ⚒ Chop Action"], ["pickaxe", "Upgraded Pick Axe", "+1 ⛏ Mine Action"]].forEach(function (eq) {
       eqBody += "<p style='margin-bottom:0'><b>" + eq[1] + "</b> &mdash; " + eq[2] + "</p>" +
         costRow("upg-row", 'data-key="' + eq[0] + '"', u[eq[0]],
-          ics(["stone", "redbp", "coin", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["iron", "purplebp", "coin", "coin"]) + '<span class="arr">▶</span><b style="font-size:10px">+1</b>');
+          ics(["copper", "redbp", "coin"]) + " <span style='font-size:9px'>or</span> " + ics(["iron", "purplebp", "coin"]) + '<span class="arr">▶</span><b style="font-size:10px">+1</b>');
     });
     h += sbox("Equipment Upgrades", "", eqBody);
     h += "</div>";
@@ -1522,7 +1533,7 @@
       var st = f.energy[eb] || 0;
       enBody += '<span class="ecol"><button class="' + (st === 1 ? "unlocked" : st === 2 ? "spent" : "") +
         '" data-act="energy" data-idx="' + eb + '">' + (st === 0 ? "🔒" : st === 1 ? "⚡" : "✕") + "</button>" +
-        '<span>' + ics(Array(eb + 1).fill("coin")) + "</span></span>";
+        '<span>' + ics(["coin", "coin", "coin"]) + "</span></span>";
     }
     enBody += "</div><p>Circle once owned. Slash per use.</p>";
     h += sbox("Energy Bars", "", enBody);
@@ -1577,6 +1588,17 @@
     var sc = S.scores[p.id] || {};
     function sv(k) { return sc[k] || 0; }
 
+    if (UI.medalPick) {
+      h += '<div class="flow-panel"><div class="q">Medal delivered — which tier does your sheet show for that row?</div>' +
+        '<div class="rule">The badge-good goes into your hand; sell or place it via the commissary.</div>' +
+        '<div class="use-grid">';
+      ["Copper Badge", "Silver Badge", "Gold Badge", "Platinum Badge"].forEach(function (mb) {
+        var mc = COMMISSARY[mb];
+        h += '<button data-act="medal-tier" data-name="' + mb + '">' + mb + "<small>sells " + mc.value + "c</small></button>";
+      });
+      h += '</div><button class="cancel" data-act="medal-cancel">Cancel</button></div>';
+    }
+
     h += '<div class="sheet"><div class="sheet-cols two">';
 
     // ---- Left half: PROJECTS ----
@@ -1617,7 +1639,9 @@
           h += '<button class="gcell' + (rowsState[ri][ci] ? " x" : "") + '" data-act="badge-cell" data-key="' + bg.key +
             '" data-r="' + ri + '" data-c="' + ci + '">' + ic(bg.rows[ri][ci]) + "</button>";
         }
-        h += '<span class="medal">◉</span></div>';
+        h += (rowFull
+          ? '<button class="medal" data-act="medal-gain" title="Medal delivered — tap to gain the badge-good">◉</button>'
+          : '<span class="medal">◉</span>') + "</div>";
       }
       h += "</div>";
     });
@@ -2185,9 +2209,8 @@
 
     h += '<div class="setup-card"><h2>Data status</h2>' +
       '<div class="hint"><b>Everything in this app comes from your photos and the official PDFs — nothing is invented.</b> ' +
-      "Confirmed: both sheet layouts and costs, the pond grid, chop/mine level tracks, commissary types/shapes and clearly legible prices, all resource and fish names, badge names and point values.</div>" +
-      '<div class="hint">Still pending (shown as ? or asked at the table until photographed): ' +
-      "River/Lake/Grotto fishing card grids &middot; which commissary price row each fish species is in &middot; the goods in each badge project row &middot; the neighbor track reward icons &middot; badge-good (Copper/Silver/Gold/Platinum) prices &middot; a glare-free shot of the placard&rsquo;s farm rows (Egg, Wool, Berries, Wild Fruit marked verify) &middot; Geode&rsquo;s commissary row &middot; the rolling dice faces.</div></div>";
+      "Confirmed: both sheet layouts and all costs, all four fishing grids and the Geode card, chop/mine level tracks, the full commissary (every price, shape, and fish species row), badge projects with goods rows and medal-good prices, neighbor track rewards, dice faces (1&ndash;5 + wild), and the crop/animal growth rules.</div>" +
+      '<div class="hint">Still pending: the Generalist badge&rsquo;s rows (marked *, two cells uncertain) and which medal tier each badge row delivers &mdash; when a row completes, tap the lit medal and pick the tier printed on your sheet.</div></div>';
 
     h += '<div class="setup-card"><h2>Fishing locations</h2>' +
       '<div class="hint">All four grids are in the app now, transcribed from the farm sheet and the three fishing cards: Pond (Mamble, Sunpop, Pebblepuff, and a wood log), River (Geojell, Pebblepuff, Crankle, a stump, an artifact), Lake (Nessel, Lillybloom, Orbble, bones), and Grotto (Plumfish, Shimmerpuff, Gribble, geodes). Cracking a geode rolls on the Geode card.</div></div>';
@@ -2432,6 +2455,15 @@
         }
         sproj[spk] = true;
       }
+      save(); render();
+    }
+    else if (act === "medal-gain") { UI.medalPick = true; render(); }
+    else if (act === "medal-cancel") { UI.medalPick = false; render(); }
+    else if (act === "medal-tier") {
+      var mbName = b.getAttribute("data-name");
+      var mbRes = findOrCreateResource(mbName, TYPE_COLORS.badge);
+      S.ledger.push({ id: uid(), playerId: activePlayer().id, kind: "gain", resId: mbRes.id, use: "hold" });
+      UI.medalPick = false;
       save(); render();
     }
     else if (act === "badge-cell") {
