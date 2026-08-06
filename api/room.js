@@ -47,12 +47,22 @@ module.exports = async (req, res) => {
         res.status(400).json({ error: "bad-request" });
         return;
       }
-      if (body.action !== "beat") {
+      if (body.action !== "beat" && body.action !== "start") {
         res.status(400).json({ error: "bad-action" });
         return;
       }
       const raw = await redis(["GET", key(code)]);
-      const room = raw ? JSON.parse(raw) : { code, host: pid, created: Date.now(), players: {} };
+      const room = raw ? JSON.parse(raw) : { code, host: pid, created: Date.now(), players: {}, started: null };
+      if (body.action === "start") {
+        if (room.host !== pid) {
+          res.status(403).json({ error: "host-only" });
+          return;
+        }
+        room.started = Date.now();
+        await redis(["SET", key(code), JSON.stringify(room), "EX", String(TTL_SECONDS)]);
+        res.json({ room });
+        return;
+      }
       const prev = room.players[pid] || { joined: Date.now() };
       const sum = body.summary || {};
       room.players[pid] = {

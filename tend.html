@@ -118,7 +118,16 @@
   }
   h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; }
 
-  .views { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .views { display: flex; flex-wrap: wrap; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  /* Table mode: bigger tap targets and type for phones at the table */
+  .table-mode .coin-card.big .n { font-size: 46px; }
+  .table-mode .coin-card.big .btns button { width: 58px; min-height: 54px; font-size: 24px; }
+  .table-mode .res-grid { grid-template-columns: repeat(3, 1fr); }
+  .table-mode .res-chip { min-height: 74px; padding-top: 12px; }
+  .table-mode .res-chip .nm { font-size: 14px; }
+  .table-mode .res-chip .dot { width: 15px; height: 15px; }
+  .table-mode .gained-chip { min-height: 54px; font-size: 15px; }
+  .table-mode .gained-chip small { font-size: 11px; }
   .views button {
     border: 0; background: transparent; border-radius: 8px; padding: 6px 10px;
     font-size: 13px; font-weight: 600; color: var(--muted);
@@ -169,6 +178,10 @@
   .room-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
   .room-chip.on { color: var(--ink); border-color: var(--accent); }
   .room-chip.on .dot { background: var(--gain); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gain) 25%, transparent); }
+  .room-start {
+    display: block; width: 100%; margin-top: 10px; border: 0; background: var(--accent);
+    color: var(--accent-ink); border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800;
+  }
 
   .phase-strip {
     font-size: 12px; color: var(--muted); margin-bottom: 12px;
@@ -804,6 +817,7 @@
     </div>
     <nav class="views" id="viewNav" aria-label="Views">
       <button data-view="play">Play</button>
+      <button data-view="table">Table</button>
       <button data-view="farm">Farm</button>
       <button data-view="cargo">Cargo</button>
       <button data-view="history">History</button>
@@ -1422,10 +1436,11 @@
       btns[i].setAttribute("aria-current", btns[i].getAttribute("data-view") === S.view ? "true" : "false");
     }
     var endbar = document.getElementById("endbar");
-    endbar.style.display = (S.view === "play" && !S.over) ? "" : "none";
+    endbar.style.display = ((S.view === "play" || S.view === "table") && !S.over) ? "" : "none";
     document.getElementById("endTurnBtn").textContent =
       S.round >= ROUNDS ? "End round 12 · finish game" : "End round " + S.round;
     if (S.view === "play") renderPlay();
+    else if (S.view === "table") renderTable();
     else if (S.view === "farm") renderFarm();
     else if (S.view === "cargo") renderCargo();
     else if (S.view === "history") renderHistory();
@@ -2228,10 +2243,37 @@
       var changed = JSON.stringify(j.room) !== JSON.stringify(RM.room) || RM.err;
       RM.room = j.room || null;
       RM.err = false;
+      // Host pressed Start: everyone's app begins a fresh game together
+      if (RM.room && RM.room.started && S.roomStarted !== RM.room.started) {
+        S.roomStarted = RM.room.started;
+        S.round = 1;
+        S.over = false;
+        S.coins = {};
+        S.unlocks = {};
+        S.caught = {};
+        S.cargo = {};
+        S.projects = {};
+        S.farm = {};
+        S.badgeState = {};
+        S.ledger = [];
+        S.history = [];
+        S.scores = {};
+        S.activePlayer = S.players[0].id;
+        UI.flow = null; UI.pending = null; UI.chooseUse = null; UI.stamp = null;
+        save();
+        changed = true;
+      }
       if (changed) maybeRender();
     }).catch(function () {
       if (!RM.err) { RM.err = true; maybeRender(); }
     });
+  }
+  function roomStart() {
+    fetch("/api/room", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "start", room: ROOM, pid: roomPid() })
+    }).then(function () { roomBeat(); }).catch(function () { });
   }
   // Re-render for room updates only when it won't interrupt what the player is doing
   function maybeRender() {
@@ -2260,6 +2302,14 @@
           '<small>R' + pl.sum.round + " · " + pl.sum.coins + "c · " + pl.sum.score + "vp</small></span>";
       });
       h += "</div>";
+      if (!RM.room.started) {
+        if (RM.room.host === me) {
+          h += '<button class="room-start" data-act="room-start">Start the game — everyone begins at round 1</button>';
+        } else {
+          var hostP = RM.room.players[RM.room.host];
+          h += '<div class="room-sub">Lobby — waiting for ★ ' + esc(hostP ? hostP.name : "the host") + " to start the game.</div>";
+        }
+      }
     }
     return h + "</div>";
   }
@@ -2287,6 +2337,64 @@
       h += "</tr>";
     }
     return h + "</table>";
+  }
+
+  // Table mode: the stripped-down resource tracker for playing in person —
+  // just your resources, coins, and the gain -> use flow, in big type.
+  function renderTable() {
+    var p = activePlayer();
+    var h = "";
+    if (S.players.length > 1) h += playerTabsHtml();
+    h += roomRosterHtml();
+
+    if (UI.flow) h += renderFlow(p);
+    else if (UI.pending) h += renderUsePanel();
+
+    h += '<div class="table-mode">';
+    h += '<div class="coin-card big"><div><div class="label">Coins</div></div>' +
+      '<div class="n">' + coins(p.id) + "</div>" +
+      '<div class="btns"><button class="minus" data-act="coins" data-delta="-1" aria-label="Spend one coin">&minus;</button>' +
+      '<button class="plus" data-act="coins" data-delta="1" aria-label="Gain one coin">+</button></div></div>';
+
+    var gains = S.ledger.filter(function (e) { return e.kind === "gain" && e.playerId === p.id; });
+    if (gains.length) {
+      var anyChoose = UI.chooseUse
+        ? "Pick which resource to " + USES[UI.chooseUse].label.toLowerCase()
+        : 'Gained this round <small>&mdash; lit = in hand, tap to use</small>';
+      h += '<div class="sec-label">' + anyChoose + '</div><div class="gained-row">';
+      gains.forEach(function (e) {
+        var r = resource(e.resId);
+        var nm = e.detail || (r ? r.name : "Resource");
+        var isHeld = e.use === "hold";
+        var sub;
+        if (isHeld) sub = "in hand";
+        else if (e.use === "sell") sub = "sold +" + e.coins + "c";
+        else if (e.use === "cargo") sub = "→ cargo";
+        else if (e.use === "gift") sub = "→ gift " + (e.side === "left" ? "L" : "R");
+        else if (e.use === "crack") sub = "cracked";
+        else sub = "→ sheet";
+        var cls = "gained-chip " + (isHeld ? "lit" : "used") + (isHeld && UI.chooseUse ? " target" : "");
+        h += '<button class="' + cls + '" style="--res-color:' + esc(r ? r.color : "#888") + '"' +
+          (isHeld ? ' data-act="gained-chip" data-id="' + e.id + '"' : " disabled") + ">" +
+          '<span class="dot"></span><span>' + esc(nm) + "<small>" + esc(sub) + "</small></span></button>";
+      });
+      h += "</div>";
+    } else {
+      h += '<div class="empty">Nothing gained yet this round.</div>';
+    }
+
+    h += '<div class="sec-label">Gained a resource? <small>&mdash; tap it</small></div>';
+    h += '<div class="res-grid">';
+    S.resources.forEach(function (r) {
+      h += '<button class="res-chip" style="--res-color:' + esc(r.color) + '" data-act="gain" data-id="' + r.id + '">' +
+        '<span class="dot"></span><span class="nm">' + esc(r.name) + "</span></button>";
+    });
+    h += "</div>";
+    h += '<div class="cargo-note">Table mode: a lean tracker for playing with the physical game in front of you. Round ' +
+      S.round + " of " + ROUNDS + " &middot; the full sheets live in the other tabs.</div>";
+    h += "</div>";
+
+    app.innerHTML = h;
   }
 
   function renderHistory() {
@@ -2636,6 +2744,7 @@
       }
       save(); render();
     }
+    else if (act === "room-start") { b.disabled = true; b.textContent = "Starting…"; roomStart(); }
     else if (act === "room-copy") {
       var link = location.origin + "/" + ROOM;
       if (navigator.clipboard && navigator.clipboard.writeText) {
