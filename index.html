@@ -788,24 +788,10 @@
   // cards are photographed. Swap each grid below with the card's
   // real 5x5 contents (row = black die, column = white die).
   // ============================================================
-  // The 12 real species from the resource listing. Tiers map to the commissary's
-  // four fish rows (tier = coins; shape by tier) — tier assignments are best-guess
-  // from the placard photo until confirmed.
-  var FISH_SPECIES = [
-    { n: "Mamble", t: 1 }, { n: "Geojell", t: 1 },
-    { n: "Sunpop", t: 2 }, { n: "Blobber", t: 2 }, { n: "Crankle", t: 2 }, { n: "Gribble", t: 2 },
-    { n: "Pebblepuff", t: 3 }, { n: "Nessel", t: 3 }, { n: "Lillybloom", t: 3 }, { n: "Orbble", t: 3 },
-    { n: "Plumfish", t: 4 }, { n: "Shimmerpuff", t: 4 }
-  ];
-  function makeGrid(offset) {
-    var g = [];
-    for (var r = 0; r < 5; r++) {
-      var row = [];
-      for (var c = 0; c < 5; c++) row.push(FISH_SPECIES[(r * 2 + c * 3 + offset) % FISH_SPECIES.length].n);
-      g.push(row);
-    }
-    return g;
-  }
+  // The 12 species named on the resource listing card. Which commissary price
+  // row each species belongs to is NOT yet confirmed, so no prices are assumed.
+  var FISH_SPECIES = ["Mamble", "Geojell", "Sunpop", "Blobber", "Crankle", "Gribble",
+    "Pebblepuff", "Nessel", "Lillybloom", "Orbble", "Plumfish", "Shimmerpuff"];
 
   // ---- Corporate Commissary (from the placard) ----
   // Good types and their manifest colors
@@ -820,59 +806,58 @@
     j4: [[0, 2], [1, 0], [1, 1], [1, 2]],
     u5: [[0, 0], [0, 2], [1, 0], [1, 1], [1, 2]]
   };
-  var FISH_TIER_SHAPES = ["s1", "r2", "r3", "sq4"];
-  // value: sell price (null = cannot be sold); shape: manifest shape (null = cannot be placed)
+  // value: sell price (null = the placard shows a dash); shape: manifest shape
+  // (null = dash). Entries read through glare/shadow carry unv (verify at the
+  // table). Goods whose placard row wasn't legible are simply absent — the app
+  // asks instead of guessing.
   var COMMISSARY = {
-    "Egg": { type: "farm", value: 1, shape: "s1" },
+    "Egg": { type: "farm", value: 1, shape: "s1", unv: true },
     "Pineapple": { type: "farm", value: 2, shape: "s1" },
-    "Wool": { type: "farm", value: 2, shape: "c3" },
-    "Berries": { type: "farm", value: 2, shape: "c3" },
-    "Wild Fruit": { type: "farm", value: 3, shape: "r3" },
+    "Wool": { type: "farm", value: 2, shape: "c3", unv: true },
+    "Berries": { type: "farm", value: 2, shape: "c3", unv: true },
+    "Wild Fruit": { type: "farm", value: 3, shape: "r3", unv: true },
     "Pumpkin": { type: "farm", value: 4, shape: "u5" },
     "Milk": { type: "farm", value: 4, shape: "u5" },
-    "Fish": { type: "fish", value: 2, shape: "r2" },
+    "Fish": { type: "fish" },
     "Stone": { type: "mining", value: 1, shape: "s1" },
     "Copper": { type: "mining", value: 1, shape: "s1" },
     "Iron": { type: "mining", value: 1, shape: "s1" },
     "Artifact": { type: "mining", value: 2, shape: "r2" },
     "Bone": { type: "mining", value: 2, shape: "r3" },
-    "Ruby": { type: "mining", value: 2, shape: "r3" },
+    "Ruby": { type: "mining", value: 2, shape: "r3", unv: true },
     "Crystal": { type: "mining", value: 3, shape: "j4" },
     "Rainbow Rock": { type: "mining", value: 4, shape: "sq4" },
     "Tree Sap": { type: "mining", value: 4, shape: "sq4" },
-    "Geode": { type: "mining", value: 2, shape: "r2" },
+    "Geode": { type: "mining" },
     "Wood": { type: "badge", value: 1, shape: null },
     "Exo Wood": { type: "badge", value: 2, shape: null },
-    "Copper Badge": { type: "badge", value: 3, shape: "r2" },
-    "Silver Badge": { type: "badge", value: 4, shape: "r3" },
-    "Gold Badge": { type: "badge", value: 5, shape: "j4" },
-    "Platinum Badge": { type: "badge", value: 6, shape: "u5" },
     "Red Blueprint": { type: "social", value: 1, shape: "s1" },
     "Purple Blueprint": { type: "social", value: 2, shape: "r2" },
     "Heart": { type: "social", value: null, shape: "sq4" }
   };
+  // The commissary's four fish rows (fully visible on the placard): which
+  // species sits in which row is unconfirmed, so the sell step offers the rows.
+  var FISH_ROWS = [
+    { value: 1, shape: "s1" }, { value: 2, shape: "r2" },
+    { value: 3, shape: "r3" }, { value: 4, shape: "sq4" }
+  ];
   // Commissary entry for a pending gain: fish species use their tier, others their resource name
   function commissaryInfo(resId, detail) {
     var r = resource(resId);
     if (!r) return {};
-    if (r.name === "Fish" && detail) {
-      for (var i = 0; i < FISH_SPECIES.length; i++) {
-        if (FISH_SPECIES[i].n === detail) {
-          return { type: "fish", value: FISH_SPECIES[i].t, shape: FISH_TIER_SHAPES[FISH_SPECIES[i].t - 1] };
-        }
-      }
-    }
     return COMMISSARY[r.name] || {};
   }
   function goodColor(res) {
     var comm = COMMISSARY[res.name];
     return comm && TYPE_COLORS[comm.type] ? TYPE_COLORS[comm.type] : res.color;
   }
+  // Only the pond's grid is known (it is printed on the farm sheet). The other
+  // locations' cards have not been photographed, so they carry no grid.
   var FISH_LOCATIONS = [
-    { key: "basic",  name: "Basic Fishing",  sub: "always available",           grid: makeGrid(0) },
-    { key: "river",  name: "River Fishing",  sub: "unlock: Broken Bridge",      grid: makeGrid(2) },
-    { key: "lake",   name: "Lake Fishing",   sub: "unlock: bottom of the Woods", grid: makeGrid(4) },
-    { key: "grotto", name: "Grotto Fishing", sub: "unlock: bottom of the Mines", grid: makeGrid(6) }
+    { key: "basic",  name: "Pond Fishing",   sub: "on your farm sheet" },
+    { key: "river",  name: "River Fishing",  sub: "unlock: Broken Bridge" },
+    { key: "lake",   name: "Lake Fishing",   sub: "unlock: bottom of the Woods" },
+    { key: "grotto", name: "Grotto Fishing", sub: "unlock: bottom of the Mines" }
   ];
   function fishLocation(key) {
     for (var i = 0; i < FISH_LOCATIONS.length; i++) if (FISH_LOCATIONS[i].key === key) return FISH_LOCATIONS[i];
@@ -1060,10 +1045,11 @@
     ["none", "yellowfish", "kelp", "kelp", "yellowfish"],
     ["yellowfish", "kelp", "none", "yellowfish", "none"]
   ];
+  // Species identified by matching the pond art to the resource listing's icons
   var POND_KINDS = {
-    kelp: { name: "Mamble", res: "Fish", tier: 1, chip: "fish" },
-    redfish: { name: "Pebblepuff", res: "Fish", tier: 3, chip: "fish" },
-    yellowfish: { name: "Blobber", res: "Fish", tier: 2, chip: "fish" },
+    kelp: { name: "Mamble", res: "Fish", chip: "fish" },
+    redfish: { name: "Pebblepuff", res: "Fish", chip: "fish" },
+    yellowfish: { name: "Blobber", res: "Fish", chip: "fish" },
     wood: { name: "Wood", res: "Wood", chip: "wood" }
   };
   function pondKind(r, c) { // 1-indexed
@@ -1072,20 +1058,23 @@
   }
 
   // Badge projects on the cargo sheet: vp + 3 rows of 3 goods (icons approximate)
+  // Badge names and point values are from the cargo sheet. The exact goods in
+  // each badge's three rows aren't legible in the photos yet, so rows render as
+  // blank cells to cross off — send a close-up and they'll show the real goods.
   var BADGES = [
-    { key: "bwoods", name: "Basic Woods", vp: 5, glyph: "🌲", rows: [["wood", "wood", "wood"], ["wood", "exo", "wood"], ["wood", "wood", "wood"]] },
-    { key: "bmines", name: "Basic Mines", vp: 5, glyph: "⛰", rows: [["stone", "stone", "copper"], ["stone", "stone", "copper"], ["stone", "stone", "copper"]] },
-    { key: "bfish", name: "Basic Fishing", vp: 5, glyph: "🐟", rows: [["fish", "fish", "fish"], ["fish", "fish", "fish"], ["fish", "fish", "fish"]] },
-    { key: "awoods", name: "Adv. Woods", vp: 10, glyph: "🌳", rows: [["exo", "exo", "exo"], ["exo", "exo", "bone"], ["exo", "exo", "treesap"]] },
-    { key: "amines", name: "Adv. Mines", vp: 10, glyph: "⛏", rows: [["iron", "iron", "iron"], ["iron", "iron", "geode"], ["iron", "iron", "geode"]] },
-    { key: "afish", name: "Adv. Fishing", vp: 10, glyph: "🎣", rows: [["fish", "fish", "fish"], ["fish", "fish", "fish"], ["fish", "fish", "fish"]] },
-    { key: "plants", name: "Plants", vp: 15, glyph: "🌿", rows: [["pineapple", "wildfruit", "pumpkin"], ["pineapple", "wildfruit", "berries"], ["pineapple", "wildfruit", "pumpkin"]] },
-    { key: "animals", name: "Animals", vp: 15, glyph: "🐾", rows: [["egg", "egg", "wool"], ["egg", "wool", "treesap"], ["egg", "wool", "milk"]] },
-    { key: "generalist", name: "Generalist", vp: 20, glyph: "❖", rows: [["wildfruit", "exo", "bone"], ["fish", "geode", "egg"], ["wood", "iron", "treesap"]] }
+    { key: "bwoods", name: "Basic Woods", vp: 5 },
+    { key: "bmines", name: "Basic Mines", vp: 5 },
+    { key: "bfish", name: "Basic Fishing", vp: 5 },
+    { key: "awoods", name: "Adv. Woods", vp: 10 },
+    { key: "amines", name: "Adv. Mines", vp: 10 },
+    { key: "afish", name: "Adv. Fishing", vp: 10 },
+    { key: "plants", name: "Plants", vp: 15 },
+    { key: "animals", name: "Animals", vp: 15 },
+    { key: "generalist", name: "Generalist", vp: 20 }
   ];
-  // Neighbor rewards tracks, 8 steps each (icons approximate)
-  var NB_LEFT = ["wood", "redbp", "exo", "wildfruit", "bone", "redbp", "heart", "treesap"];
-  var NB_RIGHT = ["stone", "redbp", "copper", "iron", "geode", "heart", "wildfruit", "treesap"];
+  // Neighbor rewards tracks: 8 steps each per the farm sheet; the per-step
+  // reward icons aren't legible in the photos yet, so steps are numbered only.
+  var NB_STEPS = 8;
 
   var FARM_UPGRADES = [
     { key: "tools", name: "Upgraded Tools", sub: "+1 tend action" },
@@ -1339,11 +1328,11 @@
     return '<button class="cost-row' + (done ? " done" : "") + '" data-act="' + act + '" ' + dataAttrs + ">" +
       inner + '<span class="ok">✔</span></button>';
   }
-  function nbTrackHtml(icons, val, side) {
+  function nbTrackHtml(val, side) {
     var h = '<div class="nbtrack">';
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < NB_STEPS; i++) {
       h += '<button class="' + (val >= i + 1 ? "got" : "") + '" data-act="nb-step" data-side="' + side + '" data-n="' + (i + 1) + '">' +
-        ic(icons[i]) + '<span class="tn">0' + (i + 1) + "</span></button>";
+        '<span class="ic dashed">?</span><span class="tn">0' + (i + 1) + "</span></button>";
     }
     return h + '<span style="font-size:10px;font-weight:800;white-space:nowrap">3✦</span></div>';
   }
@@ -1397,7 +1386,7 @@
     });
     animalBody += "<p style='margin-top:4px'>" + ic("egg") + " S 2&times;2 &nbsp; " + ic("crop_m") + " M 3&times;3 &nbsp; " + ic("milk") + " L 4&times;4</p>";
     h += sbox("Animals", "", animalBody);
-    h += sbox("Left Neighbor Rewards", "◀◀◀", "<p>Gain resources for every left neighbor bonus.</p>" + nbTrackHtml(NB_LEFT, f.nbL, "nbL"));
+    h += sbox("Left Neighbor Rewards", "◀◀◀", "<p>Gain resources for every left neighbor bonus.</p>" + nbTrackHtml(f.nbL, "nbL"));
     h += "</div>";
 
     // ---- Column 2 ----
@@ -1436,7 +1425,6 @@
     // ---- Column 3 ----
     h += "<div>";
     h += sbox("Fish", "1⚓", "<p>Roll 2 dice. ✦ are wild.<br>Use ⚓ Fishing Action(s) to gain an item or fish.</p>");
-    var pond = fishLocation("basic");
     var pondBody = '<table class="pond"><tr><th class="blank"></th>';
     for (var pc = 1; pc <= 5; pc++) pondBody += "<th>" + pc + "</th>";
     pondBody += "</tr>";
@@ -1485,7 +1473,7 @@
     }
     enBody += "</div><p>Circle once owned. Slash per use.</p>";
     h += sbox("Energy Bars", "", enBody);
-    h += sbox("Right Neighbor Rewards", "▶▶▶", "<p>Gain resources for every right neighbor bonus.</p>" + nbTrackHtml(NB_RIGHT, f.nbR, "nbR"));
+    h += sbox("Right Neighbor Rewards", "▶▶▶", "<p>Gain resources for every right neighbor bonus.</p>" + nbTrackHtml(f.nbR, "nbR"));
     h += "</div>";
 
     h += "</div></div>"; // sheet-cols, sheet
@@ -1568,16 +1556,16 @@
       rowsState.forEach(function (row) { if (row.every(Boolean)) fullRows++; });
       var earned = fullRows >= 2;
       h += '<div class="badge-box' + (earned ? " earned" : "") + '">' +
-        '<div class="badge-head"><span class="bicon">' + bg.glyph + '</span><span class="bn">' + esc(bg.name) + '</span><span class="bvp">' + bg.vp + "✦</span></div>";
-      bg.rows.forEach(function (goods, ri) {
+        '<div class="badge-head"><span class="bicon">✦</span><span class="bn">' + esc(bg.name) + '</span><span class="bvp">' + bg.vp + "✦</span></div>";
+      for (var ri = 0; ri < 3; ri++) {
         var rowFull = rowsState[ri].every(Boolean);
         h += '<div class="badge-row' + (rowFull ? " full" : "") + '">';
-        goods.forEach(function (g, ci) {
+        for (var ci = 0; ci < 3; ci++) {
           h += '<button class="gcell' + (rowsState[ri][ci] ? " x" : "") + '" data-act="badge-cell" data-key="' + bg.key +
-            '" data-r="' + ri + '" data-c="' + ci + '">' + ic(g) + "</button>";
-        });
+            '" data-r="' + ri + '" data-c="' + ci + '"><span class="ic dashed">?</span></button>';
+        }
         h += '<span class="medal">◉</span></div>';
-      });
+      }
       h += "</div>";
     });
     h += "</div>";
@@ -1868,11 +1856,21 @@
     var comm = commissaryInfo(UI.pending.resId, UI.pending.detail);
     var h = "";
     if (UI.pending.step === "sell") {
+      var isFish = pr && pr.name === "Fish";
+      var sellRule;
+      if (isFish) {
+        sellRule = "The commissary's fish rows pay 1–4 coins. Which row " + esc(prName) + " is in isn't confirmed — check the placard.";
+      } else if (comm.value) {
+        sellRule = "Commissary listed price: " + comm.value + " coin" + (comm.value === 1 ? "" : "s") +
+          (comm.unv ? " (read through glare — verify on the placard)" : ".");
+      } else {
+        sellRule = "Check its coin value on the Corporate Commissary board.";
+      }
       h += '<div class="flow-panel"><div class="q">' + esc(prName) + " sold — for how many coins?</div>" +
-        '<div class="rule">' + (comm.value ? "Commissary listed price: " + comm.value + " coin" + (comm.value === 1 ? "" : "s") + "." :
-          "Check its coin value on the Corporate Commissary board.") + "</div><div class=\"num-grid\">";
+        '<div class="rule">' + sellRule + '</div><div class="num-grid">';
       for (var c = 1; c <= 8; c++) {
-        h += '<button' + (comm.value === c ? ' class="listed"' : "") + ' data-act="sell-coins" data-n="' + c + '">' + c + "</button>";
+        var listed = !isFish && comm.value === c && !comm.unv;
+        h += '<button' + (listed ? ' class="listed"' : "") + ' data-act="sell-coins" data-n="' + c + '">' + c + "</button>";
       }
       h += '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
     } else if (UI.pending.step === "gift") {
@@ -1932,32 +1930,43 @@
       } else if (f.step === "pick") {
         var loc2 = fishLocation(f.loc);
         var u2 = unlocks(p.id);
-        var elig = f.anySquare ? null : eligibleCells(loc2, f.dice, !!u2.rod, p.id);
-        h += '<div class="flow-panel" style="--flow-color:' + color + '"><div class="q">' + esc(loc2.name) + " — " + dieFace(f.dice[0]) + " · " + dieFace(f.dice[1]) + "</div>" +
-          '<div class="rule">' + (f.anySquare ? "Manual override: pick any uncaught square." :
-            (u2.rod ? "Upgraded rod: matching squares plus adjacent ones are lit." : "Pick a lit square to catch.")) + "</div>" +
-          '<table class="fish-grid"><tr><th></th>';
-        for (var c = 1; c <= 5; c++) h += "<th>" + c + "</th>";
-        h += "</tr>";
-        var isPond = loc2.key === "basic";
-        for (var r = 1; r <= 5; r++) {
-          h += "<tr><th>" + r + "</th>";
-          for (var c2 = 1; c2 <= 5; c2++) {
-            var key = r + "," + c2;
-            var pk2 = isPond ? pondKind(r, c2) : null;
-            var caught = isCaught(p.id, loc2.key, r, c2);
-            var empty = isPond && !pk2;
-            var hit = !caught && !empty && (f.anySquare || (elig && elig[key]));
-            var label = isPond ? (pk2 ? pk2.name : "+") : loc2.grid[r - 1][c2 - 1];
-            var art2 = isPond && TA && TA.pond && TA.pond[key];
-            h += '<td><button class="cellb' + (hit ? " hit" : "") + (caught ? " caught" : "") + '"' +
-              (hit ? ' data-act="fish-pick" data-cell="' + key + '"' : " disabled") + ">" +
-              (art2 ? '<img src="' + art2 + '" alt="' + esc(label) + '" style="max-width:100%;max-height:100%">' : esc(label)) + "</button></td>";
-          }
+        if (loc2.key === "basic") {
+          var elig = f.anySquare ? null : eligibleCells(loc2, f.dice, !!u2.rod, p.id);
+          h += '<div class="flow-panel" style="--flow-color:' + color + '"><div class="q">' + esc(loc2.name) + " — " + dieFace(f.dice[0]) + " · " + dieFace(f.dice[1]) + "</div>" +
+            '<div class="rule">' + (f.anySquare ? "Manual override: pick any uncaught square." :
+              (u2.rod ? "Upgraded rod: matching squares plus adjacent ones are lit." : "Pick a lit square to catch.")) + "</div>" +
+            '<table class="fish-grid"><tr><th></th>';
+          for (var c = 1; c <= 5; c++) h += "<th>" + c + "</th>";
           h += "</tr>";
+          for (var r = 1; r <= 5; r++) {
+            h += "<tr><th>" + r + "</th>";
+            for (var c2 = 1; c2 <= 5; c2++) {
+              var key = r + "," + c2;
+              var pk2 = pondKind(r, c2);
+              var caught = isCaught(p.id, loc2.key, r, c2);
+              var hit = !caught && pk2 && (f.anySquare || (elig && elig[key]));
+              var label = pk2 ? pk2.name : "+";
+              var art2 = TA && TA.pond && TA.pond[key];
+              h += '<td><button class="cellb' + (hit ? " hit" : "") + (caught ? " caught" : "") + '"' +
+                (hit ? ' data-act="fish-pick" data-cell="' + key + '"' : " disabled") + ">" +
+                (art2 ? '<img src="' + art2 + '" alt="' + esc(label) + '" style="max-width:100%;max-height:100%">' : esc(label)) + "</button></td>";
+            }
+            h += "</tr>";
+          }
+          h += "</table>";
+          if (!f.anySquare) h += '<button class="override" data-act="fish-any">Pick any square (manual override)</button>';
+        } else {
+          // This location's card hasn't been photographed — no grid to light up.
+          // Compare the dice to your physical card and tap what you caught.
+          h += '<div class="flow-panel" style="--flow-color:' + color + '"><div class="q">' + esc(loc2.name) + " — " + dieFace(f.dice[0]) + " · " + dieFace(f.dice[1]) + "</div>" +
+            '<div class="rule">This card isn&rsquo;t in the app yet &mdash; compare the roll to your physical fishing card, then tap what you caught.</div>' +
+            '<div class="res-grid">';
+          FISH_SPECIES.forEach(function (sp) {
+            h += '<button class="res-chip" style="--res-color:var(--water)" data-act="fish-pick-name" data-name="' + esc(sp) + '">' +
+              '<span class="dot"></span><span class="nm">' + esc(sp) + "</span></button>";
+          });
+          h += '</div>';
         }
-        h += "</table>";
-        if (!f.anySquare) h += '<button class="override" data-act="fish-any">Pick any square (manual override)</button>';
         h += '<button class="cancel" data-act="fish-reroll">Re-roll</button>' +
           '<button class="cancel" data-act="cancel-flow">Cancel</button></div>';
       } else if (f.step === "caught") {
@@ -2104,8 +2113,14 @@
     });
     h += '<button class="setup-add" data-act="add-res">+ Add resource</button></div>';
 
-    h += '<div class="setup-card"><h2>Fishing grids</h2>' +
-      '<div class="hint">The fish species and grid layouts are placeholders until the real fishing cards are photographed &mdash; the flow (location &rarr; dice &rarr; pick &rarr; use) is the real mechanic.</div></div>';
+    h += '<div class="setup-card"><h2>Data status</h2>' +
+      '<div class="hint"><b>Everything in this app comes from your photos and the official PDFs — nothing is invented.</b> ' +
+      "Confirmed: both sheet layouts and costs, the pond grid, chop/mine level tracks, commissary types/shapes and clearly legible prices, all resource and fish names, badge names and point values.</div>" +
+      '<div class="hint">Still pending (shown as ? or asked at the table until photographed): ' +
+      "River/Lake/Grotto fishing card grids &middot; which commissary price row each fish species is in &middot; the goods in each badge project row &middot; the neighbor track reward icons &middot; badge-good (Copper/Silver/Gold/Platinum) prices &middot; a glare-free shot of the placard&rsquo;s farm rows (Egg, Wool, Berries, Wild Fruit marked verify) &middot; Geode&rsquo;s commissary row &middot; the rolling dice faces.</div></div>";
+
+    h += '<div class="setup-card"><h2>Fishing locations</h2>' +
+      '<div class="hint">Only the pond&rsquo;s grid is in the app (it&rsquo;s printed on the farm sheet). For River, Lake, and Grotto the app rolls the dice, then asks you to compare against your physical card and tap what you caught &mdash; photograph those cards and their grids will light up here too.</div></div>';
 
     h += '<div class="setup-card"><h2>Game</h2>' +
       '<div class="hint">Resets to round 1 and clears coins, unlocks, caught fish, the ledger, history, and scores. Players and resources are kept.</div>' +
@@ -2169,18 +2184,17 @@
     }
     else if (act === "fish-reroll") { UI.flow.step = "roll"; UI.flow.dice = null; UI.flow.anySquare = false; render(); }
     else if (act === "fish-any") { UI.flow.anySquare = true; render(); }
-    else if (act === "fish-pick") {
-      var cell = b.getAttribute("data-cell");
-      var loc = fishLocation(UI.flow.loc);
-      var pcs = cell.split(",");
-      var name, resName = "Fish";
-      if (loc.key === "basic") {
+    else if (act === "fish-pick" || act === "fish-pick-name") {
+      var name, resName = "Fish", cell = null;
+      if (act === "fish-pick") {
+        cell = b.getAttribute("data-cell");
+        var pcs = cell.split(",");
         var pkind = pondKind(+pcs[0], +pcs[1]);
         if (!pkind) return;
         name = pkind.name;
         resName = pkind.res;
       } else {
-        name = loc.grid[+pcs[0] - 1][+pcs[1] - 1];
+        name = b.getAttribute("data-name");
       }
       UI.flow.step = "caught";
       UI.flow.caughtName = name;
@@ -2190,8 +2204,8 @@
       setTimeout(function () {
         if (!UI.flow || UI.flow.step !== "caught") return;
         var cres = findOrCreateResource(UI.flow.caughtRes, null);
-        UI.pending = { resId: cres.id, step: "use", detail: UI.flow.caughtName === cres.name ? null : UI.flow.caughtName,
-          catchMeta: { loc: UI.flow.loc, cell: UI.flow.caughtCell } };
+        UI.pending = { resId: cres.id, step: "use", detail: UI.flow.caughtName === cres.name ? null : UI.flow.caughtName };
+        if (UI.flow.caughtCell) UI.pending.catchMeta = { loc: UI.flow.loc, cell: UI.flow.caughtCell };
         UI.flow = null;
         render();
       }, 1400);

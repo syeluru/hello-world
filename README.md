@@ -50,16 +50,20 @@ animated task cards (Fish, Chop, Mine, Tend) sit at the top of the screen —
 they tease on hover and play a little scene when tapped (the fish leaps, the
 axe swings, the pickaxe sparks, the watering can pours).
 
-Fishing is the fully-realized flow: tap Fish → choose a location (Basic, or
-River/Lake/Grotto once unlocked on the Setup tab) → the black and white dice
-roll with a tumble animation (✦ is wild) → matching squares on the 5×5 grid
-light up (an upgraded rod widens the catch area) → tap your catch, watch it
-leap, and the four use-it-immediately options light up. Caught squares stay
-crossed off per location, and undoing a catch un-crosses the square.
+Fishing is the fully-realized flow: tap Fish → choose a location (the Pond,
+or River/Lake/Grotto once unlocked) → the black and white dice roll with a
+tumble animation (✦ is wild) → on the Pond, matching squares light up on the
+real grid from the farm sheet (Mambles, Pebblepuffs, Blobbers, and the wood
+log; an upgraded rod widens the catch area) → tap your catch, watch it leap,
+and the use-it options light up. Caught squares stay crossed off, and undo
+un-crosses them.
 
-The fish species and grid layouts are **placeholders** until the real fishing
-cards are photographed — the engine (location → dice → pick → use) is real,
-and each grid is one small data block in `index.html` to swap.
+**Nothing in the app is invented.** Everything comes from the rulebook
+photos, the official sheet PDFs, the commissary placard, and the resource
+listing card. Data that hasn't been photographed yet (River/Lake/Grotto
+grids, badge project goods rows, neighbor track icons, per-species fish
+prices) renders as "?" or asks at the table instead of guessing — the Setup
+tab's Data status card lists exactly what's confirmed and what's pending.
 
 ## Built around Tend's rules
 
@@ -88,9 +92,10 @@ and each grid is one small data block in `index.html` to swap.
   the Seasoned Explorer doubling) — totaled live per player, leader
   highlighted.
 
-Default resources (Wood, Exo Wood, Copper, Iron, Fish, Plant, Milk, Geode) and
-tasks are all editable on the Setup tab — rename, recolor, add, or remove them
-to match the cards in play.
+Default resources use the names from the official resource listing (Wood, Exo
+Wood, Stone, Copper, Iron, Fish, Pineapple, Wild Fruit, Pumpkin, Berries,
+Egg, Wool, Milk, Geode, and the Blueprints) and are all editable on the Setup
+tab — rename, recolor, add, or remove them to match the cards in play.
 
 ## Hosting it for your game group
 
