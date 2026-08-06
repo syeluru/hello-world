@@ -4,10 +4,32 @@ A companion web app for **Tend** (IV Studio) that any player can use in the
 middle of a round to track the resources they've gained, how they used them,
 their coins, and the tasks they've taken.
 
-**Open `index.html` in any browser — phone or laptop — and play.** No build
-step, no server, no install. Game state is saved in the browser
-(localStorage), so a refresh or an accidentally closed tab doesn't lose the
+**Play solo:** open `tend.html` in any browser — no build step, no server.
+Game state is saved in the browser (localStorage), so a refresh doesn't lose
+the game.
+
+## Game rooms (Vercel)
+
+Deployed on Vercel, the landing page (`index.html`) lets anyone **create or
+join a game room** named with a silly two-word phrase (`pink-dinosaur`).
+Room URLs like `tend-companion-app.vercel.app/pink-dinosaur` are shareable —
+everyone who opens one joins the room and appears in a live roster (green dot
+when online, ★ on the room's creator) with their round, coins, and score.
+Each player's sheets stay on their own device; each room gets its own saved
 game.
+
+### Deploying
+
+1. On [vercel.com](https://vercel.com): **Add New → Project**, import this
+   GitHub repository, and name the project `tend-companion-app` (that yields
+   `tend-companion-app.vercel.app`). Set the **Production Branch** to this
+   branch (or merge it to the default branch first). No framework preset or
+   build command needed.
+2. In the project's **Storage** tab, add **Upstash for Redis** (free tier) —
+   it wires up the `UPSTASH_REDIS_REST_URL`/`TOKEN` env vars the room API
+   (`api/room.js`) uses. Redeploy once after connecting.
+3. Done — every push auto-deploys. Rooms expire 48 hours after their last
+   activity.
 
 ## Exact original artwork (optional, local-only)
 
@@ -99,8 +121,7 @@ tab — rename, recolor, add, or remove them to match the cards in play.
 
 ## Hosting it for your game group
 
-Any static host works. The quickest option is GitHub Pages: enable Pages on
-this repository (deploy from branch, root folder) and share the URL — everyone
-at the table opens it on their own phone. Everyone plays simultaneously in
-Tend, so each player runs their own copy (or shares one device using the
-player tabs).
+Vercel (above) is the primary path since it powers the game rooms. Any static
+host also works for solo play — e.g. GitHub Pages serving `tend.html`.
+Everyone plays simultaneously in Tend, so each player runs their own copy (or
+shares one device using the player tabs).

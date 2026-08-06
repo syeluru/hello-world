@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/:room([a-z]{2,14}-[a-z]{2,14})", "destination": "/tend.html" }
+  ]
+}
