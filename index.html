@@ -247,6 +247,15 @@
     100% { opacity: 1; transform: scale(1); box-shadow: none; }
   }
   .use-grid button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .use-grid .wide { grid-column: 1 / -1; border-style: dashed; animation-delay: 0.24s; }
+  .held-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .held-chip {
+    border: 1px dashed var(--res-color, var(--accent)); background: var(--surface); border-radius: 999px;
+    padding: 8px 14px; font-size: 13px; font-weight: 700; min-height: 40px;
+    display: inline-flex; align-items: center; gap: 8px;
+    animation: lightup 0.4s ease both;
+  }
+  .held-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--res-color, var(--accent)); }
   .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .num-grid button {
     border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
@@ -669,6 +678,21 @@
     if (e) removeEntry(e.id);
   }
 
+  // A held item is resolved in place: same ledger entry, its use filled in
+  function resolveHold(entryId, use, extra) {
+    for (var i = 0; i < S.ledger.length; i++) {
+      if (S.ledger[i].id === entryId) {
+        var e = S.ledger[i];
+        e.use = use;
+        if (use === "sell") { e.coins = extra || 0; addCoins(e.playerId, e.coins); }
+        if (use === "gift") { e.side = extra; }
+        break;
+      }
+    }
+    UI.pending = null;
+    save(); render();
+  }
+
   function entryText(e) {
     // Denormalized description used for both ledger display and history snapshots
     if (e.kind === "task") return { tag: "Task", cls: "act", txt: e.label };
@@ -681,6 +705,7 @@
     var r = resource(e.resId);
     var name = r ? r.name : "Resource";
     if (e.detail) name = e.detail + " (" + name + ")";
+    if (e.use === "hold") return { tag: "Held", cls: "gain", txt: name + " → in hand, not yet used" };
     if (e.use === "sell") return { tag: "+" + e.coins + " coins", cls: "coin", txt: name + " → sold to commissary" };
     if (e.use === "cargo") return { tag: "Cargo", cls: "gain", txt: name + " → cargo manifest" };
     if (e.use === "gift") return { tag: "Gift", cls: "gain", txt: name + " → gifted to " + (e.side || "a") + " neighbor" };
@@ -844,6 +869,17 @@
     if (UI.flow) h += renderFlow(p);
     else if (UI.pending) h += renderUsePanel();
 
+    var held = S.ledger.filter(function (e) { return e.kind === "gain" && e.use === "hold" && e.playerId === p.id; });
+    if (held.length) {
+      h += '<div class="sec-label">In hand this round <small>&mdash; tap one to use it</small></div><div class="held-row">';
+      held.forEach(function (e) {
+        var r = resource(e.resId);
+        h += '<button class="held-chip" style="--res-color:' + esc(r ? r.color : "#888") + '" data-act="resolve-hold" data-id="' + e.id + '">' +
+          '<span class="dot"></span>' + esc(e.detail || (r ? r.name : "Resource")) + "</button>";
+      });
+      h += "</div>";
+    }
+
     h += '<div class="sec-label">Take a task</div><div class="task-grid">';
     h += taskCardHtml("fish", "Fish", "roll the dice, pick your catch", "var(--water)");
     h += taskCardHtml("chop", "Chop", "scratch off a Woods square", "var(--chop)");
@@ -917,14 +953,16 @@
         '<button data-act="gift-side" data-side="right">Right neighbor</button>' +
         '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
     } else {
-      h += '<div class="flow-panel"><div class="q">' + esc(prName) + " gained — how are you using it?</div>" +
-        '<div class="rule">No storage in Tend: every resource must be used immediately.</div>' +
+      var resolving = !!UI.pending.entryId;
+      h += '<div class="flow-panel"><div class="q">' + esc(prName) + (resolving ? " — how are you using it?" : " gained — how are you using it?") + "</div>" +
+        '<div class="rule">The rulebook says resources are used immediately — but hold it if you want to decide in a moment.</div>' +
         '<div class="use-grid">' +
         '<button data-act="use" data-use="spend">' + USES.spend.label + "<small>" + USES.spend.sub + "</small></button>" +
         '<button data-act="use" data-use="sell">' + USES.sell.label + "<small>" + USES.sell.sub + "</small></button>" +
         '<button data-act="use" data-use="cargo">' + USES.cargo.label + "<small>" + USES.cargo.sub + "</small></button>" +
         '<button data-act="use" data-use="gift">' + USES.gift.label + "<small>" + USES.gift.sub + "</small></button>" +
-        '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
+        (resolving ? "" : '<button class="wide" data-act="use" data-use="hold">Hold onto it<small>keep it in hand, decide later this round</small></button>') +
+        '</div><button class="cancel" data-act="cancel-pending">' + (resolving ? "Keep holding" : "Cancel") + "</button></div>";
     }
     return h;
   }
@@ -990,7 +1028,7 @@
           '<path d="M68 40 l14 -9 v18 z" fill="var(--water)"/><circle cx="42" cy="37" r="2.4" fill="#fff"/></g>' +
           "</svg>" +
           '<div class="caughtname">' + esc(f.caughtName) + "!</div>" +
-          '<div class="sub">Now — no storage — use it immediately.</div></div></div>';
+          '<div class="sub">Use it now, or hold it in hand for this round.</div></div></div>';
       }
     }
 
@@ -1206,14 +1244,34 @@
     else if (act === "flow-nothing") { UI.flow = null; render(); }
     else if (act === "cancel-flow") { UI.flow = null; render(); }
     else if (act === "gain") { UI.flow = null; UI.pending = { resId: id, step: "use" }; render(); }
+    else if (act === "resolve-hold") {
+      for (var hi = 0; hi < S.ledger.length; hi++) {
+        if (S.ledger[hi].id === id) {
+          var he = S.ledger[hi];
+          UI.flow = null;
+          UI.pending = { entryId: he.id, resId: he.resId, detail: he.detail, step: "use" };
+          break;
+        }
+      }
+      render();
+    }
     else if (act === "use") {
       var use = b.getAttribute("data-use");
       if (use === "sell") { UI.pending.step = "sell"; render(); }
       else if (use === "gift") { UI.pending.step = "gift"; render(); }
+      else if (UI.pending.entryId) resolveHold(UI.pending.entryId, use);
       else gainResource(UI.pending.resId, use);
     }
-    else if (act === "sell-coins") gainResource(UI.pending.resId, "sell", parseInt(b.getAttribute("data-n"), 10));
-    else if (act === "gift-side") gainResource(UI.pending.resId, "gift", b.getAttribute("data-side"));
+    else if (act === "sell-coins") {
+      var nSell = parseInt(b.getAttribute("data-n"), 10);
+      if (UI.pending.entryId) resolveHold(UI.pending.entryId, "sell", nSell);
+      else gainResource(UI.pending.resId, "sell", nSell);
+    }
+    else if (act === "gift-side") {
+      var side = b.getAttribute("data-side");
+      if (UI.pending.entryId) resolveHold(UI.pending.entryId, "gift", side);
+      else gainResource(UI.pending.resId, "gift", side);
+    }
     else if (act === "cancel-pending") { UI.pending = null; render(); }
     else if (act === "coins") adjustCoins(parseInt(b.getAttribute("data-delta"), 10));
     else if (act === "program") {
