@@ -481,6 +481,7 @@
     opacity: 0.5; transition: all 0.3s ease; background: none; padding: 0;
   }
   button.medal { cursor: pointer; }
+  .badge-row.full .medal.known { background: #D9A23C; border-color: #8A6A1C; color: #fff; }
   .badge-row.full .medal { opacity: 1; border-style: solid; background: #E8663C; color: #fff; box-shadow: 0 0 0 2px rgba(232,102,60,0.35); }
   .badge-row .gcell {
     width: 20px; height: 20px; border-radius: 4px; border: 0; padding: 0; position: relative;
@@ -1178,7 +1179,8 @@
     { key: "afish", name: "Adv. Fishing", vp: 10, rows: [["sp_pebblepuff", "sp_pebblepuff", "sp_crankle"], ["sp_lillybloom", "sp_lillybloom", "sp_orbble"], ["sp_shimmerpuff", "sp_shimmerpuff", "sp_gribble"]] },
     { key: "plants", name: "Plants", vp: 15, rows: [["pineapple", "pineapple", "wildfruit"], ["berries", "berries", "berries"], ["berries", "wildfruit", "pumpkin"]] },
     { key: "animals", name: "Animals", vp: 15, rows: [["egg", "egg", "egg"], ["wool", "wool", "wool"], ["egg", "wool", "milk"]] },
-    { key: "generalist", name: "Generalist", vp: 20, unv: true, rows: [["wool", "wildfruit", "berries"], ["artifact", "sp_crankle", "bone"], ["sp_geojell", "sp_plumfish", "sp_nessel"]] }
+    { key: "generalist", name: "Generalist", vp: 20, medals: ["Gold Badge", "Gold Badge", "Gold Badge"],
+      rows: [["wool", "wildfruit", "berries"], ["artifact", "rainbow", "bone"], ["sp_geojell", "sp_plumfish", "sp_nessel"]] }
   ];
   // Neighbor rewards tracks, transcribed from the farm sheet close-ups
   var NB_LEFT = ["wood", "purplebp", "exo", "artifact", "bone", "redbp", "heart", "treesap"];
@@ -1720,8 +1722,10 @@
           h += '<button class="gcell' + (rowsState[ri][ci] ? " x" : "") + '" data-act="badge-cell" data-key="' + bg.key +
             '" data-r="' + ri + '" data-c="' + ci + '">' + ic(bg.rows[ri][ci]) + "</button>";
         }
+        var rowMedal = bg.medals && bg.medals[ri];
         h += (rowFull
-          ? '<button class="medal" data-act="medal-gain" title="Medal delivered — tap to gain the badge-good">◉</button>'
+          ? '<button class="medal' + (rowMedal ? " known" : "") + '" data-act="medal-gain" data-key="' + bg.key + '" data-row="' + ri +
+            '" title="' + (rowMedal ? rowMedal + " delivered — tap to gain it" : "Medal delivered — tap to gain the badge-good") + '">◉</button>'
           : '<span class="medal">◉</span>') + "</div>";
       }
       h += "</div>";
@@ -2291,7 +2295,8 @@
     h += '<div class="setup-card"><h2>Data status</h2>' +
       '<div class="hint"><b>Everything in this app comes from your photos and the official PDFs — nothing is invented.</b> ' +
       "Confirmed: both sheet layouts and all costs, all four fishing grids and the Geode card, chop/mine level tracks, the full commissary (every price, shape, and fish species row), badge projects with goods rows and medal-good prices, neighbor track rewards, dice faces (1&ndash;5 + wild), and the crop/animal growth rules.</div>" +
-      '<div class="hint">Still pending: the Generalist badge&rsquo;s rows (marked *, two cells uncertain) and which medal tier each badge row delivers &mdash; when a row completes, tap the lit medal and pick the tier printed on your sheet.</div></div>';
+      '<div class="hint">Every cell of game data is confirmed, including all Generalist rows (Wool/Wild Fruit/Berries, Artifact/Rainbow Rock/Bone, Geojell/Plumfish/Nessel &mdash; each delivering a Gold Badge). ' +
+      "The one remaining lookup: medal tiers for the other eight badges&rsquo; rows &mdash; when one completes, tap the lit medal and pick the tier printed on your sheet (Generalist delivers its Gold automatically).</div></div>";
 
     h += '<div class="setup-card"><h2>Fishing locations</h2>' +
       '<div class="hint">All four grids are in the app now, transcribed from the farm sheet and the three fishing cards: Pond (Mamble, Sunpop, Pebblepuff, and a wood log), River (Geojell, Pebblepuff, Crankle, a stump, an artifact), Lake (Nessel, Lillybloom, Orbble, bones), and Grotto (Plumfish, Shimmerpuff, Gribble, geodes). Cracking a geode rolls on the Geode card.</div></div>';
@@ -2577,7 +2582,16 @@
       }
       save(); render();
     }
-    else if (act === "medal-gain") { UI.medalPick = true; render(); }
+    else if (act === "medal-gain") {
+      var mgBadge = null;
+      BADGES.forEach(function (x) { if (x.key === b.getAttribute("data-key")) mgBadge = x; });
+      var mgTier = mgBadge && mgBadge.medals && mgBadge.medals[parseInt(b.getAttribute("data-row"), 10)];
+      if (mgTier) { // tier printed on the sheet is known — deliver it directly
+        var mgRes = findOrCreateResource(mgTier, TYPE_COLORS.badge);
+        S.ledger.push({ id: uid(), playerId: activePlayer().id, kind: "gain", resId: mgRes.id, use: "hold" });
+        save(); render();
+      } else { UI.medalPick = true; render(); }
+    }
     else if (act === "medal-cancel") { UI.medalPick = false; render(); }
     else if (act === "medal-tier") {
       var mbName = b.getAttribute("data-name");
