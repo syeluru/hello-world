@@ -342,6 +342,43 @@
   .catch-splash .caughtname { font-size: 17px; font-weight: 800; margin-top: 4px; animation: lightup 0.5s ease 0.45s both; }
   .catch-splash .sub { font-size: 12px; color: var(--muted); }
 
+  /* ---- Cargo manifest ---- */
+  .palette { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .palette button {
+    border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px;
+    padding: 6px 11px; font-size: 12px; font-weight: 700; min-height: 36px;
+    display: inline-flex; align-items: center; gap: 6px; color: var(--muted);
+  }
+  .palette button .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--res-color, var(--muted)); }
+  .palette button.on { border-color: var(--res-color, var(--ink)); color: var(--ink);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--res-color, var(--ink)) 20%, transparent); }
+  .manifest-wrap { background: var(--surface); border: 2px solid var(--ink); border-radius: 12px; padding: 8px; box-shadow: var(--shadow); overflow-x: auto; }
+  .manifest { display: flex; gap: 6px; align-items: stretch; }
+  .cargo-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; flex: 1; min-width: 300px; }
+  .cargo-grid .cell {
+    aspect-ratio: 1; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2);
+    padding: 0; min-width: 0; transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .cargo-grid .cell:active { transform: scale(0.9); }
+  .cargo-grid .cell.filled { border-color: transparent; }
+  .cargo-grid .cell.stall-b { border-left: 2px dashed var(--muted); border-radius: 0 3px 3px 0; }
+  .row-rewards { display: flex; flex-direction: column; gap: 2px; justify-content: space-between; }
+  .row-rewards .rr {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    width: 26px; border-radius: 6px; border: 1px dashed var(--line);
+    font-size: 11px; font-weight: 800; color: var(--muted);
+    filter: grayscale(1); opacity: 0.5; transition: filter 0.4s ease, opacity 0.4s ease;
+  }
+  .row-rewards .rr.done { filter: none; opacity: 1; border-style: solid;
+    color: var(--rr-color, var(--accent)); border-color: var(--rr-color, var(--accent));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rr-color, var(--accent)) 22%, transparent); }
+  .stall-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .stall-inputs input {
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px;
+    background: var(--surface-2); font-size: 12px; font-weight: 700; text-align: center;
+  }
+  .cargo-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
   /* ---- Coins ---- */
   .coin-card {
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
@@ -519,6 +556,7 @@
     </div>
     <nav class="views" id="viewNav" aria-label="Views">
       <button data-view="play">Play</button>
+      <button data-view="cargo">Cargo</button>
       <button data-view="history">History</button>
       <button data-view="score">Score</button>
       <button data-view="setup">Setup</button>
@@ -532,7 +570,7 @@
 (function () {
   "use strict";
 
-  var STORE_KEY = "tend-companion-v3";
+  var STORE_KEY = "tend-companion-v4";
   var ROUNDS = 12;
   var SWATCHES = ["#8A5A3B", "#4A6FA5", "#6E6A75", "#8E4A8B", "#5B8A3A", "#B0A38E", "#C05B4D", "#3E7C7B"];
   var USES = {
@@ -589,10 +627,14 @@
         { id: uid(), name: "Fish", color: "#4A6FA5" },
         { id: uid(), name: "Plant", color: "#5B8A3A" },
         { id: uid(), name: "Milk", color: "#B0A38E" },
-        { id: uid(), name: "Geode", color: "#8E4A8B" }
+        { id: uid(), name: "Geode", color: "#8E4A8B" },
+        { id: uid(), name: "Red Blueprint", color: "#D96A8A" },
+        { id: uid(), name: "Purple Blueprint", color: "#7B5EA7" }
       ],
       unlocks: {},    // playerId -> {river,lake,grotto,rod}
       caught: {},     // playerId -> locKey -> ["r,c", ...]
+      cargo: {},      // playerId -> {cells: {"r,c": resId}, stalls: [label x3]}
+      projects: {},   // playerId -> {projKey: true} single-use coin projects spent
       ledger: [],     // entries this round
       history: [],    // archived rounds, newest first
       scores: {}      // playerId -> field -> n
@@ -602,7 +644,7 @@
   var S = load();
   // Transient UI state (never persisted): active task flow, pending resource use,
   // and a use picked from the can-do board awaiting a target resource
-  var UI = { flow: null, pending: null, chooseUse: null };
+  var UI = { flow: null, pending: null, chooseUse: null, brush: null };
 
   function load() {
     try {
@@ -648,6 +690,21 @@
     return S.caught[pid][loc];
   }
   function isCaught(pid, loc, r, c) { return caughtSet(pid, loc).indexOf(r + "," + c) >= 0; }
+  function cargoOf(pid) {
+    if (!S.cargo[pid]) S.cargo[pid] = { cells: {}, stalls: ["Stall 1", "Stall 2", "Stall 3"] };
+    return S.cargo[pid];
+  }
+  function projectsOf(pid) { if (!S.projects[pid]) S.projects[pid] = {}; return S.projects[pid]; }
+
+  // Single-use coin-purchase projects from the cargo sheet's Projects panel
+  var BUY_PROJECTS = [
+    { key: "wood", name: "Wood", cost: 1 },
+    { key: "copper", name: "Copper", cost: 1 },
+    { key: "exowood", name: "Exo Wood", cost: 2 },
+    { key: "iron", name: "Iron", cost: 2 },
+    { key: "redbp", name: "Red Blueprint", cost: 3 },
+    { key: "purplebp", name: "Purple Blueprint", cost: 3 }
+  ];
 
   // ---- Mutations ----
 
@@ -664,6 +721,7 @@
     if (use === "gift") { e.side = extra; }
     S.ledger.push(e);
     UI.pending = null;
+    if (use === "cargo") { S.view = "cargo"; UI.brush = resId; } // jump to the sheet, brush loaded
     save(); render();
   }
 
@@ -688,6 +746,10 @@
       if (S.ledger[i].id === eid) {
         var e = S.ledger[i];
         if (e.kind === "gain" && e.use === "sell") addCoins(e.playerId, -e.coins);
+        if (e.kind === "gain" && e.bought) { // refund the purchase, restore the single-use project
+          addCoins(e.playerId, e.bought.cost);
+          delete projectsOf(e.playerId)[e.bought.key];
+        }
         if (e.kind === "coin") addCoins(e.playerId, -e.delta);
         if (e.loc && e.cell) { // un-catch the fishing square
           var set = caughtSet(e.playerId, e.loc);
@@ -714,6 +776,7 @@
         e.use = use;
         if (use === "sell") { e.coins = extra || 0; addCoins(e.playerId, e.coins); }
         if (use === "gift") { e.side = extra; }
+        if (use === "cargo") { S.view = "cargo"; UI.brush = e.resId; }
         break;
       }
     }
@@ -733,7 +796,11 @@
     var r = resource(e.resId);
     var name = r ? r.name : "Resource";
     if (e.detail) name = e.detail + " (" + name + ")";
-    if (e.use === "hold") return { tag: "Held", cls: "gain", txt: name + " → in hand, not yet used" };
+    if (e.use === "hold") {
+      return e.bought
+        ? { tag: "Held", cls: "gain", txt: name + " → bought (−" + e.bought.cost + "c), in hand" }
+        : { tag: "Held", cls: "gain", txt: name + " → in hand, not yet used" };
+    }
     if (e.use === "sell") return { tag: "+" + e.coins + " coins", cls: "coin", txt: name + " → sold to commissary" };
     if (e.use === "cargo") return { tag: "Cargo", cls: "gain", txt: name + " → cargo manifest" };
     if (e.use === "gift") return { tag: "Gift", cls: "gain", txt: name + " → gifted to " + (e.side || "a") + " neighbor" };
@@ -801,9 +868,80 @@
     document.getElementById("endTurnBtn").textContent =
       S.round >= ROUNDS ? "End round 12 · finish game" : "End round " + S.round;
     if (S.view === "play") renderPlay();
+    else if (S.view === "cargo") renderCargo();
     else if (S.view === "history") renderHistory();
     else if (S.view === "score") renderScore();
     else renderSetup();
+  }
+
+  // Row rewards down the right edge of the manifest: tend, fish, chop, mine, repeated
+  var ROW_REWARDS = [
+    { g: "T", c: "var(--accent)", n: "Tend" }, { g: "F", c: "var(--water)", n: "Fish" },
+    { g: "C", c: "var(--chop)", n: "Chop" }, { g: "M", c: "var(--mine)", n: "Mine" },
+    { g: "T", c: "var(--accent)", n: "Tend" }, { g: "F", c: "var(--water)", n: "Fish" },
+    { g: "C", c: "var(--chop)", n: "Chop" }, { g: "M", c: "var(--mine)", n: "Mine" }
+  ];
+
+  function renderCargo() {
+    var p = activePlayer();
+    var cg = cargoOf(p.id);
+    var h = "";
+
+    if (S.players.length > 1) {
+      h += '<div class="player-tabs" role="tablist">';
+      S.players.forEach(function (pl) {
+        h += '<button role="tab" aria-current="' + (pl.id === S.activePlayer ? "true" : "false") +
+          '" data-act="pick-player" data-id="' + pl.id + '">' + esc(pl.name) + "</button>";
+      });
+      h += "</div>";
+    }
+
+    h += '<div class="sec-label">Brush <small>&mdash; pick a good, then tap squares to fill; tap a filled square to erase</small></div>';
+    h += '<div class="palette">';
+    S.resources.forEach(function (r) {
+      h += '<button style="--res-color:' + esc(r.color) + '" class="' + (UI.brush === r.id ? "on" : "") +
+        '" data-act="brush" data-id="' + r.id + '"><span class="dot"></span>' + esc(r.name) + "</button>";
+    });
+    h += "</div>";
+
+    h += '<div class="sec-label">Cargo manifest &mdash; ' + esc(p.name) + "</div>";
+    h += '<div class="manifest-wrap"><div class="manifest"><div class="cargo-grid">';
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 12; c++) {
+        var key = r + "," + c;
+        var resId = cg.cells[key];
+        var res = resId ? resource(resId) : null;
+        var cls = "cell" + (res ? " filled" : "") + ((c === 4 || c === 8) ? " stall-b" : "");
+        h += '<button class="' + cls + '"' + (res ? ' style="background:' + esc(res.color) + '"' : "") +
+          ' data-act="cargo-cell" data-cell="' + key + '" aria-label="Row ' + (r + 1) + " column " + (c + 1) +
+          (res ? ", " + esc(res.name) : ", empty") + '"></button>';
+      }
+    }
+    h += "</div>";
+
+    h += '<div class="row-rewards">';
+    for (var rr = 0; rr < 8; rr++) {
+      var full = true;
+      for (var cc = 0; cc < 12; cc++) if (!cg.cells[rr + "," + cc]) { full = false; break; }
+      h += '<div class="rr' + (full ? " done" : "") + '" style="--rr-color:' + ROW_REWARDS[rr].c +
+        '" title="Row ' + (rr + 1) + " reward: " + ROW_REWARDS[rr].n + ' action">' + ROW_REWARDS[rr].g + "</div>";
+    }
+    h += "</div></div>";
+
+    h += '<div class="stall-inputs">';
+    for (var st = 0; st < 3; st++) {
+      h += '<input type="text" value="' + esc(cg.stalls[st] || "") + '" data-act="stall-label" data-idx="' + st +
+        '" aria-label="Stall ' + (st + 1) + ' label">';
+    }
+    h += "</div></div>";
+
+    h += '<div class="cargo-note">Filling a full row lights its reward &mdash; take that bonus task. ' +
+      "Goods must not touch another good of the same type on orthogonal sides. " +
+      "Stall labels are editable to match your sheet variant (e.g. &ldquo;⛏:2&rdquo;).</div>";
+
+    h += '<div class="ledger-tools"><button class="btn-ghost" data-act="clear-cargo">Clear sheet</button></div>';
+
+    app.innerHTML = h;
   }
 
   // Inline SVG scenes for the four task cards
@@ -940,6 +1078,21 @@
     h += cando("gift", "var(--accent)", "needs a resource in hand");
     h += '<button class="cando ' + (canP ? "lit" : "dim") + '" style="--cando-color:var(--coin)" data-act="program" data-kind="intern"' + (canP ? "" : " disabled") + ">Intern Program &minus;3<small>" + (canP ? "take any 1 main task" : "needs 3 coins") + "</small></button>";
     h += '<button class="cando ' + (canP ? "lit" : "dim") + '" style="--cando-color:var(--coin)" data-act="program" data-kind="buyback"' + (canP ? "" : " disabled") + ">Buyback Program &minus;3<small>" + (canP ? "cross out any 1 good" : "needs 3 coins") + "</small></button>";
+    h += "</div>";
+
+    // Single-use coin purchases from the Projects panel of the cargo sheet
+    var proj = projectsOf(p.id);
+    h += '<div class="sec-label">Buy goods <small>&mdash; single use each, from your projects panel</small></div><div class="cando-grid">';
+    BUY_PROJECTS.forEach(function (bp) {
+      var res = resourceByName(bp.name);
+      var used = !!proj[bp.key];
+      var afford = coins(p.id) >= bp.cost;
+      var lit = !used && afford;
+      var sub = used ? "used" : (afford ? "gain 1 " + bp.name : "needs " + bp.cost + " coin" + (bp.cost === 1 ? "" : "s"));
+      h += '<button class="cando ' + (lit ? "lit" : "dim") + '" style="--cando-color:' + esc(res ? res.color : "var(--coin)") + '"' +
+        (lit ? ' data-act="buy-project" data-key="' + bp.key + '"' : " disabled") + ">" +
+        esc(bp.name) + " &minus;" + bp.cost + "<small>" + esc(sub) + "</small></button>";
+    });
     h += "</div>";
 
     h += '<div class="sec-label">Take a task</div><div class="task-grid">';
@@ -1354,6 +1507,38 @@
       else gainResource(UI.pending.resId, "gift", side);
     }
     else if (act === "cancel-pending") { UI.pending = null; UI.chooseUse = null; render(); }
+    else if (act === "brush") { UI.brush = id; render(); }
+    else if (act === "cargo-cell") {
+      var cgP = activePlayer();
+      var cg2 = cargoOf(cgP.id);
+      var ck = b.getAttribute("data-cell");
+      if (cg2.cells[ck]) delete cg2.cells[ck];
+      else if (UI.brush && resource(UI.brush)) cg2.cells[ck] = UI.brush;
+      else if (S.resources[0]) { UI.brush = S.resources[0].id; cg2.cells[ck] = UI.brush; }
+      save(); render();
+    }
+    else if (act === "clear-cargo") {
+      if (!confirm("Clear " + activePlayer().name + "'s whole cargo manifest?")) return;
+      cargoOf(activePlayer().id).cells = {};
+      save(); render();
+    }
+    else if (act === "buy-project") {
+      var bpk = b.getAttribute("data-key");
+      var bp = null;
+      BUY_PROJECTS.forEach(function (x) { if (x.key === bpk) bp = x; });
+      var bpP = activePlayer();
+      if (!bp || projectsOf(bpP.id)[bp.key] || coins(bpP.id) < bp.cost) return;
+      addCoins(bpP.id, -bp.cost);
+      projectsOf(bpP.id)[bp.key] = true;
+      var bres = resourceByName(bp.name);
+      if (!bres) {
+        bres = { id: uid(), name: bp.name, color: SWATCHES[S.resources.length % SWATCHES.length] };
+        S.resources.push(bres);
+      }
+      S.ledger.push({ id: uid(), playerId: bpP.id, kind: "gain", resId: bres.id, use: "hold",
+        bought: { key: bp.key, cost: bp.cost } });
+      save(); render();
+    }
     else if (act === "coins") adjustCoins(parseInt(b.getAttribute("data-delta"), 10));
     else if (act === "program") {
       var p2 = activePlayer();
@@ -1381,6 +1566,8 @@
       delete S.scores[id];
       delete S.unlocks[id];
       delete S.caught[id];
+      delete S.cargo[id];
+      delete S.projects[id];
       S.ledger = S.ledger.filter(function (e) { return e.playerId !== id; });
       if (S.activePlayer === id) S.activePlayer = S.players[0].id;
       save(); render();
@@ -1402,6 +1589,8 @@
       S.coins = {};
       S.unlocks = {};
       S.caught = {};
+      S.cargo = {};
+      S.projects = {};
       S.ledger = [];
       S.history = [];
       S.scores = {};
@@ -1422,6 +1611,7 @@
     else if (act === "rename-res") { var r = resource(id); if (r) r.name = t.value.trim() || r.name; save(); render(); }
     else if (act === "recolor-res") { var r2 = resource(id); if (r2) r2.color = t.value; save(); render(); }
     else if (act === "toggle-unlock") { unlocks(activePlayer().id)[t.getAttribute("data-key")] = t.checked; save(); render(); }
+    else if (act === "stall-label") { cargoOf(activePlayer().id).stalls[parseInt(t.getAttribute("data-idx"), 10)] = t.value; save(); }
     else if (act === "score") {
       var pid = t.getAttribute("data-pid"), field = t.getAttribute("data-field");
       if (!S.scores[pid]) S.scores[pid] = {};
