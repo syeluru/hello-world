@@ -419,6 +419,36 @@
   .catch-mini { display: grid; grid-template-columns: repeat(3, 10px); gap: 1px; margin-left: auto; }
   .catch-mini span { width: 10px; height: 10px; border: 1px solid #15161A; background: #fff; }
   .catch-mini span.on { background: #15161A; }
+  .plant-add-row { display: flex; gap: 4px; flex-wrap: wrap; padding: 2px 0 6px; }
+  .plant-add-row button {
+    border: 1.5px dashed #15161A; background: #fff; border-radius: 7px; padding: 4px 7px;
+    font-size: 10px; font-weight: 700; color: #15161A; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .plant-add-row button:hover { background: rgba(0,0,0,0.05); }
+  .growth-row { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-top: 1px solid #E4E4DF; }
+  .growth-row .gname { font-size: 10.5px; font-weight: 700; min-width: 66px; }
+  .growth-row .gname small { display: block; font-weight: 600; color: #6B6F6D; font-size: 9px; }
+  .gdie { display: flex; gap: 3px; margin-left: auto; }
+  .gdie button {
+    width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid #B9BDB9; background: #fff;
+    font-size: 10px; font-weight: 800; color: #6B6F6D; padding: 0; position: relative;
+    font-variant-numeric: tabular-nums;
+  }
+  .gdie button.hface { border-style: double; }
+  .gdie button.now { background: #15161A; color: #fff; border-color: #15161A; }
+  .gdie button.now.hready { background: var(--gain); border-color: var(--gain);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gain) 35%, transparent); animation: pulse-t 1.3s ease-in-out infinite; }
+  .harvest-btn {
+    border: 1.5px solid #B9BDB9; background: #fff; border-radius: 7px; padding: 4px 8px;
+    font-size: 10px; font-weight: 800; color: #9CA19D;
+  }
+  .harvest-btn.ready { border-color: var(--gain); color: var(--gain);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--gain) 25%, transparent); }
+  .growth-row .rmp { border: 0; background: none; color: #C05B4D; font-size: 13px; padding: 2px 4px; }
+  .tickall {
+    display: block; width: 100%; border: 0; background: #15161A; color: #F7F7F2;
+    border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 800; margin-top: 6px;
+  }
   .energy-circles { display: flex; gap: 10px; justify-content: space-around; padding: 4px 0; }
   .energy-circles .ecol { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .energy-circles button {
@@ -788,6 +818,23 @@
   // Farming dice growth (confirmed): 2x2 crops/animals tick 1 -> 2 (harvest) ->
   // 3 -> 4 (harvest, then clear). 3x3 and 4x4 tick 1 -> 2 -> 3 (harvest).
   var GROWTH_RULES = { small: "1 → 2✳ → 3 → 4✳ then clear", large: "1 → 2 → 3✳" };
+  // Plantable crops and animals: die rule 'small' (2x2: harvest at 2 and 4,
+  // clear after harvesting at 4) or 'large' (3x3/4x4: harvest at 3)
+  var PLANTINGS = [
+    { key: "pineapple", name: "Pineapple", size: "2×2", rule: "small", product: "Pineapple", chip: "pineapple" },
+    { key: "berries", name: "Berries", size: "2×2 · trellis", rule: "small", product: "Berries", chip: "berries" },
+    { key: "wildfruit", name: "Wild Fruit", size: "3×3", rule: "large", product: "Wild Fruit", chip: "wildfruit" },
+    { key: "pumpkin", name: "Pumpkin", size: "4×4", rule: "large", product: "Pumpkin", chip: "pumpkin" },
+    { key: "animalS", name: "Animal S", size: "2×2", rule: "small", product: "Egg", chip: "egg" },
+    { key: "animalM", name: "Animal M", size: "3×3", rule: "large", product: "Wool", chip: "wool" },
+    { key: "animalL", name: "Animal L", size: "4×4", rule: "large", product: "Milk", chip: "milk" }
+  ];
+  function plantingDef(key) {
+    for (var i = 0; i < PLANTINGS.length; i++) if (PLANTINGS[i].key === key) return PLANTINGS[i];
+    return null;
+  }
+  function dieMax(rule) { return rule === "small" ? 4 : 3; }
+  function isHarvestFace(rule, n) { return rule === "small" ? (n === 2 || n === 4) : n === 3; }
 
   // ============================================================
   // PLACEHOLDER fishing data. The engine is real; the fish and
@@ -1041,6 +1088,7 @@
       S.farm[pid] = { cells: cells, chopLvl: 1, mineLvl: 1, energy: [0, 0, 0], upg: {}, trellis: 0, nbL: 0, nbR: 0 };
     }
     var f = S.farm[pid];
+    if (!f.plantings) f.plantings = [];
     if (!f.trellisRows) f.trellisRows = [false, false, false, false];
     if (!f.animalRows) f.animalRows = [false, false, false, false, false, false, false, false];
     if (!f.bridgeRows) f.bridgeRows = [false, false];
@@ -1474,6 +1522,39 @@
       }
     }
     h += "</div></div></div>";
+
+    // Live growth dice for planted crops and animals
+    var growthBody = '<div class="plant-add-row">';
+    PLANTINGS.forEach(function (pd) {
+      growthBody += '<button data-act="plant-add" data-key="' + pd.key + '">+ ' + ic(pd.chip) + " " + esc(pd.name) + "</button>";
+    });
+    growthBody += "</div>";
+    if (!f.plantings.length) {
+      growthBody += "<p style='color:#6B6F6D'>Nothing planted. Tap a chip above when you plant a crop or buy an animal.</p>";
+    }
+    f.plantings.forEach(function (pl) {
+      var pd = plantingDef(pl.key);
+      if (!pd) return;
+      var max = dieMax(pd.rule);
+      var ready = isHarvestFace(pd.rule, pl.die);
+      growthBody += '<div class="growth-row"><span class="gname">' + ic(pd.chip) + " " + esc(pd.name) +
+        "<small>" + pd.size + " &rarr; " + esc(pd.product) + "</small></span>";
+      growthBody += '<span class="gdie">';
+      for (var d = 1; d <= max; d++) {
+        var hf = isHarvestFace(pd.rule, d);
+        growthBody += '<button class="' + (hf ? "hface" : "") + (pl.die === d ? " now" : "") + (pl.die === d && ready ? " hready" : "") +
+          '" data-act="plant-die" data-id="' + pl.id + '" data-n="' + d + '" title="Set die to ' + d + '">' + d + (hf ? "✳" : "") + "</button>";
+      }
+      growthBody += "</span>";
+      growthBody += '<button class="harvest-btn' + (ready ? " ready" : "") + '"' + (ready ? ' data-act="plant-harvest" data-id="' + pl.id + '"' : " disabled") + ">Harvest</button>";
+      growthBody += '<button class="rmp" data-act="plant-remove" data-id="' + pl.id + '" aria-label="Remove">✕</button></div>';
+    });
+    if (f.plantings.length) {
+      growthBody += '<button class="tickall" data-act="growth-tick">Growth phase — tick everything up</button>';
+    }
+    growthBody += "<p style='margin-top:6px'>2&times;2 die: " + GROWTH_RULES.small + " &nbsp;&middot;&nbsp; 3&times;3 / 4&times;4: " + GROWTH_RULES.large + "</p>";
+    h += sbox("Growth", "phase 4", growthBody);
+
     h += sbox("Groundskeeping", "", "<p>Pay the cost to till or build fences.</p>" +
       "<p>" + ic("coin") + " : <span class='ic dashed'>~</span>/<span class='ic dashed'>=</span> &nbsp;&nbsp; " + ic("copper") + " : <span class='ic dashed'>=</span>&times;4</p>" +
       "<p>" + ic("stone") + "/" + ic("wood") + " : <span class='ic dashed'>=</span>&times;3 &nbsp;&nbsp; " + ic("exo") + "/" + ic("iron") + " : <span class='ic dashed'>=</span>&times;5</p>");
@@ -2454,6 +2535,45 @@
             label: spk === "intern" ? "Intern Program — take any 1 main task" : "Buyback Program — wild good for a badge" });
         }
         sproj[spk] = true;
+      }
+      save(); render();
+    }
+    else if (act === "plant-add") {
+      farmOf(activePlayer().id).plantings.push({ id: uid(), key: b.getAttribute("data-key"), die: 1 });
+      save(); render();
+    }
+    else if (act === "plant-die") {
+      var fpd = farmOf(activePlayer().id);
+      for (var pi = 0; pi < fpd.plantings.length; pi++) {
+        if (fpd.plantings[pi].id === b.getAttribute("data-id")) fpd.plantings[pi].die = parseInt(b.getAttribute("data-n"), 10);
+      }
+      save(); render();
+    }
+    else if (act === "plant-remove") {
+      var fpr = farmOf(activePlayer().id);
+      fpr.plantings = fpr.plantings.filter(function (x) { return x.id !== b.getAttribute("data-id"); });
+      save(); render();
+    }
+    else if (act === "growth-tick") {
+      farmOf(activePlayer().id).plantings.forEach(function (pl) {
+        var pd = plantingDef(pl.key);
+        if (pd) pl.die = Math.min(pl.die + 1, dieMax(pd.rule));
+      });
+      save(); render();
+    }
+    else if (act === "plant-harvest") {
+      var fph = farmOf(activePlayer().id);
+      var hid = b.getAttribute("data-id");
+      for (var hj = 0; hj < fph.plantings.length; hj++) {
+        if (fph.plantings[hj].id === hid) {
+          var hpl = fph.plantings[hj];
+          var hpd = plantingDef(hpl.key);
+          if (!hpd || !isHarvestFace(hpd.rule, hpl.die)) break;
+          var hres = findOrCreateResource(hpd.product, null);
+          S.ledger.push({ id: uid(), playerId: activePlayer().id, kind: "gain", resId: hres.id, use: "hold" });
+          if (hpd.rule === "small" && hpl.die === 4) fph.plantings.splice(hj, 1); // clears after the 4 harvest
+          break;
+        }
       }
       save(); render();
     }
