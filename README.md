@@ -9,6 +9,24 @@ step, no server, no install. Game state is saved in the browser
 (localStorage), so a refresh or an accidentally closed tab doesn't lose the
 game.
 
+## The digital table
+
+The Play tab is now built around **taking tasks**, not just counting. Four
+animated task cards (Fish, Chop, Mine, Tend) sit at the top of the screen —
+they tease on hover and play a little scene when tapped (the fish leaps, the
+axe swings, the pickaxe sparks, the watering can pours).
+
+Fishing is the fully-realized flow: tap Fish → choose a location (Basic, or
+River/Lake/Grotto once unlocked on the Setup tab) → the black and white dice
+roll with a tumble animation (✦ is wild) → matching squares on the 5×5 grid
+light up (an upgraded rod widens the catch area) → tap your catch, watch it
+leap, and the four use-it-immediately options light up. Caught squares stay
+crossed off per location, and undoing a catch un-crosses the square.
+
+The fish species and grid layouts are **placeholders** until the real fishing
+cards are photographed — the engine (location → dice → pick → use) is real,
+and each grid is one small data block in `index.html` to swap.
+
 ## Built around Tend's rules
 
 - **No storage — use it immediately.** When you gain a resource you tap it,

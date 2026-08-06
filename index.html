@@ -20,6 +20,10 @@
     --spend-soft: #F4E2DE;
     --coin: #A98014;
     --coin-soft: #F1E8CE;
+    --water: #4A6FA5;
+    --water-soft: #DFE7F2;
+    --chop: #A34A6B;
+    --mine: #8A6D1C;
     --shadow: 0 1px 3px rgba(30, 36, 34, 0.10);
   }
   @media (prefers-color-scheme: dark) {
@@ -38,6 +42,10 @@
       --spend-soft: #422520;
       --coin: #D8AF3C;
       --coin-soft: #3A311A;
+      --water: #7396C7;
+      --water-soft: #22334A;
+      --chop: #C97795;
+      --mine: #C2A244;
       --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     }
   }
@@ -56,6 +64,10 @@
     --spend-soft: #422520;
     --coin: #D8AF3C;
     --coin-soft: #3A311A;
+    --water: #7396C7;
+    --water-soft: #22334A;
+    --chop: #C97795;
+    --mine: #C2A244;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   }
   :root[data-theme="light"] {
@@ -73,6 +85,10 @@
     --spend-soft: #F4E2DE;
     --coin: #A98014;
     --coin-soft: #F1E8CE;
+    --water: #4A6FA5;
+    --water-soft: #DFE7F2;
+    --chop: #A34A6B;
+    --mine: #8A6D1C;
     --shadow: 0 1px 3px rgba(30, 36, 34, 0.10);
   }
 
@@ -132,6 +148,164 @@
   }
   .sec-label small { font-weight: 600; letter-spacing: 0.02em; text-transform: none; }
 
+  .phase-strip {
+    font-size: 12px; color: var(--muted); margin-bottom: 12px;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .phase-strip b { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  .season-note {
+    background: var(--coin-soft); color: var(--ink); border: 1px solid var(--coin);
+    border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600; margin-bottom: 12px;
+  }
+
+  /* ---- Task board ---- */
+  .task-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .task-card {
+    position: relative; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    border-top: 3px solid var(--task-color, var(--accent));
+    padding: 0 0 10px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .task-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(30,36,34,0.16); }
+  .task-card:active { transform: scale(0.97); }
+  .task-card svg { width: 100%; height: 84px; display: block; }
+  .task-card .tname { font-size: 14px; font-weight: 800; letter-spacing: 0.02em; }
+  .task-card .tsub { font-size: 11px; color: var(--muted); padding: 0 8px 2px; text-align: center; }
+
+  /* scene animations — hover teases, click plays */
+  .bobber { transition: transform 0.3s ease; }
+  .task-card:hover .bobber { animation: bob 1.1s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+  .waves { animation: drift 6s linear infinite; }
+  @keyframes drift { 0% { transform: translateX(0); } 100% { transform: translateX(-24px); } }
+  .fishy { opacity: 0; }
+  .task-card.playing .fishy { animation: leap 0.9s ease-out; }
+  @keyframes leap {
+    0% { opacity: 0; transform: translate(6px, 16px) rotate(20deg); }
+    35% { opacity: 1; transform: translate(-2px, -14px) rotate(-15deg); }
+    70% { opacity: 1; transform: translate(-12px, 2px) rotate(-50deg); }
+    100% { opacity: 0; transform: translate(-16px, 20px) rotate(-70deg); }
+  }
+  .axe { transform-origin: 78% 70%; transition: transform 0.2s ease; }
+  .task-card:hover .axe { transform: rotate(-14deg); }
+  .task-card.playing .axe { animation: chopswing 0.5s ease-in-out 2; }
+  @keyframes chopswing { 0%,100% { transform: rotate(-14deg);} 55% { transform: rotate(18deg);} }
+  .task-card.playing .chip { animation: chipfly 0.7s ease-out 0.15s both; }
+  @keyframes chipfly { 0% { opacity: 0; transform: translate(0,0);} 20% {opacity:1;} 100% { opacity: 0; transform: translate(-14px,-18px) rotate(80deg);} }
+  .pick { transform-origin: 70% 75%; transition: transform 0.2s ease; }
+  .task-card:hover .pick { transform: rotate(-12deg) translateY(-2px); }
+  .task-card.playing .pick { animation: strike 0.5s ease-in-out 2; }
+  @keyframes strike { 0%,100% { transform: rotate(-12deg);} 55% { transform: rotate(16deg) translateY(3px);} }
+  .task-card.playing .spark { animation: sparkle 0.6s ease-out 0.2s both; }
+  @keyframes sparkle { 0% { opacity: 0; transform: scale(0.4);} 35% { opacity: 1;} 100% { opacity: 0; transform: scale(1.6) translateY(-8px);} }
+  .can { transform-origin: 30% 60%; transition: transform 0.2s ease; }
+  .task-card:hover .can { transform: rotate(-16deg); }
+  .task-card.playing .can { animation: pour 1s ease-in-out; }
+  @keyframes pour { 0%,100% { transform: rotate(0);} 30%,70% { transform: rotate(-24deg);} }
+  .drop { opacity: 0; }
+  .task-card.playing .drop { animation: dripping 0.5s ease-in 0.25s 2; }
+  @keyframes dripping { 0% { opacity: 0; transform: translateY(0);} 30% { opacity: 1;} 100% { opacity: 0; transform: translateY(12px);} }
+  .sprout { transform-origin: 50% 100%; }
+  .task-card.playing .sprout { animation: grow 0.9s ease-out 0.4s both; }
+  @keyframes grow { 0% { transform: scale(1); } 60% { transform: scale(1.25); } 100% { transform: scale(1.15); } }
+
+  /* ---- Flow panel ---- */
+  .flow-panel {
+    background: var(--surface); border: 2px solid var(--flow-color, var(--accent)); border-radius: 14px;
+    padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .flow-panel .q { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+  .flow-panel .rule { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .flow-panel .cancel {
+    margin-top: 10px; width: 100%; border: 0; background: none; color: var(--muted);
+    font-size: 13px; font-weight: 600; padding: 8px;
+  }
+  .loc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .loc-grid button {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+    padding: 12px 10px; font-size: 14px; font-weight: 700; min-height: 56px; text-align: center;
+    position: relative;
+  }
+  .loc-grid button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .loc-grid button.locked { opacity: 0.45; }
+  .use-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .use-grid button {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+    padding: 12px 10px; font-size: 14px; font-weight: 700; min-height: 52px; text-align: center;
+    animation: lightup 0.45s ease both;
+  }
+  .use-grid button:nth-child(2) { animation-delay: 0.06s; }
+  .use-grid button:nth-child(3) { animation-delay: 0.12s; }
+  .use-grid button:nth-child(4) { animation-delay: 0.18s; }
+  @keyframes lightup {
+    0% { opacity: 0.3; transform: scale(0.96); box-shadow: none; }
+    60% { opacity: 1; transform: scale(1.03); box-shadow: 0 0 0 3px var(--gain-soft); }
+    100% { opacity: 1; transform: scale(1); box-shadow: none; }
+  }
+  .use-grid button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .num-grid button {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+    min-height: 48px; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums;
+    color: var(--coin);
+  }
+
+  /* ---- Dice ---- */
+  .dice-stage { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 10px 0 14px; }
+  .die {
+    width: 64px; height: 64px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.22);
+  }
+  .die.black { background: #23272B; color: #F2F3F4; border: 2px solid #101214; }
+  .die.white { background: #F7F7F2; color: #23272B; border: 2px solid #D8D8D0; }
+  .die.rolling { animation: tumble 0.82s ease-in-out; }
+  @keyframes tumble {
+    0% { transform: rotate(0) translateY(0); }
+    25% { transform: rotate(200deg) translateY(-16px) scale(1.06); }
+    50% { transform: rotate(390deg) translateY(2px); }
+    75% { transform: rotate(560deg) translateY(-8px); }
+    100% { transform: rotate(720deg) translateY(0); }
+  }
+  .roll-btn {
+    display: block; width: 100%; border: 0; background: var(--flow-color, var(--accent)); color: var(--accent-ink);
+    border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 800;
+  }
+  .dice-legend { text-align: center; font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* ---- Fishing grid ---- */
+  .fish-grid { border-collapse: collapse; margin: 0 auto; }
+  .fish-grid th { font-size: 11px; font-weight: 700; color: var(--muted); padding: 2px 4px; font-variant-numeric: tabular-nums; }
+  .fish-grid td { padding: 2px; }
+  .cellb {
+    width: 52px; height: 44px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--surface-2); font-size: 10px; font-weight: 700; line-height: 1.15;
+    padding: 2px; overflow: hidden; color: var(--muted);
+  }
+  .cellb.hit {
+    border-color: var(--water); color: var(--ink); background: var(--water-soft);
+    animation: lightup 0.4s ease both; cursor: pointer;
+  }
+  .cellb.caught { text-decoration: line-through; opacity: 0.4; cursor: default; }
+  .cellb:disabled { cursor: default; }
+  .override { margin-top: 8px; width: 100%; border: 0; background: none; color: var(--water); font-size: 12px; font-weight: 700; padding: 6px; }
+
+  /* ---- Catch splash ---- */
+  .catch-splash { text-align: center; padding: 18px 0 10px; }
+  .catch-splash svg { width: 120px; height: 80px; }
+  .catch-splash .fishy2 { animation: leap2 1s ease-out both; }
+  @keyframes leap2 {
+    0% { opacity: 0; transform: translate(30px, 40px) rotate(30deg); }
+    45% { opacity: 1; transform: translate(0px, -12px) rotate(-10deg); }
+    100% { opacity: 1; transform: translate(-4px, 6px) rotate(-4deg); }
+  }
+  .catch-splash .caughtname { font-size: 17px; font-weight: 800; margin-top: 4px; animation: lightup 0.5s ease 0.45s both; }
+  .catch-splash .sub { font-size: 12px; color: var(--muted); }
+
   /* ---- Coins ---- */
   .coin-card {
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
@@ -144,6 +318,7 @@
   .coin-card .n {
     font-size: 34px; font-weight: 800; letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums; color: var(--coin); margin-left: auto;
+    transition: transform 0.2s ease;
   }
   .coin-card .btns { display: flex; gap: 8px; }
   .coin-card .btns button {
@@ -153,49 +328,30 @@
   .coin-card .minus { color: var(--spend); }
   .coin-card .plus { color: var(--gain); }
 
+  .program-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .program-row button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 10px;
+    padding: 10px; font-size: 13px; font-weight: 700; min-height: 52px; color: var(--coin);
+  }
+  .program-row button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+  .program-row button:disabled { opacity: 0.45; cursor: default; }
+
   /* ---- Resource chips ---- */
-  .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  @media (max-width: 420px) { .res-grid { grid-template-columns: 1fr 1fr; } }
+  .res-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  @media (max-width: 420px) { .res-grid { grid-template-columns: repeat(3, 1fr); } }
   .res-chip {
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
     border-top: 3px solid var(--res-color, var(--accent));
-    padding: 10px 8px 12px; min-height: 60px; box-shadow: var(--shadow);
+    padding: 8px 6px 10px; min-height: 56px; box-shadow: var(--shadow);
     display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: transform 0.15s ease;
   }
-  .res-chip:active { transform: scale(0.97); }
-  .res-chip .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--res-color, var(--accent)); }
-  .res-chip .nm { font-size: 13px; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
+  .res-chip:hover { transform: translateY(-2px); }
+  .res-chip:active { transform: scale(0.96); }
+  .res-chip .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--res-color, var(--accent)); }
+  .res-chip .nm { font-size: 12px; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
 
-  /* ---- Pending use panel ---- */
-  .use-panel {
-    background: var(--surface); border: 2px solid var(--accent); border-radius: 14px;
-    padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
-  }
-  .use-panel .q { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
-  .use-panel .rule { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-  .use-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .use-grid button {
-    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
-    padding: 12px 10px; font-size: 14px; font-weight: 700; min-height: 52px; text-align: center;
-  }
-  .use-grid button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
-  .use-panel .cancel {
-    margin-top: 10px; width: 100%; border: 0; background: none; color: var(--muted);
-    font-size: 13px; font-weight: 600; padding: 8px;
-  }
-  .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .num-grid button {
-    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
-    min-height: 48px; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums;
-    color: var(--coin);
-  }
-
-  /* ---- Task chips ---- */
-  .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .quick-actions button {
-    border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
-    padding: 8px 14px; font-size: 13px; font-weight: 600; min-height: 40px;
-  }
+  /* ---- Action logger ---- */
   .action-row { display: flex; gap: 8px; }
   .action-row input {
     flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px;
@@ -247,26 +403,6 @@
     box-shadow: 0 4px 14px rgba(30, 36, 34, 0.25);
   }
   .endbar button:active { transform: scale(0.98); }
-
-  .phase-strip {
-    font-size: 12px; color: var(--muted); margin-bottom: 12px;
-    background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
-    padding: 8px 12px;
-  }
-  .phase-strip b { color: var(--accent); font-variant-numeric: tabular-nums; }
-
-  .program-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-  .program-row button {
-    border: 1px solid var(--line); background: var(--surface); border-radius: 10px;
-    padding: 10px; font-size: 13px; font-weight: 700; min-height: 52px; color: var(--coin);
-  }
-  .program-row button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
-  .program-row button:disabled { opacity: 0.45; cursor: default; }
-
-  .season-note {
-    background: var(--coin-soft); color: var(--ink); border: 1px solid var(--coin);
-    border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600; margin-bottom: 12px;
-  }
 
   /* ---- History ---- */
   .hist-turn {
@@ -323,6 +459,10 @@
     border: 1px dashed var(--line); background: none; border-radius: 8px;
     padding: 9px 12px; font-size: 13px; font-weight: 600; color: var(--accent); width: 100%;
   }
+  .toggle-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+  .toggle-row label { flex: 1; font-size: 14px; font-weight: 600; }
+  .toggle-row label small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .toggle-row input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); }
   .danger {
     border: 1px solid var(--spend); color: var(--spend); background: none;
     border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 700; width: 100%;
@@ -356,15 +496,43 @@
 (function () {
   "use strict";
 
-  var STORE_KEY = "tend-companion-v2";
+  var STORE_KEY = "tend-companion-v3";
   var ROUNDS = 12;
   var SWATCHES = ["#8A5A3B", "#4A6FA5", "#6E6A75", "#8E4A8B", "#5B8A3A", "#B0A38E", "#C05B4D", "#3E7C7B"];
   var USES = {
-    spend: { label: "Spent on sheet", sub: "badge, upgrade, soil, fence" },
-    sell:  { label: "Sold to commissary", sub: "gain its coin value" },
+    spend: { label: "Spend on sheet", sub: "badge, upgrade, soil, fence" },
+    sell:  { label: "Sell to commissary", sub: "gain its coin value" },
     cargo: { label: "Cargo manifest", sub: "fill matching boxes" },
-    gift:  { label: "Gifted to neighbor", sub: "left or right track" }
+    gift:  { label: "Gift to neighbor", sub: "left or right track" }
   };
+  var DIE_FACES = [1, 2, 3, 4, 5, "W"]; // PLACEHOLDER die faces — confirm from the rolling dice
+
+  // ============================================================
+  // PLACEHOLDER fishing data. The engine is real; the fish and
+  // their grid positions are invented until the actual fishing
+  // cards are photographed. Swap each grid below with the card's
+  // real 5x5 contents (row = black die, column = white die).
+  // ============================================================
+  var FISH_SPECIES = ["Shimmerpuff", "Glimmer Eel", "Mosskoi", "Pebble Bass", "Duskfin", "Bubble Ray", "Sunny Guppy", "Star Carp"];
+  function makeGrid(offset) {
+    var g = [];
+    for (var r = 0; r < 5; r++) {
+      var row = [];
+      for (var c = 0; c < 5; c++) row.push(FISH_SPECIES[(r * 2 + c * 3 + offset) % FISH_SPECIES.length]);
+      g.push(row);
+    }
+    return g;
+  }
+  var FISH_LOCATIONS = [
+    { key: "basic",  name: "Basic Fishing",  sub: "always available",           grid: makeGrid(0) },
+    { key: "river",  name: "River Fishing",  sub: "unlock: Broken Bridge",      grid: makeGrid(2) },
+    { key: "lake",   name: "Lake Fishing",   sub: "unlock: bottom of the Woods", grid: makeGrid(4) },
+    { key: "grotto", name: "Grotto Fishing", sub: "unlock: bottom of the Mines", grid: makeGrid(6) }
+  ];
+  function fishLocation(key) {
+    for (var i = 0; i < FISH_LOCATIONS.length; i++) if (FISH_LOCATIONS[i].key === key) return FISH_LOCATIONS[i];
+    return null;
+  }
 
   function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -376,7 +544,7 @@
       view: "play",
       activePlayer: pid,
       players: [{ id: pid, name: "Player 1" }],
-      coins: {},   // playerId -> n
+      coins: {},      // playerId -> n
       resources: [
         { id: uid(), name: "Wood", color: "#8A5A3B" },
         { id: uid(), name: "Exo Wood", color: "#A34A6B" },
@@ -387,15 +555,17 @@
         { id: uid(), name: "Milk", color: "#B0A38E" },
         { id: uid(), name: "Geode", color: "#8E4A8B" }
       ],
-      tasks: ["Tend", "Fish", "Mine", "Chop"],
-      ledger: [],  // entries this round
-      history: [], // archived rounds, newest first
-      scores: {}   // playerId -> {s1,s2,s3,cargo,badges,explorer,neighbor}
+      unlocks: {},    // playerId -> {river,lake,grotto,rod}
+      caught: {},     // playerId -> locKey -> ["r,c", ...]
+      ledger: [],     // entries this round
+      history: [],    // archived rounds, newest first
+      scores: {}      // playerId -> field -> n
     };
   }
 
   var S = load();
-  var UI = { pending: null }; // {resId, step:'use'|'sell'} — not persisted
+  // Transient UI state (never persisted): active task flow + pending resource use
+  var UI = { flow: null, pending: null };
 
   function load() {
     try {
@@ -425,17 +595,34 @@
     for (var i = 0; i < S.resources.length; i++) if (S.resources[i].id === id) return S.resources[i];
     return null;
   }
+  function resourceByName(name) {
+    for (var i = 0; i < S.resources.length; i++) if (S.resources[i].name.toLowerCase() === name.toLowerCase()) return S.resources[i];
+    return null;
+  }
   function activePlayer() { return player(S.activePlayer) || S.players[0]; }
   // Seasons per the round tracker: scoring at the start of rounds 6 and 10, and at game end
   function season(round) { return round <= 5 ? 1 : round <= 9 ? 2 : 3; }
   function coins(pid) { return S.coins[pid] || 0; }
   function addCoins(pid, d) { S.coins[pid] = Math.max(0, coins(pid) + d); }
+  function unlocks(pid) { if (!S.unlocks[pid]) S.unlocks[pid] = {}; return S.unlocks[pid]; }
+  function caughtSet(pid, loc) {
+    if (!S.caught[pid]) S.caught[pid] = {};
+    if (!S.caught[pid][loc]) S.caught[pid][loc] = [];
+    return S.caught[pid][loc];
+  }
+  function isCaught(pid, loc, r, c) { return caughtSet(pid, loc).indexOf(r + "," + c) >= 0; }
 
   // ---- Mutations ----
 
   function gainResource(resId, use, extra) {
     var p = activePlayer();
     var e = { id: uid(), playerId: p.id, kind: "gain", resId: resId, use: use };
+    if (UI.pending && UI.pending.detail) e.detail = UI.pending.detail;
+    if (UI.pending && UI.pending.catchMeta) {
+      e.loc = UI.pending.catchMeta.loc;
+      e.cell = UI.pending.catchMeta.cell;
+      caughtSet(p.id, e.loc).push(e.cell); // burn the square only once the use is committed
+    }
     if (use === "sell") { e.coins = extra || 0; addCoins(p.id, e.coins); }
     if (use === "gift") { e.side = extra; }
     S.ledger.push(e);
@@ -465,6 +652,11 @@
         var e = S.ledger[i];
         if (e.kind === "gain" && e.use === "sell") addCoins(e.playerId, -e.coins);
         if (e.kind === "coin") addCoins(e.playerId, -e.delta);
+        if (e.loc && e.cell) { // un-catch the fishing square
+          var set = caughtSet(e.playerId, e.loc);
+          var ix = set.indexOf(e.cell);
+          if (ix >= 0) set.splice(ix, 1);
+        }
         S.ledger.splice(i, 1);
         break;
       }
@@ -488,6 +680,7 @@
     }
     var r = resource(e.resId);
     var name = r ? r.name : "Resource";
+    if (e.detail) name = e.detail + " (" + name + ")";
     if (e.use === "sell") return { tag: "+" + e.coins + " coins", cls: "coin", txt: name + " → sold to commissary" };
     if (e.use === "cargo") return { tag: "Cargo", cls: "gain", txt: name + " → cargo manifest" };
     if (e.use === "gift") return { tag: "Gift", cls: "gain", txt: name + " → gifted to " + (e.side || "a") + " neighbor" };
@@ -501,11 +694,42 @@
     });
     S.history.unshift({ round: S.round, season: season(S.round), entries: entries });
     S.ledger = [];
+    UI.flow = null;
     UI.pending = null;
     if (S.round >= ROUNDS) { S.over = true; }
     else { S.round++; }
     save(); render();
     window.scrollTo(0, 0);
+  }
+
+  // ---- Fishing helpers ----
+
+  function rollDie() { return DIE_FACES[Math.floor(Math.random() * DIE_FACES.length)]; }
+  function faceMatches(face, index1based) { return face === "W" || face === index1based; }
+  function eligibleCells(loc, dice, rodUpgrade, pid) {
+    var out = {};
+    for (var r = 1; r <= 5; r++) {
+      for (var c = 1; c <= 5; c++) {
+        if (faceMatches(dice[0], r) && faceMatches(dice[1], c)) out[r + "," + c] = true;
+      }
+    }
+    if (rodUpgrade) {
+      // PLACEHOLDER: "Upgraded Rod modifies catch area" — modeled as +1 orthogonal reach
+      var extra = {};
+      Object.keys(out).forEach(function (k) {
+        var p = k.split(",");
+        var r0 = +p[0], c0 = +p[1];
+        [[r0 - 1, c0], [r0 + 1, c0], [r0, c0 - 1], [r0, c0 + 1]].forEach(function (n) {
+          if (n[0] >= 1 && n[0] <= 5 && n[1] >= 1 && n[1] <= 5) extra[n[0] + "," + n[1]] = true;
+        });
+      });
+      Object.keys(extra).forEach(function (k) { out[k] = true; });
+    }
+    Object.keys(out).forEach(function (k) {
+      var p = k.split(",");
+      if (isCaught(pid, loc.key, +p[0], +p[1])) delete out[k];
+    });
+    return out;
   }
 
   // ---- Rendering ----
@@ -526,6 +750,55 @@
     else if (S.view === "history") renderHistory();
     else if (S.view === "score") renderScore();
     else renderSetup();
+  }
+
+  // Inline SVG scenes for the four task cards
+  function taskArt(kind) {
+    if (kind === "fish") {
+      return '<svg viewBox="0 0 160 84" aria-hidden="true">' +
+        '<path class="waves" d="M-24 62 q12 -7 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 v30 h-216 z" fill="var(--water)" opacity="0.35"/>' +
+        '<path class="waves" style="animation-duration:8s" d="M-24 68 q12 -6 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 v20 h-216 z" fill="var(--water)" opacity="0.55"/>' +
+        '<path d="M36 58 Q60 12 106 20" stroke="var(--ink)" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+        '<line x1="106" y1="20" x2="106" y2="44" stroke="var(--ink)" stroke-width="1.6"/>' +
+        '<g class="bobber"><circle cx="106" cy="48" r="5.5" fill="var(--spend)"/><circle cx="106" cy="45.6" r="2.4" fill="#fff" opacity="0.85"/></g>' +
+        '<g class="fishy"><path d="M118 52 q8 -6 16 0 q-8 6 -16 0 z" fill="var(--water)"/><path d="M134 52 l6 -4 v8 z" fill="var(--water)"/><circle cx="122" cy="51" r="1.2" fill="#fff"/></g>' +
+        "</svg>";
+    }
+    if (kind === "chop") {
+      return '<svg viewBox="0 0 160 84" aria-hidden="true">' +
+        '<rect x="0" y="66" width="160" height="18" fill="var(--gain)" opacity="0.25"/>' +
+        '<rect x="46" y="38" width="10" height="30" rx="3" fill="#8A5A3B"/>' +
+        '<circle cx="51" cy="28" r="17" fill="var(--gain)" opacity="0.85"/>' +
+        '<circle cx="40" cy="36" r="11" fill="var(--gain)" opacity="0.7"/>' +
+        '<circle cx="63" cy="36" r="11" fill="var(--gain)" opacity="0.7"/>' +
+        '<g class="axe"><rect x="86" y="30" width="34" height="6" rx="3" transform="rotate(38 86 30)" fill="#8A5A3B"/>' +
+        '<path d="M108 48 q12 -8 16 2 q-6 8 -14 6 z" fill="var(--chop)"/></g>' +
+        '<rect class="chip" x="66" y="52" width="6" height="4" rx="1" fill="#8A5A3B"/>' +
+        '<rect class="chip" style="animation-delay:0.25s" x="72" y="48" width="5" height="4" rx="1" fill="#A3714C"/>' +
+        "</svg>";
+    }
+    if (kind === "mine") {
+      return '<svg viewBox="0 0 160 84" aria-hidden="true">' +
+        '<rect x="0" y="66" width="160" height="18" fill="var(--mine)" opacity="0.18"/>' +
+        '<path d="M28 66 l16 -26 l14 10 l10 -14 l20 30 z" fill="var(--muted)" opacity="0.75"/>' +
+        '<path d="M52 50 l6 -8 l8 6 l-5 8 z" fill="var(--surface-2)"/>' +
+        '<g class="pick"><rect x="92" y="26" width="30" height="6" rx="3" transform="rotate(42 92 26)" fill="#8A5A3B"/>' +
+        '<path d="M96 24 q20 -8 34 8 q-16 -4 -30 2 z" fill="var(--mine)"/></g>' +
+        '<circle class="spark" cx="70" cy="44" r="3" fill="var(--coin)"/>' +
+        '<circle class="spark" style="animation-delay:0.32s" cx="80" cy="38" r="2.2" fill="var(--coin)"/>' +
+        "</svg>";
+    }
+    return '<svg viewBox="0 0 160 84" aria-hidden="true">' +
+      '<rect x="0" y="66" width="160" height="18" fill="var(--gain)" opacity="0.25"/>' +
+      '<g class="sprout"><path d="M80 66 v-16" stroke="var(--gain)" stroke-width="3" stroke-linecap="round"/>' +
+      '<path d="M80 54 q-10 -2 -12 -12 q12 0 12 12 z" fill="var(--gain)"/>' +
+      '<path d="M80 58 q10 -2 12 -12 q-12 0 -12 12 z" fill="var(--gain)" opacity="0.8"/></g>' +
+      '<g class="can"><path d="M104 34 h20 v14 q0 4 -4 4 h-12 q-4 0 -4 -4 z" fill="var(--accent)"/>' +
+      '<path d="M104 38 l-12 -6 l1.6 -3 l12 6 z" fill="var(--accent)"/>' +
+      '<path d="M108 30 q6 -8 12 0" stroke="var(--accent)" stroke-width="3" fill="none"/></g>' +
+      '<circle class="drop" cx="92" cy="36" r="2" fill="var(--water)"/>' +
+      '<circle class="drop" style="animation-delay:0.4s" cx="88" cy="40" r="1.6" fill="var(--water)"/>' +
+      "</svg>";
   }
 
   function renderPlay() {
@@ -567,6 +840,17 @@
       h += "</div>";
     }
 
+    // Active flow panel (task wizard), or the pending resource-use panel
+    if (UI.flow) h += renderFlow(p);
+    else if (UI.pending) h += renderUsePanel();
+
+    h += '<div class="sec-label">Take a task</div><div class="task-grid">';
+    h += taskCardHtml("fish", "Fish", "roll the dice, pick your catch", "var(--water)");
+    h += taskCardHtml("chop", "Chop", "scratch off a Woods square", "var(--chop)");
+    h += taskCardHtml("mine", "Mine", "scratch off a Mines square", "var(--mine)");
+    h += taskCardHtml("tend", "Tend", "farm actions: plant, water, animals", "var(--accent)");
+    h += "</div>";
+
     h += '<div class="sec-label">Coins</div>';
     h += '<div class="coin-card"><div><div class="label">Coins on hand</div>' +
       '<div class="sub">From commissary sales; spend on sheet costs</div></div>' +
@@ -579,35 +863,7 @@
       '<button data-act="program" data-kind="intern"' + canProgram + ">Intern Program &minus;3<small>take any 1 main task</small></button>" +
       '<button data-act="program" data-kind="buyback"' + canProgram + ">Buyback Program &minus;3<small>cross out any 1 good</small></button></div>";
 
-    h += '<div class="sec-label">Gained a resource? <small>&mdash; tap it, then say how you used it</small></div>';
-
-    if (UI.pending) {
-      var pr = resource(UI.pending.resId);
-      var prName = pr ? pr.name : "Resource";
-      if (UI.pending.step === "sell") {
-        h += '<div class="use-panel"><div class="q">' + esc(prName) + " sold — for how many coins?</div>" +
-          '<div class="rule">Check its coin value on the Corporate Commissary board.</div><div class="num-grid">';
-        for (var c = 1; c <= 8; c++) h += '<button data-act="sell-coins" data-n="' + c + '">' + c + "</button>";
-        h += '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
-      } else if (UI.pending.step === "gift") {
-        h += '<div class="use-panel"><div class="q">' + esc(prName) + " gifted — to which neighbor?</div>" +
-          '<div class="rule">Mark the bonus on that side’s neighbor rewards track.</div>' +
-          '<div class="use-grid">' +
-          '<button data-act="gift-side" data-side="left">Left neighbor</button>' +
-          '<button data-act="gift-side" data-side="right">Right neighbor</button>' +
-          '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
-      } else {
-        h += '<div class="use-panel"><div class="q">' + esc(prName) + " gained — how are you using it?</div>" +
-          '<div class="rule">No storage in Tend: every resource must be used immediately.</div>' +
-          '<div class="use-grid">' +
-          '<button data-act="use" data-use="spend">' + USES.spend.label + "<small>" + USES.spend.sub + "</small></button>" +
-          '<button data-act="use" data-use="sell">' + USES.sell.label + "<small>" + USES.sell.sub + "</small></button>" +
-          '<button data-act="use" data-use="cargo">' + USES.cargo.label + "<small>" + USES.cargo.sub + "</small></button>" +
-          '<button data-act="use" data-use="gift">' + USES.gift.label + "<small>" + USES.gift.sub + "</small></button>" +
-          '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
-      }
-    }
-
+    h += '<div class="sec-label">Gained something else? <small>&mdash; neighbor rewards, geodes, trades</small></div>';
     h += '<div class="res-grid">';
     S.resources.forEach(function (r) {
       h += '<button class="res-chip" style="--res-color:' + esc(r.color) + '" data-act="gain" data-id="' + r.id + '">' +
@@ -615,16 +871,9 @@
     });
     h += "</div>";
 
-    h += '<div class="sec-label">Log a task or action</div>';
-    if (S.tasks.length) {
-      h += '<div class="quick-actions">';
-      S.tasks.forEach(function (a, i) {
-        h += '<button data-act="quick" data-idx="' + i + '">' + esc(a) + "</button>";
-      });
-      h += "</div>";
-    }
+    h += '<div class="sec-label">Log a note</div>';
     h += '<div class="action-row">' +
-      '<input id="actionInput" type="text" placeholder="e.g. Watered crops, built fence" aria-label="Action description">' +
+      '<input id="actionInput" type="text" placeholder="e.g. Built fence, used energy bar" aria-label="Action description">' +
       '<button data-act="log-task">Log</button></div>';
 
     h += '<div class="sec-label">This round&rsquo;s ledger</div><div class="ledger">';
@@ -638,12 +887,143 @@
         '<button class="del" data-act="remove-entry" data-id="' + e.id + '" aria-label="Delete entry">&times;</button></div>';
       shown++;
     }
-    if (!shown) h += '<div class="empty">Nothing yet &mdash; tap a resource when you gain one, or log a task.</div>';
+    if (!shown) h += '<div class="empty">Nothing yet &mdash; take a task above, or tap a resource when you gain one.</div>';
     h += "</div>";
     h += '<div class="ledger-tools"><button class="btn-ghost" data-act="undo"' + (S.ledger.length ? "" : " disabled") + ">Undo last</button></div>";
 
     app.innerHTML = h;
   }
+
+  function taskCardHtml(kind, name, sub, color) {
+    return '<button class="task-card" id="task-' + kind + '" style="--task-color:' + color + '" data-act="task" data-kind="' + kind + '">' +
+      taskArt(kind) +
+      '<span class="tname">' + name + '</span><span class="tsub">' + sub + "</span></button>";
+  }
+
+  function renderUsePanel() {
+    var pr = resource(UI.pending.resId);
+    var prName = UI.pending.detail || (pr ? pr.name : "Resource");
+    var h = "";
+    if (UI.pending.step === "sell") {
+      h += '<div class="flow-panel"><div class="q">' + esc(prName) + " sold — for how many coins?</div>" +
+        '<div class="rule">Check its coin value on the Corporate Commissary board.</div><div class="num-grid">';
+      for (var c = 1; c <= 8; c++) h += '<button data-act="sell-coins" data-n="' + c + '">' + c + "</button>";
+      h += '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
+    } else if (UI.pending.step === "gift") {
+      h += '<div class="flow-panel"><div class="q">' + esc(prName) + " gifted — to which neighbor?</div>" +
+        '<div class="rule">Mark the bonus on that side’s neighbor rewards track.</div>' +
+        '<div class="use-grid">' +
+        '<button data-act="gift-side" data-side="left">Left neighbor</button>' +
+        '<button data-act="gift-side" data-side="right">Right neighbor</button>' +
+        '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
+    } else {
+      h += '<div class="flow-panel"><div class="q">' + esc(prName) + " gained — how are you using it?</div>" +
+        '<div class="rule">No storage in Tend: every resource must be used immediately.</div>' +
+        '<div class="use-grid">' +
+        '<button data-act="use" data-use="spend">' + USES.spend.label + "<small>" + USES.spend.sub + "</small></button>" +
+        '<button data-act="use" data-use="sell">' + USES.sell.label + "<small>" + USES.sell.sub + "</small></button>" +
+        '<button data-act="use" data-use="cargo">' + USES.cargo.label + "<small>" + USES.cargo.sub + "</small></button>" +
+        '<button data-act="use" data-use="gift">' + USES.gift.label + "<small>" + USES.gift.sub + "</small></button>" +
+        '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
+    }
+    return h;
+  }
+
+  function renderFlow(p) {
+    var f = UI.flow;
+    var h = "";
+
+    if (f.task === "fish") {
+      var color = "var(--water)";
+      if (f.step === "location") {
+        h += '<div class="flow-panel" style="--flow-color:' + color + '"><div class="q">Where are you fishing?</div>' +
+          '<div class="rule">Locked locations open via unlocks on the Setup tab.</div><div class="loc-grid">';
+        var u = unlocks(p.id);
+        FISH_LOCATIONS.forEach(function (loc) {
+          var locked = loc.key !== "basic" && !u[loc.key];
+          h += '<button class="' + (locked ? "locked" : "") + '" data-act="fish-loc" data-loc="' + loc.key + '"' + (locked ? " disabled" : "") + ">" +
+            esc(loc.name) + "<small>" + (locked ? "🔒 " : "") + esc(loc.sub) + "</small></button>";
+        });
+        h += '</div><button class="cancel" data-act="cancel-flow">Cancel</button></div>';
+      } else if (f.step === "roll") {
+        var loc = fishLocation(f.loc);
+        h += '<div class="flow-panel" style="--flow-color:' + color + '"><div class="q">' + esc(loc.name) + " — roll the dice</div>" +
+          '<div class="rule">Black die = row, white die = column. The Tend icon (✦) is wild.</div>' +
+          '<div class="dice-stage">' +
+          '<div class="die black' + (f.rolling ? " rolling" : "") + '">' + (f.dice ? dieFace(f.dice[0]) : "?") + "</div>" +
+          '<div class="die white' + (f.rolling ? " rolling" : "") + '">' + (f.dice ? dieFace(f.dice[1]) : "?") + "</div>" +
+          "</div>" +
+          '<button class="roll-btn" data-act="fish-roll"' + (f.rolling ? " disabled" : "") + ">" + (f.rolling ? "Rolling…" : "Roll") + "</button>" +
+          '<div class="dice-legend">Rolled real dice at the table? Roll here anyway or pick any square next.</div>' +
+          '<button class="cancel" data-act="cancel-flow">Cancel</button></div>';
+      } else if (f.step === "pick") {
+        var loc2 = fishLocation(f.loc);
+        var u2 = unlocks(p.id);
+        var elig = f.anySquare ? null : eligibleCells(loc2, f.dice, !!u2.rod, p.id);
+        h += '<div class="flow-panel" style="--flow-color:' + color + '"><div class="q">' + esc(loc2.name) + " — " + dieFace(f.dice[0]) + " · " + dieFace(f.dice[1]) + "</div>" +
+          '<div class="rule">' + (f.anySquare ? "Manual override: pick any uncaught square." :
+            (u2.rod ? "Upgraded rod: matching squares plus adjacent ones are lit." : "Pick a lit square to catch.")) + "</div>" +
+          '<table class="fish-grid"><tr><th></th>';
+        for (var c = 1; c <= 5; c++) h += "<th>" + c + "</th>";
+        h += "</tr>";
+        for (var r = 1; r <= 5; r++) {
+          h += "<tr><th>" + r + "</th>";
+          for (var c2 = 1; c2 <= 5; c2++) {
+            var key = r + "," + c2;
+            var caught = isCaught(p.id, loc2.key, r, c2);
+            var hit = !caught && (f.anySquare || (elig && elig[key]));
+            h += '<td><button class="cellb' + (hit ? " hit" : "") + (caught ? " caught" : "") + '"' +
+              (hit ? ' data-act="fish-pick" data-cell="' + key + '"' : " disabled") + ">" +
+              esc(loc2.grid[r - 1][c2 - 1]) + "</button></td>";
+          }
+          h += "</tr>";
+        }
+        h += "</table>";
+        if (!f.anySquare) h += '<button class="override" data-act="fish-any">Pick any square (manual override)</button>';
+        h += '<button class="cancel" data-act="fish-reroll">Re-roll</button>' +
+          '<button class="cancel" data-act="cancel-flow">Cancel</button></div>';
+      } else if (f.step === "caught") {
+        h += '<div class="flow-panel" style="--flow-color:' + color + '"><div class="catch-splash">' +
+          '<svg viewBox="0 0 120 80" aria-hidden="true">' +
+          '<path d="M0 62 q15 -8 30 0 t30 0 t30 0 t30 0 v18 h-120 z" fill="var(--water)" opacity="0.45"/>' +
+          '<g class="fishy2"><path d="M34 40 q16 -14 34 0 q-16 14 -34 0 z" fill="var(--water)"/>' +
+          '<path d="M68 40 l14 -9 v18 z" fill="var(--water)"/><circle cx="42" cy="37" r="2.4" fill="#fff"/></g>' +
+          "</svg>" +
+          '<div class="caughtname">' + esc(f.caughtName) + "!</div>" +
+          '<div class="sub">Now — no storage — use it immediately.</div></div></div>';
+      }
+    }
+
+    if (f.task === "chop" || f.task === "mine") {
+      var isChop = f.task === "chop";
+      var tcolor = isChop ? "var(--chop)" : "var(--mine)";
+      h += '<div class="flow-panel" style="--flow-color:' + tcolor + '"><div class="q">' + (isChop ? "Chop — the Woods" : "Mine — the Mines") + "</div>" +
+        '<div class="rule">Scratch off a square from the top (1 action) or bottom (2 actions) of your physical card, then tap what you revealed.</div>' +
+        '<div class="res-grid">';
+      S.resources.forEach(function (r) {
+        h += '<button class="res-chip" style="--res-color:' + esc(r.color) + '" data-act="flow-gain" data-id="' + r.id + '">' +
+          '<span class="dot"></span><span class="nm">' + esc(r.name) + "</span></button>";
+      });
+      h += '</div><button class="cancel" data-act="cancel-flow">Cancel</button></div>';
+    }
+
+    if (f.task === "tend") {
+      h += '<div class="flow-panel"><div class="q">Tend — the farm</div>' +
+        '<div class="rule">Plant, water, or care for animals on your farm sheet, then tap anything you gained.</div>' +
+        '<div class="res-grid">';
+      S.resources.forEach(function (r) {
+        h += '<button class="res-chip" style="--res-color:' + esc(r.color) + '" data-act="flow-gain" data-id="' + r.id + '">' +
+          '<span class="dot"></span><span class="nm">' + esc(r.name) + "</span></button>";
+      });
+      h += '</div>' +
+        '<button class="cancel" data-act="flow-nothing">Log the task with no resource gained</button>' +
+        '<button class="cancel" data-act="cancel-flow">Cancel</button></div>';
+    }
+
+    return h;
+  }
+
+  function dieFace(v) { return v === "W" ? "✦" : v; }
 
   function renderHistory() {
     var h = "";
@@ -689,7 +1069,7 @@
   function renderScore() {
     var best = -1;
     S.players.forEach(function (pl) { best = Math.max(best, scoreTotal(pl.id)); });
-    var h = '<div class="empty" style="padding-top:0">Final scoring &mdash; the five ways to earn victory points in Tend. Fill in each player&rsquo;s totals.</div>';
+    var h = '<div class="empty" style="padding-top:0">Final scoring &mdash; mirrors the scoring area on the cargo sheet.</div>';
     S.players.forEach(function (pl) {
       var total = scoreTotal(pl.id);
       var sc = S.scores[pl.id] || {};
@@ -707,8 +1087,10 @@
 
   function renderSetup() {
     var h = "";
+    var p = activePlayer();
+    var u = unlocks(p.id);
 
-    h += '<div class="setup-card"><h2>Players</h2><div class="hint">Everyone plays simultaneously in Tend &mdash; add the players sharing this device.</div>';
+    h += '<div class="setup-card"><h2>Players</h2><div class="hint">Everyone plays simultaneously in Tend &mdash; each player can also run this app on their own phone.</div>';
     S.players.forEach(function (pl) {
       h += '<div class="setup-row">' +
         '<input type="text" value="' + esc(pl.name) + '" data-act="rename-player" data-id="' + pl.id + '" aria-label="Player name">' +
@@ -716,6 +1098,17 @@
         "</div>";
     });
     h += '<button class="setup-add" data-act="add-player">+ Add player</button></div>';
+
+    h += '<div class="setup-card"><h2>Unlocks &amp; upgrades &mdash; ' + esc(p.name) + '</h2>' +
+      '<div class="hint">Toggle these as ' + esc(p.name) + " unlocks them in the game; they open new fishing locations and widen the catch area.</div>";
+    [["river", "River Fishing", "unlocked via the Broken Bridge project"],
+     ["lake", "Lake Fishing", "reach the bottom of the Woods scratch card"],
+     ["grotto", "Grotto Fishing", "reach the bottom of the Mines scratch card"],
+     ["rod", "Upgraded Rod", "modifies the catch area"]].forEach(function (row) {
+      h += '<div class="toggle-row"><label>' + row[1] + "<small>" + row[2] + "</small></label>" +
+        '<input type="checkbox"' + (u[row[0]] ? " checked" : "") + ' data-act="toggle-unlock" data-key="' + row[0] + '" aria-label="' + row[1] + '"></div>';
+    });
+    h += "</div>";
 
     h += '<div class="setup-card"><h2>Resources</h2>' +
       '<div class="hint">The goods you gain from tending, fishing, mining, and chopping. Rename or add to match the cards in play.</div>';
@@ -728,18 +1121,11 @@
     });
     h += '<button class="setup-add" data-act="add-res">+ Add resource</button></div>';
 
-    h += '<div class="setup-card"><h2>Quick tasks</h2>' +
-      '<div class="hint">One-tap buttons for the tasks you take in a round. Tend, Fish, Mine, and Chop are the four main tasks.</div>';
-    S.tasks.forEach(function (a, i) {
-      h += '<div class="setup-row">' +
-        '<input type="text" value="' + esc(a) + '" data-act="rename-task" data-idx="' + i + '" aria-label="Task name">' +
-        '<button class="rm" data-act="remove-task" data-idx="' + i + '" aria-label="Remove task">&times;</button>' +
-        "</div>";
-    });
-    h += '<button class="setup-add" data-act="add-task">+ Add task</button></div>';
+    h += '<div class="setup-card"><h2>Fishing grids</h2>' +
+      '<div class="hint">The fish species and grid layouts are placeholders until the real fishing cards are photographed &mdash; the flow (location &rarr; dice &rarr; pick &rarr; use) is the real mechanic.</div></div>';
 
     h += '<div class="setup-card"><h2>Game</h2>' +
-      '<div class="hint">Resets to round 1 and clears coins, the ledger, history, and scores. Players, resources, and tasks are kept.</div>' +
+      '<div class="hint">Resets to round 1 and clears coins, unlocks, caught fish, the ledger, history, and scores. Players and resources are kept.</div>' +
       '<button class="danger" data-act="reset">Start a new game</button></div>';
 
     app.innerHTML = h;
@@ -756,14 +1142,70 @@
 
   document.getElementById("endTurnBtn").addEventListener("click", endRound);
 
+  function startFlow(kind) {
+    UI.pending = null;
+    if (kind === "fish") UI.flow = { task: "fish", step: "location" };
+    else UI.flow = { task: kind, step: "gain" };
+    logTaskSilent(kind);
+    render();
+  }
+  // Record the task itself so the ledger shows "Task: Fish" even before a catch lands
+  function logTaskSilent(kind) {
+    var names = { fish: "Fish", chop: "Chop", mine: "Mine", tend: "Tend" };
+    var p = activePlayer();
+    S.ledger.push({ id: uid(), playerId: p.id, kind: "task", label: names[kind] || kind });
+    save();
+  }
+
   app.addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-act]");
     if (!b || b.tagName === "INPUT") return;
     var act = b.getAttribute("data-act");
     var id = b.getAttribute("data-id");
-    var idx = parseInt(b.getAttribute("data-idx"), 10);
 
-    if (act === "gain") { UI.pending = { resId: id, step: "use" }; render(); }
+    if (act === "task") {
+      var kind = b.getAttribute("data-kind");
+      // play the card's scene animation, then open the flow
+      b.classList.add("playing");
+      setTimeout(function () { startFlow(kind); }, 650);
+      return;
+    }
+    else if (act === "fish-loc") { UI.flow.step = "roll"; UI.flow.loc = b.getAttribute("data-loc"); UI.flow.dice = null; render(); }
+    else if (act === "fish-roll") {
+      UI.flow.rolling = true;
+      UI.flow.dice = [rollDie(), rollDie()];
+      render();
+      setTimeout(function () {
+        if (!UI.flow || UI.flow.task !== "fish") return;
+        UI.flow.rolling = false;
+        UI.flow.step = "pick";
+        render();
+      }, 850);
+    }
+    else if (act === "fish-reroll") { UI.flow.step = "roll"; UI.flow.dice = null; UI.flow.anySquare = false; render(); }
+    else if (act === "fish-any") { UI.flow.anySquare = true; render(); }
+    else if (act === "fish-pick") {
+      var cell = b.getAttribute("data-cell");
+      var loc = fishLocation(UI.flow.loc);
+      var pcs = cell.split(",");
+      var name = loc.grid[+pcs[0] - 1][+pcs[1] - 1];
+      UI.flow.step = "caught";
+      UI.flow.caughtName = name;
+      UI.flow.caughtCell = cell;
+      render();
+      setTimeout(function () {
+        if (!UI.flow || UI.flow.step !== "caught") return;
+        var fishRes = resourceByName("Fish") || S.resources[0];
+        UI.pending = { resId: fishRes.id, step: "use", detail: name,
+          catchMeta: { loc: UI.flow.loc, cell: UI.flow.caughtCell } };
+        UI.flow = null;
+        render();
+      }, 1400);
+    }
+    else if (act === "flow-gain") { UI.pending = { resId: id, step: "use" }; UI.flow = null; render(); }
+    else if (act === "flow-nothing") { UI.flow = null; render(); }
+    else if (act === "cancel-flow") { UI.flow = null; render(); }
+    else if (act === "gain") { UI.flow = null; UI.pending = { resId: id, step: "use" }; render(); }
     else if (act === "use") {
       var use = b.getAttribute("data-use");
       if (use === "sell") { UI.pending.step = "sell"; render(); }
@@ -783,8 +1225,7 @@
         label: isIntern ? "Intern Program — take any 1 main task" : "Buyback Program — cross out any 1 good" });
       save(); render();
     }
-    else if (act === "pick-player") { S.activePlayer = id; UI.pending = null; save(); render(); }
-    else if (act === "quick") logTask(S.tasks[idx] || "");
+    else if (act === "pick-player") { S.activePlayer = id; UI.flow = null; UI.pending = null; save(); render(); }
     else if (act === "log-task") logTask(document.getElementById("actionInput").value);
     else if (act === "remove-entry") removeEntry(id);
     else if (act === "undo") undo();
@@ -795,10 +1236,12 @@
     else if (act === "remove-player") {
       if (S.players.length <= 1) return;
       var pl = player(id);
-      if (!confirm("Remove " + (pl ? pl.name : "this player") + "? Their coins and scores are discarded.")) return;
+      if (!confirm("Remove " + (pl ? pl.name : "this player") + "? Their coins, unlocks, and scores are discarded.")) return;
       S.players = S.players.filter(function (x) { return x.id !== id; });
       delete S.coins[id];
       delete S.scores[id];
+      delete S.unlocks[id];
+      delete S.caught[id];
       S.ledger = S.ledger.filter(function (e) { return e.playerId !== id; });
       if (S.activePlayer === id) S.activePlayer = S.players[0].id;
       save(); render();
@@ -813,18 +1256,19 @@
       S.resources = S.resources.filter(function (x) { return x.id !== id; });
       save(); render();
     }
-    else if (act === "add-task") { S.tasks.push("New task"); save(); render(); }
-    else if (act === "remove-task") { S.tasks.splice(idx, 1); save(); render(); }
     else if (act === "reset") {
-      if (!confirm("Start a new game? Round, coins, ledger, history, and scores are cleared.")) return;
+      if (!confirm("Start a new game? Round, coins, unlocks, caught fish, ledger, history, and scores are cleared.")) return;
       S.round = 1;
       S.over = false;
       S.coins = {};
+      S.unlocks = {};
+      S.caught = {};
       S.ledger = [];
       S.history = [];
       S.scores = {};
       S.activePlayer = S.players[0].id;
       S.view = "play";
+      UI.flow = null;
       UI.pending = null;
       save(); render();
     }
@@ -835,11 +1279,10 @@
     var act = t.getAttribute("data-act");
     if (!act) return;
     var id = t.getAttribute("data-id");
-    var idx = parseInt(t.getAttribute("data-idx"), 10);
     if (act === "rename-player") { var pl = player(id); if (pl) pl.name = t.value.trim() || pl.name; save(); render(); }
     else if (act === "rename-res") { var r = resource(id); if (r) r.name = t.value.trim() || r.name; save(); render(); }
     else if (act === "recolor-res") { var r2 = resource(id); if (r2) r2.color = t.value; save(); render(); }
-    else if (act === "rename-task") { S.tasks[idx] = t.value.trim() || S.tasks[idx]; save(); render(); }
+    else if (act === "toggle-unlock") { unlocks(activePlayer().id)[t.getAttribute("data-key")] = t.checked; save(); render(); }
     else if (act === "score") {
       var pid = t.getAttribute("data-pid"), field = t.getAttribute("data-field");
       if (!S.scores[pid]) S.scores[pid] = {};
