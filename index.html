@@ -289,6 +289,14 @@
     min-height: 48px; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums;
     color: var(--coin);
   }
+  .num-grid button.listed {
+    border-color: var(--coin);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--coin) 25%, transparent);
+    animation: lightup 0.45s ease both;
+  }
+  .stamp-preview { display: grid; gap: 2px; justify-content: center; padding: 6px 0 2px; }
+  .stamp-preview .pv { width: 18px; height: 18px; border-radius: 3px; background: transparent; }
+  .stamp-preview .pv.on { border: 1px solid rgba(0,0,0,0.25); }
 
   /* ---- Dice ---- */
   .dice-stage { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 10px 0 14px; }
@@ -628,15 +636,70 @@
   // cards are photographed. Swap each grid below with the card's
   // real 5x5 contents (row = black die, column = white die).
   // ============================================================
-  var FISH_SPECIES = ["Shimmerpuff", "Glimmer Eel", "Mosskoi", "Pebble Bass", "Duskfin", "Bubble Ray", "Sunny Guppy", "Star Carp"];
+  // Species tiers map to the commissary's four fish rows (tier = coins; shape by tier)
+  var FISH_SPECIES = [
+    { n: "Shimmerpuff", t: 1 }, { n: "Glimmer Eel", t: 3 }, { n: "Mosskoi", t: 2 }, { n: "Pebble Bass", t: 2 },
+    { n: "Duskfin", t: 3 }, { n: "Bubble Ray", t: 4 }, { n: "Sunny Guppy", t: 1 }, { n: "Star Carp", t: 4 }
+  ];
   function makeGrid(offset) {
     var g = [];
     for (var r = 0; r < 5; r++) {
       var row = [];
-      for (var c = 0; c < 5; c++) row.push(FISH_SPECIES[(r * 2 + c * 3 + offset) % FISH_SPECIES.length]);
+      for (var c = 0; c < 5; c++) row.push(FISH_SPECIES[(r * 2 + c * 3 + offset) % FISH_SPECIES.length].n);
       g.push(row);
     }
     return g;
+  }
+
+  // ---- Corporate Commissary (from the placard) ----
+  // Good types and their manifest colors
+  var TYPE_COLORS = { farm: "#6FA84C", mining: "#E09A3C", fish: "#4FA8B8", social: "#D64F4F", badge: "#7B5EA7" };
+  // Manifest shapes as [row, col] offsets
+  var SHAPES = {
+    s1: [[0, 0]],
+    r2: [[0, 0], [0, 1]],
+    r3: [[0, 0], [0, 1], [0, 2]],
+    c3: [[0, 0], [1, 0], [1, 1]],
+    sq4: [[0, 0], [0, 1], [1, 0], [1, 1]],
+    j4: [[0, 2], [1, 0], [1, 1], [1, 2]],
+    u5: [[0, 0], [0, 2], [1, 0], [1, 1], [1, 2]]
+  };
+  var FISH_TIER_SHAPES = ["s1", "r2", "r3", "sq4"];
+  // value: sell price (null = cannot be sold); shape: manifest shape (null = cannot be placed)
+  var COMMISSARY = {
+    "Egg": { type: "farm", value: 1, shape: "s1" },
+    "Plant": { type: "farm", value: 3, shape: "r3" },
+    "Milk": { type: "farm", value: 4, shape: "u5" },
+    "Fish": { type: "fish", value: 2, shape: "r2" },
+    "Ore": { type: "mining", value: 1, shape: "s1" },
+    "Copper": { type: "mining", value: 1, shape: "s1" },
+    "Iron": { type: "mining", value: 1, shape: "s1" },
+    "Geode": { type: "mining", value: 2, shape: "r2" },
+    "Bone": { type: "mining", value: 2, shape: "r3" },
+    "Crystal": { type: "mining", value: 3, shape: "j4" },
+    "Jar": { type: "mining", value: 4, shape: "sq4" },
+    "Wood": { type: "badge", value: 1, shape: null },
+    "Exo Wood": { type: "badge", value: 2, shape: null },
+    "Red Blueprint": { type: "social", value: 1, shape: "s1" },
+    "Purple Blueprint": { type: "social", value: 2, shape: "r2" },
+    "Heart": { type: "social", value: null, shape: "sq4" }
+  };
+  // Commissary entry for a pending gain: fish species use their tier, others their resource name
+  function commissaryInfo(resId, detail) {
+    var r = resource(resId);
+    if (!r) return {};
+    if (r.name === "Fish" && detail) {
+      for (var i = 0; i < FISH_SPECIES.length; i++) {
+        if (FISH_SPECIES[i].n === detail) {
+          return { type: "fish", value: FISH_SPECIES[i].t, shape: FISH_TIER_SHAPES[FISH_SPECIES[i].t - 1] };
+        }
+      }
+    }
+    return COMMISSARY[r.name] || {};
+  }
+  function goodColor(res) {
+    var comm = COMMISSARY[res.name];
+    return comm && TYPE_COLORS[comm.type] ? TYPE_COLORS[comm.type] : res.color;
   }
   var FISH_LOCATIONS = [
     { key: "basic",  name: "Basic Fishing",  sub: "always available",           grid: makeGrid(0) },
@@ -686,7 +749,7 @@
   var S = load();
   // Transient UI state (never persisted): active task flow, pending resource use,
   // and a use picked from the can-do board awaiting a target resource
-  var UI = { flow: null, pending: null, chooseUse: null, brush: null };
+  var UI = { flow: null, pending: null, chooseUse: null, brush: null, stamp: null };
 
   function load() {
     try {
@@ -809,9 +872,34 @@
     if (use === "sell") { e.coins = extra || 0; addCoins(p.id, e.coins); }
     if (use === "gift") { e.side = extra; }
     S.ledger.push(e);
+    var detail = UI.pending ? UI.pending.detail : e.detail;
     UI.pending = null;
-    if (use === "cargo") { S.view = "cargo"; UI.brush = resId; } // jump to the sheet, brush loaded
+    if (use === "cargo") armStamp(resId, detail);
     save(); render();
+  }
+
+  // Jump to the cargo sheet with the good's manifest shape ready to place
+  function armStamp(resId, detail) {
+    S.view = "cargo";
+    UI.brush = resId;
+    var comm = commissaryInfo(resId, detail);
+    UI.stamp = comm.shape ? { resId: resId, shape: comm.shape, rot: 0, flip: false } : null;
+  }
+
+  // Shape offsets after flip + rotation, normalized to start at 0,0
+  function stampCells(shapeKey, rot, flip) {
+    var pts = SHAPES[shapeKey].map(function (p) { return [p[0], p[1]]; });
+    if (flip) {
+      var maxC0 = Math.max.apply(null, pts.map(function (p) { return p[1]; }));
+      pts = pts.map(function (p) { return [p[0], maxC0 - p[1]]; });
+    }
+    for (var i = 0; i < (rot % 4); i++) {
+      var maxR = Math.max.apply(null, pts.map(function (p) { return p[0]; }));
+      pts = pts.map(function (p) { return [p[1], maxR - p[0]]; });
+    }
+    var minR = Math.min.apply(null, pts.map(function (p) { return p[0]; }));
+    var minC = Math.min.apply(null, pts.map(function (p) { return p[1]; }));
+    return pts.map(function (p) { return [p[0] - minR, p[1] - minC]; });
   }
 
   function logTask(label) {
@@ -865,7 +953,7 @@
         e.use = use;
         if (use === "sell") { e.coins = extra || 0; addCoins(e.playerId, e.coins); }
         if (use === "gift") { e.side = extra; }
-        if (use === "cargo") { S.view = "cargo"; UI.brush = e.resId; }
+        if (use === "cargo") armStamp(e.resId, e.detail);
         break;
       }
     }
@@ -1071,24 +1159,37 @@
   function renderCargo() {
     var p = activePlayer();
     var cg = cargoOf(p.id);
-    var h = "";
+    var h = playerTabsHtml();
 
-    if (S.players.length > 1) {
-      h += '<div class="player-tabs" role="tablist">';
-      S.players.forEach(function (pl) {
-        h += '<button role="tab" aria-current="' + (pl.id === S.activePlayer ? "true" : "false") +
-          '" data-act="pick-player" data-id="' + pl.id + '">' + esc(pl.name) + "</button>";
-      });
-      h += "</div>";
-    }
-
-    h += '<div class="sec-label">Brush <small>&mdash; pick a good, then tap squares to fill; tap a filled square to erase</small></div>';
+    h += '<div class="sec-label">Brush <small>&mdash; goods paint in their commissary type color; tap a filled square to erase</small></div>';
     h += '<div class="palette">';
     S.resources.forEach(function (r) {
-      h += '<button style="--res-color:' + esc(r.color) + '" class="' + (UI.brush === r.id ? "on" : "") +
+      h += '<button style="--res-color:' + esc(goodColor(r)) + '" class="' + (UI.brush === r.id ? "on" : "") +
         '" data-act="brush" data-id="' + r.id + '"><span class="dot"></span>' + esc(r.name) + "</button>";
     });
     h += "</div>";
+
+    if (UI.stamp) {
+      var stRes = resource(UI.stamp.resId);
+      var stCells = stampCells(UI.stamp.shape, UI.stamp.rot, UI.stamp.flip);
+      var maxR2 = Math.max.apply(null, stCells.map(function (x) { return x[0]; }));
+      var maxC2 = Math.max.apply(null, stCells.map(function (x) { return x[1]; }));
+      h += '<div class="flow-panel"><div class="q">Place ' + esc(stRes ? stRes.name : "good") + " — tap the grid</div>" +
+        '<div class="rule">The tapped square becomes the shape&rsquo;s top-left. Rotate or flip to fit. Same-type goods must not touch orthogonally.</div>' +
+        '<div class="stamp-preview" style="grid-template-columns:repeat(' + (maxC2 + 1) + ', 18px)">';
+      for (var pr2 = 0; pr2 <= maxR2; pr2++) {
+        for (var pc2 = 0; pc2 <= maxC2; pc2++) {
+          var on = stCells.some(function (x) { return x[0] === pr2 && x[1] === pc2; });
+          h += '<span class="pv' + (on ? " on" : "") + '"' + (on && stRes ? ' style="background:' + esc(goodColor(stRes)) + '"' : "") + "></span>";
+        }
+      }
+      h += "</div>" +
+        '<div class="use-grid" style="margin-top:10px">' +
+        '<button data-act="stamp-rot">Rotate ⟳</button>' +
+        '<button data-act="stamp-flip">Flip ⇋</button>' +
+        "</div>" +
+        '<button class="cancel" data-act="stamp-off">Paint square-by-square instead</button></div>';
+    }
 
     h += '<div class="sec-label">Cargo manifest &mdash; ' + esc(p.name) + "</div>";
     h += '<div class="manifest-wrap"><div class="manifest"><div class="cargo-grid">';
@@ -1098,7 +1199,7 @@
         var resId = cg.cells[key];
         var res = resId ? resource(resId) : null;
         var cls = "cell" + (res ? " filled" : "") + ((c === 4 || c === 8) ? " stall-b" : "");
-        h += '<button class="' + cls + '"' + (res ? ' style="background:' + esc(res.color) + '"' : "") +
+        h += '<button class="' + cls + '"' + (res ? ' style="background:' + esc(goodColor(res)) + '"' : "") +
           ' data-act="cargo-cell" data-cell="' + key + '" aria-label="Row ' + (r + 1) + " column " + (c + 1) +
           (res ? ", " + esc(res.name) : ", empty") + '"></button>';
       }
@@ -1335,11 +1436,15 @@
   function renderUsePanel() {
     var pr = resource(UI.pending.resId);
     var prName = UI.pending.detail || (pr ? pr.name : "Resource");
+    var comm = commissaryInfo(UI.pending.resId, UI.pending.detail);
     var h = "";
     if (UI.pending.step === "sell") {
       h += '<div class="flow-panel"><div class="q">' + esc(prName) + " sold — for how many coins?</div>" +
-        '<div class="rule">Check its coin value on the Corporate Commissary board.</div><div class="num-grid">';
-      for (var c = 1; c <= 8; c++) h += '<button data-act="sell-coins" data-n="' + c + '">' + c + "</button>";
+        '<div class="rule">' + (comm.value ? "Commissary listed price: " + comm.value + " coin" + (comm.value === 1 ? "" : "s") + "." :
+          "Check its coin value on the Corporate Commissary board.") + "</div><div class=\"num-grid\">";
+      for (var c = 1; c <= 8; c++) {
+        h += '<button' + (comm.value === c ? ' class="listed"' : "") + ' data-act="sell-coins" data-n="' + c + '">' + c + "</button>";
+      }
       h += '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
     } else if (UI.pending.step === "gift") {
       h += '<div class="flow-panel"><div class="q">' + esc(prName) + " gifted — to which neighbor?</div>" +
@@ -1350,12 +1455,17 @@
         '</div><button class="cancel" data-act="cancel-pending">Cancel</button></div>';
     } else {
       var resolving = !!UI.pending.entryId;
+      var noSell = comm.value === null, noCargo = comm.shape === null;
       h += '<div class="flow-panel"><div class="q">' + esc(prName) + (resolving ? " — how are you using it?" : " gained — how are you using it?") + "</div>" +
         '<div class="rule">The rulebook says resources are used immediately — but hold it if you want to decide in a moment.</div>' +
         '<div class="use-grid">' +
         '<button data-act="use" data-use="spend">' + USES.spend.label + "<small>" + USES.spend.sub + "</small></button>" +
-        '<button data-act="use" data-use="sell">' + USES.sell.label + "<small>" + USES.sell.sub + "</small></button>" +
-        '<button data-act="use" data-use="cargo">' + USES.cargo.label + "<small>" + USES.cargo.sub + "</small></button>" +
+        (noSell
+          ? '<button class="dim" disabled style="filter:grayscale(1);opacity:0.45">' + USES.sell.label + "<small>can&rsquo;t be sold</small></button>"
+          : '<button data-act="use" data-use="sell">' + USES.sell.label + "<small>" + (comm.value ? "listed: " + comm.value + "c" : USES.sell.sub) + "</small></button>") +
+        (noCargo
+          ? '<button class="dim" disabled style="filter:grayscale(1);opacity:0.45">' + USES.cargo.label + "<small>can&rsquo;t be placed</small></button>"
+          : '<button data-act="use" data-use="cargo">' + USES.cargo.label + "<small>" + USES.cargo.sub + "</small></button>") +
         '<button data-act="use" data-use="gift">' + USES.gift.label + "<small>" + USES.gift.sub + "</small></button>" +
         (resolving ? "" : '<button class="wide" data-act="use" data-use="hold">Hold onto it<small>keep it in hand, decide later this round</small></button>') +
         '</div><button class="cancel" data-act="cancel-pending">' + (resolving ? "Keep holding" : "Cancel") + "</button></div>";
@@ -1576,6 +1686,7 @@
     var b = ev.target.closest("button[data-view]");
     if (!b) return;
     S.view = b.getAttribute("data-view");
+    if (S.view !== "cargo") UI.stamp = null;
     save(); render();
   });
 
@@ -1760,11 +1871,27 @@
       var cgP = activePlayer();
       var cg2 = cargoOf(cgP.id);
       var ck = b.getAttribute("data-cell");
-      if (cg2.cells[ck]) delete cg2.cells[ck];
+      if (UI.stamp) {
+        var anchor = ck.split(",");
+        var ar = +anchor[0], ac = +anchor[1];
+        var cells2 = stampCells(UI.stamp.shape, UI.stamp.rot, UI.stamp.flip);
+        var fits = cells2.every(function (x) {
+          var rr = ar + x[0], cc = ac + x[1];
+          return rr < 8 && cc < 12 && !cg2.cells[rr + "," + cc];
+        });
+        if (!fits) return; // out of bounds or overlapping — pick another anchor
+        cells2.forEach(function (x) { cg2.cells[(ar + x[0]) + "," + (ac + x[1])] = UI.stamp.resId; });
+        UI.brush = UI.stamp.resId;
+        UI.stamp = null;
+      }
+      else if (cg2.cells[ck]) delete cg2.cells[ck];
       else if (UI.brush && resource(UI.brush)) cg2.cells[ck] = UI.brush;
       else if (S.resources[0]) { UI.brush = S.resources[0].id; cg2.cells[ck] = UI.brush; }
       save(); render();
     }
+    else if (act === "stamp-rot") { UI.stamp.rot = (UI.stamp.rot + 1) % 4; render(); }
+    else if (act === "stamp-flip") { UI.stamp.flip = !UI.stamp.flip; render(); }
+    else if (act === "stamp-off") { UI.stamp = null; render(); }
     else if (act === "clear-cargo") {
       if (!confirm("Clear " + activePlayer().name + "'s whole cargo manifest?")) return;
       cargoOf(activePlayer().id).cells = {};
@@ -1797,7 +1924,7 @@
         label: isIntern ? "Intern Program — take any 1 main task" : "Buyback Program — cross out any 1 good" });
       save(); render();
     }
-    else if (act === "pick-player") { S.activePlayer = id; UI.flow = null; UI.pending = null; UI.chooseUse = null; save(); render(); }
+    else if (act === "pick-player") { S.activePlayer = id; UI.flow = null; UI.pending = null; UI.chooseUse = null; UI.stamp = null; save(); render(); }
     else if (act === "log-task") logTask(document.getElementById("actionInput").value);
     else if (act === "remove-entry") removeEntry(id);
     else if (act === "undo") undo();
