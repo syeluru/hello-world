@@ -9,6 +9,22 @@ step, no server, no install. Game state is saved in the browser
 (localStorage), so a refresh or an accidentally closed tab doesn't lose the
 game.
 
+## Exact original artwork (optional, local-only)
+
+The app ships with color-matched chip icons. To see IV Studio's exact
+original artwork instead, generate a local art bundle from the official
+print-and-play PDFs you downloaded:
+
+```
+pip install pillow            # plus poppler-utils for pdfimages/pdftoppm
+python3 tools/extract-art.py LowInk_FarmSheet.pdf LowInk_CargoManifest.pdf
+```
+
+This writes `art.js` next to `index.html`; the app picks it up automatically
+(item icons, the pond's real tiles, and the manifest row-reward art). The
+artwork is IV Studio's — `art.js` is gitignored and should stay on your own
+machine for personal use with your copy of Tend.
+
 ## The digital sheets
 
 IV Studio's official companion covers the digital scratch-offs, task cards,

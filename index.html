@@ -379,6 +379,10 @@
     border: 1px solid rgba(0,0,0,0.35);
   }
   .ic.dashed { background: #fff !important; border: 1.5px dashed #15161A; color: #15161A; text-shadow: none; }
+  .ic.art { background: none; border: 0; text-shadow: none; width: 19px; height: 19px; }
+  .ic.art img { width: 100%; height: 100%; object-fit: contain; }
+  .pond td button img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .pond td button.nix { border-style: dashed; color: #B9C4C0; cursor: default; }
   .cost-row {
     display: flex; align-items: center; gap: 3px; padding: 3px 2px; border-radius: 6px;
     cursor: pointer; border: 0; background: none; width: 100%; text-align: left; font-size: 11px;
@@ -757,9 +761,15 @@
 </div>
 <div class="endbar" id="endbar"><button id="endTurnBtn">End round</button></div>
 
+<script src="art.js"></script>
 <script>
 (function () {
   "use strict";
+
+  // Optional local art bundle: run tools/extract-art.py against the official
+  // IV Studio PDFs to generate art.js (window.TEND_ART). The artwork stays on
+  // your machine; without it the app renders its own color-matched chips.
+  var TA = (typeof window !== "undefined" && window.TEND_ART) || null;
 
   var STORE_KEY = "tend-companion-v5";
   var ROUNDS = 12;
@@ -1005,10 +1015,33 @@
     lure: ["#7CC24C", "❋"], squid: ["#C24C6E", "❋"]
   };
   function ic(kind, dashed) {
+    if (!dashed && TA && TA.icons && TA.icons[kind]) {
+      return '<span class="ic art"><img src="' + TA.icons[kind] + '" alt="' + kind + '"></span>';
+    }
     var d = IC[kind] || ["#999", "?"];
     return '<span class="ic' + (dashed ? " dashed" : "") + '" style="background:' + d[0] + '">' + d[1] + "</span>";
   }
   function ics(list) { return list.map(function (k) { return ic(k); }).join(""); }
+
+  // Pond contents read from the printed farm sheet (row = black die, col = white die).
+  // Names are descriptive of the art until the real species names are confirmed.
+  var POND_MAP = [
+    ["kelp", "kelp", "wood", "redfish", "kelp"],
+    ["kelp", "redfish", "none", "none", "kelp"],
+    ["kelp", "none", "none", "kelp", "kelp"],
+    ["none", "yellowfish", "kelp", "kelp", "yellowfish"],
+    ["yellowfish", "kelp", "none", "yellowfish", "none"]
+  ];
+  var POND_KINDS = {
+    kelp: { name: "Kelp", res: "Fish", tier: 1, chip: "plant" },
+    redfish: { name: "Red fish", res: "Fish", tier: 3, chip: "fish" },
+    yellowfish: { name: "Yellow fish", res: "Fish", tier: 2, chip: "fish" },
+    wood: { name: "Wood", res: "Wood", chip: "wood" }
+  };
+  function pondKind(r, c) { // 1-indexed
+    var k = POND_MAP[r - 1][c - 1];
+    return k === "none" ? null : POND_KINDS[k];
+  }
 
   // Badge projects on the cargo sheet: vp + 3 rows of 3 goods (icons approximate)
   var BADGES = [
@@ -1382,9 +1415,13 @@
     for (var prr = 1; prr <= 5; prr++) {
       pondBody += "<tr><th>" + prr + "</th>";
       for (var pcc = 1; pcc <= 5; pcc++) {
+        var pk = pondKind(prr, pcc);
         var pcaught = isCaught(p.id, "basic", prr, pcc);
-        pondBody += '<td><button class="' + (pcaught ? "caught" : "") + '" data-act="pond-cell" data-cell="' + prr + "," + pcc + '">' +
-          esc(pond.grid[prr - 1][pcc - 1]) + "</button></td>";
+        var pArt = TA && TA.pond && TA.pond[prr + "," + pcc];
+        var inner = pArt ? '<img src="' + pArt + '" alt="">' : (pk ? ic(pk.chip) : "+");
+        pondBody += '<td><button class="' + (pcaught ? "caught" : "") + (pk ? "" : " nix") + '"' +
+          (pk ? ' data-act="pond-cell" data-cell="' + prr + "," + pcc + '"' : " disabled") +
+          ' title="' + (pk ? esc(pk.name) : "empty") + '">' + inner + "</button></td>";
       }
       pondBody += "</tr>";
     }
@@ -1540,8 +1577,10 @@
     for (var rr = 0; rr < 8; rr++) {
       var full = true;
       for (var cc = 0; cc < 12; cc++) if (!cg.cells[rr + "," + cc]) { full = false; break; }
+      var rrArt = TA && TA.rows && TA.rows[rr];
       h += '<div class="rr' + (full ? " done" : "") + '" style="--rr-color:' + ROW_REWARDS[rr].c +
-        '" title="Row ' + (rr + 1) + " reward: " + ROW_REWARDS[rr].n + ' action">' + ROW_REWARDS[rr].g + "</div>";
+        '" title="Row ' + (rr + 1) + " reward: " + ROW_REWARDS[rr].n + ' action">' +
+        (rrArt ? '<img src="' + rrArt + '" alt="' + ROW_REWARDS[rr].n + '" style="max-width:90%;max-height:90%">' : ROW_REWARDS[rr].g) + "</div>";
     }
     h += "</div></div>";
     h += '<div class="stall-inputs">';
@@ -1872,15 +1911,20 @@
           '<table class="fish-grid"><tr><th></th>';
         for (var c = 1; c <= 5; c++) h += "<th>" + c + "</th>";
         h += "</tr>";
+        var isPond = loc2.key === "basic";
         for (var r = 1; r <= 5; r++) {
           h += "<tr><th>" + r + "</th>";
           for (var c2 = 1; c2 <= 5; c2++) {
             var key = r + "," + c2;
+            var pk2 = isPond ? pondKind(r, c2) : null;
             var caught = isCaught(p.id, loc2.key, r, c2);
-            var hit = !caught && (f.anySquare || (elig && elig[key]));
+            var empty = isPond && !pk2;
+            var hit = !caught && !empty && (f.anySquare || (elig && elig[key]));
+            var label = isPond ? (pk2 ? pk2.name : "+") : loc2.grid[r - 1][c2 - 1];
+            var art2 = isPond && TA && TA.pond && TA.pond[key];
             h += '<td><button class="cellb' + (hit ? " hit" : "") + (caught ? " caught" : "") + '"' +
               (hit ? ' data-act="fish-pick" data-cell="' + key + '"' : " disabled") + ">" +
-              esc(loc2.grid[r - 1][c2 - 1]) + "</button></td>";
+              (art2 ? '<img src="' + art2 + '" alt="' + esc(label) + '" style="max-width:100%;max-height:100%">' : esc(label)) + "</button></td>";
           }
           h += "</tr>";
         }
@@ -2101,15 +2145,24 @@
       var cell = b.getAttribute("data-cell");
       var loc = fishLocation(UI.flow.loc);
       var pcs = cell.split(",");
-      var name = loc.grid[+pcs[0] - 1][+pcs[1] - 1];
+      var name, resName = "Fish";
+      if (loc.key === "basic") {
+        var pkind = pondKind(+pcs[0], +pcs[1]);
+        if (!pkind) return;
+        name = pkind.name;
+        resName = pkind.res;
+      } else {
+        name = loc.grid[+pcs[0] - 1][+pcs[1] - 1];
+      }
       UI.flow.step = "caught";
       UI.flow.caughtName = name;
       UI.flow.caughtCell = cell;
+      UI.flow.caughtRes = resName;
       render();
       setTimeout(function () {
         if (!UI.flow || UI.flow.step !== "caught") return;
-        var fishRes = resourceByName("Fish") || S.resources[0];
-        UI.pending = { resId: fishRes.id, step: "use", detail: name,
+        var cres = findOrCreateResource(UI.flow.caughtRes, null);
+        UI.pending = { resId: cres.id, step: "use", detail: UI.flow.caughtName === cres.name ? null : UI.flow.caughtName,
           catchMeta: { loc: UI.flow.loc, cell: UI.flow.caughtCell } };
         UI.flow = null;
         render();
