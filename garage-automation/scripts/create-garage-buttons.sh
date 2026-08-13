@@ -37,15 +37,55 @@ echo "Home Assistant: $HA_URL"
 echo "Target cover:   $COVER"
 echo
 
-# --- Verify we can reach HA and the token works ------------------------------
-echo "Checking connection..."
-if ! curl -sf -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/" >/dev/null; then
-  echo "ERROR: Could not reach Home Assistant at $HA_URL, or the token was rejected."
-  echo "  - On the same network as HA?"
-  echo "  - Try the IP address instead of homeassistant.local via HA_URL."
+# --- Step 1: is anything actually listening there? ---------------------------
+# Checked WITHOUT the token so a network problem is never mistaken for a
+# bad token — these are completely different fixes.
+echo "Checking that Home Assistant is reachable..."
+if ! curl -s -o /dev/null --max-time 8 "$HA_URL/" 2>/dev/null; then
+  echo
+  echo "ERROR: Nothing responded at $HA_URL"
+  echo
+  echo "This is a NETWORK problem, not a token problem. Work through these:"
+  echo
+  echo "  1. Is the Home Assistant VM actually running in UTM?"
+  echo
+  echo "  2. Does the name resolve?"
+  echo "       ping -c 2 homeassistant.local"
+  echo "     If that fails, mDNS isn't working — use the IP address instead."
+  echo
+  echo "  3. Find the IP: look at the HA VM's console window in UTM. It prints"
+  echo "     its address on the login screen. Then:"
+  echo "       export HA_URL=\"http://192.168.1.NNN:8123\""
+  echo "       $0"
+  echo
+  echo "  4. If the VM has no LAN address at all, its network is set to Shared"
+  echo "     (NAT). Switch the VM to Bridged mode in UTM settings and reboot it."
+  echo
   exit 1
 fi
-echo "  Connected."
+echo "  Reachable."
+
+# --- Step 2: does the token work? --------------------------------------------
+echo "Checking the access token..."
+auth_status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 \
+  -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/" || true)
+
+if [[ "$auth_status" != "200" ]]; then
+  echo
+  echo "ERROR: Home Assistant answered, but rejected the token (HTTP $auth_status)."
+  echo
+  echo "This is a TOKEN problem — the network is fine. Usually one of:"
+  echo "  - The token was truncated when copied. They are very long; make sure"
+  echo "    the whole string is inside the quotes."
+  echo "  - The token was revoked or belongs to a different HA instance."
+  echo "  - You created a 'Refresh token' rather than a LONG-LIVED access token."
+  echo
+  echo "Create a new one: your username (bottom-left) -> Security tab ->"
+  echo "Long-lived access tokens -> Create Token."
+  echo
+  exit 1
+fi
+echo "  Token accepted."
 
 # --- Verify the garage cover actually exists ---------------------------------
 if ! curl -sf -H "Authorization: Bearer $HA_TOKEN" \
