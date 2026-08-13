@@ -1,0 +1,40 @@
+# =============================================================================
+# Custom voice sentences for kitchen stock
+# =============================================================================
+# Install to: /config/custom_sentences/en/kitchen_stock.yaml
+# Then restart Home Assistant.
+#
+# Teaches Assist the phrasings people ACTUALLY use standing in the kitchen,
+# rather than making them remember a command. The natural phrasing is the
+# whole point — if someone has to think about how to say it, they won't.
+#
+# Test with: Developer tools > Assist, or just talk to a voice satellite.
+# =============================================================================
+language: "en"
+
+intents:
+  WeAreOutOf:
+    data:
+      - sentences:
+          - "we are out of {item}"
+          - "we're out of {item}"
+          - "I'm out of {item}"
+          - "we ran out of {item}"
+          - "(we |)need (more |){item}"
+          - "add {item} to the (shopping |grocery |)list"
+          - "put {item} on the (shopping |grocery |)list"
+          - "buy (more |){item}"
+          - "get (more |){item}"
+
+  WhatDoWeNeed:
+    data:
+      - sentences:
+          - "what do we need"
+          - "what's on the (shopping |grocery |)list"
+          - "what is on the (shopping |grocery |)list"
+          - "read (me |)the (shopping |grocery |)list"
+          - "do we need anything"
+
+lists:
+  item:
+    wildcard: true

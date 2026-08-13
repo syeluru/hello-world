@@ -1,0 +1,115 @@
+# =============================================================================
+# Kitchen inventory — Phase 1 (works today, no new hardware, no Grocy)
+# =============================================================================
+# Gives you the highest-value half of a kitchen inventory system immediately:
+#   - Anyone can say "we're out of eggs" to any voice satellite or the phone
+#     app's Assist button, and it lands on the shared shopping list.
+#   - The list syncs to every phone, watch, and dashboard automatically.
+#   - A reminder fires before your usual shopping trip.
+#   - Nothing to maintain, nothing to scan, nothing to abandon.
+#
+# Phase 2 replaces the list source with Grocy (real stock levels, minimum
+# thresholds, expiry, consumption-rate prediction) while keeping every
+# interaction below exactly the same.
+#
+# Also install: kitchen-automation/homeassistant/custom_sentences/en/kitchen_stock.yaml
+# (that file teaches Assist the natural phrasings)
+# =============================================================================
+
+# Creates the built-in todo.shopping_list entity.
+shopping_list:
+
+# -----------------------------------------------------------------------------
+# Voice intents — the interaction that keeps the list honest.
+# -----------------------------------------------------------------------------
+intent_script:
+  WeAreOutOf:
+    description: "Adds an item to the shopping list when someone says we're out of it."
+    action:
+      - action: todo.add_item
+        target:
+          entity_id: todo.shopping_list
+        data:
+          item: "{{ item }}"
+    speech:
+      text: "Got it — {{ item }} is on the list."
+
+  WhatDoWeNeed:
+    description: "Reads back the current shopping list."
+    action:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status: needs_action
+        response_variable: shopping
+    speech:
+      text: >-
+        {% set items = shopping['todo.shopping_list']['items'] | map(attribute='summary') | list %}
+        {% if items | count == 0 %}
+          The shopping list is empty.
+        {% else %}
+          {{ items | count }} item{{ 's' if items | count != 1 }} on the list:
+          {{ items | join(', ') }}.
+        {% endif %}
+
+# -----------------------------------------------------------------------------
+# Reminders
+# -----------------------------------------------------------------------------
+automation:
+  # Nudge before the usual shopping run so nobody leaves without the list.
+  # Adjust the day and time to your actual routine.
+  - id: kitchen_shopping_list_reminder
+    alias: "Kitchen: shopping list reminder"
+    description: >-
+      Saturday morning summary of what's on the list. Silent if the list is
+      empty — a reminder about nothing trains people to ignore reminders.
+    mode: single
+    triggers:
+      - trigger: time
+        at: "09:00:00"
+    conditions:
+      - condition: time
+        weekday:
+          - sat
+    actions:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status: needs_action
+        response_variable: shopping
+      - variables:
+          items: >-
+            {{ shopping['todo.shopping_list']['items']
+               | map(attribute='summary') | list }}
+      - condition: template
+        value_template: "{{ items | count > 0 }}"
+      - action: notify.garage_household
+        data:
+          title: "🛒 Shopping list ({{ items | count }})"
+          message: "{{ items | join(', ') }}"
+
+  # If someone adds something while you're already at a store, say so.
+  - id: kitchen_list_item_added_while_shopping
+    alias: "Kitchen: item added while someone is shopping"
+    description: >-
+      Placeholder for Phase 3 — once a grocery-store zone exists, this notifies
+      whoever is at the store that a new item just landed on the list.
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: todo.shopping_list
+        attribute: needs_action
+    conditions:
+      # Enable once zone.grocery_store is defined:
+      # - condition: zone
+      #   entity_id: person.alice
+      #   zone: zone.grocery_store
+      - condition: template
+        value_template: "false"
+    actions:
+      - action: notify.garage_household
+        data:
+          title: "🛒 Added to the list"
+          message: "Someone just added an item while you're at the store."
