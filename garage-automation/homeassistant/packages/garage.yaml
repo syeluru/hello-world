@@ -73,14 +73,18 @@ automation:
     alias: "Garage: open on arrival (GPS)"
     description: >-
       Opens the garage when a household member enters the Home Approach zone
-      coming from away. 15-minute cooldown guards against GPS bounce.
+      coming from away. The anti-jitter guard is PER PERSON (see below), so one
+      person arriving never suppresses another's arrival.
     mode: single
     max_exceeded: silent
     triggers:
+      # IMPORTANT: every household member must be listed here explicitly.
+      # Adding someone under Settings > People does NOT add them to this list.
       - trigger: zone
         entity_id:
           - person.alice
           - person.bob
+          # - person.anupama
         zone: zone.home_approach
         event: enter
     conditions:
@@ -96,11 +100,18 @@ automation:
         value_template: >-
           {{ trigger.from_state is not none and
              trigger.from_state.state == 'not_home' }}
-      # Cooldown against repeated zone enter/exit while parked near the edge.
+      # Anti-jitter, PER PERSON: this arriving person must have genuinely been
+      # away for 10+ minutes, not just bounced across the zone edge while
+      # parked nearby. Measured from how long they held the previous state.
+      #
+      # Do NOT go back to an automation-wide `last_triggered` cooldown here:
+      # that is shared across everyone, so a second person arriving shortly
+      # after the first gets silently skipped — which looks exactly like
+      # "the garage doesn't work for <that person>".
       - condition: template
         value_template: >-
-          {{ this.attributes.last_triggered is none or
-             (now() - this.attributes.last_triggered).total_seconds() > 900 }}
+          {{ (trigger.to_state.last_changed
+              - trigger.from_state.last_changed).total_seconds() > 600 }}
     actions:
       - action: cover.open_cover
         target:
