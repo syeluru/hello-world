@@ -18,8 +18,6 @@
 # =============================================================================
 set -euo pipefail
 
-HA_URL="${HA_URL:-http://homeassistant.local:8123}"
-
 if [[ -z "${HA_TOKEN:-}" ]]; then
   echo "ERROR: HA_TOKEN is not set."
   echo
@@ -33,59 +31,89 @@ fi
 # something other than "garage-door".
 COVER="${COVER:-cover.garage_door_door}"
 
-echo "Home Assistant: $HA_URL"
-echo "Target cover:   $COVER"
+echo "Target cover: $COVER"
 echo
 
-# --- Step 1: is anything actually listening there? ---------------------------
-# Checked WITHOUT the token so a network problem is never mistaken for a
-# bad token — these are completely different fixes.
-echo "Checking that Home Assistant is reachable..."
-if ! curl -s -o /dev/null --max-time 8 "$HA_URL/" 2>/dev/null; then
+# --- Find Home Assistant -----------------------------------------------------
+# Home Assistant does not always live on port 8123 — a reverse proxy, an add-on,
+# or a custom http.server_port can put it on 80. Rather than making you guess,
+# probe the usual addresses and use whichever actually answers the API.
+#
+# Probing with the token means one request settles both questions at once:
+#   HTTP 200 -> right URL and the token is good
+#   HTTP 401 -> right URL, bad token (stop and say so — trying more URLs is
+#               pointless and would report a misleading "unreachable" error)
+#   no reply -> wrong URL, keep looking
+if [[ -n "${HA_URL:-}" ]]; then
+  candidates=("${HA_URL%/}")
+else
+  candidates=(
+    "http://homeassistant.local:8123"
+    "http://homeassistant.local"
+    "http://homeassistant:8123"
+    "http://homeassistant"
+    "http://localhost:8123"
+  )
+fi
+
+FOUND_URL=""
+echo "Looking for Home Assistant..."
+for candidate in "${candidates[@]}"; do
+  echo -n "  $candidate ... "
+  status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 6 \
+    -H "Authorization: Bearer $HA_TOKEN" "$candidate/api/" 2>/dev/null || true)
+
+  case "$status" in
+    200)
+      echo "yes"
+      FOUND_URL="$candidate"
+      break
+      ;;
+    401|403)
+      echo "found, but the token was rejected"
+      echo
+      echo "ERROR: Home Assistant is running at $candidate, but it will not"
+      echo "accept this token (HTTP $status). The network is fine."
+      echo
+      echo "Usually one of:"
+      echo "  - The token was truncated when copied. They are very long —"
+      echo "    make sure the entire string is inside the quotes."
+      echo "  - The token was revoked, or belongs to a different instance."
+      echo "  - You copied a refresh token rather than a LONG-LIVED token."
+      echo
+      echo "Create a new one: your username (bottom-left) -> Security tab ->"
+      echo "Long-lived access tokens -> Create Token."
+      exit 1
+      ;;
+    *)
+      echo "no answer"
+      ;;
+  esac
+done
+
+if [[ -z "$FOUND_URL" ]]; then
   echo
-  echo "ERROR: Nothing responded at $HA_URL"
+  echo "ERROR: Could not find Home Assistant at any of the usual addresses."
   echo
-  echo "This is a NETWORK problem, not a token problem. Work through these:"
+  echo "Open Home Assistant in a browser and look at the address bar. Whatever"
+  echo "comes before the first single slash is the value to use — including the"
+  echo "port if there is one. For example, if the browser shows"
+  echo "http://homeassistant.local/profile/security then use:"
   echo
-  echo "  1. Is the Home Assistant VM actually running in UTM?"
+  echo "  export HA_URL=\"http://homeassistant.local\""
+  echo "  $0"
   echo
-  echo "  2. Does the name resolve?"
-  echo "       ping -c 2 homeassistant.local"
-  echo "     If that fails, mDNS isn't working — use the IP address instead."
-  echo
-  echo "  3. Find the IP: look at the HA VM's console window in UTM. It prints"
-  echo "     its address on the login screen. Then:"
-  echo "       export HA_URL=\"http://192.168.1.NNN:8123\""
-  echo "       $0"
-  echo
-  echo "  4. If the VM has no LAN address at all, its network is set to Shared"
-  echo "     (NAT). Switch the VM to Bridged mode in UTM settings and reboot it."
-  echo
+  echo "If the browser cannot load it either, this is a networking problem:"
+  echo "  1. Is the Home Assistant VM running in UTM?"
+  echo "  2. Try: ping -c 2 homeassistant.local"
+  echo "  3. Use the IP shown on the VM's console screen instead of the name."
+  echo "  4. If the VM has no LAN address, its network is set to Shared (NAT)."
+  echo "     Switch it to Bridged in UTM settings and reboot the VM."
   exit 1
 fi
-echo "  Reachable."
 
-# --- Step 2: does the token work? --------------------------------------------
-echo "Checking the access token..."
-auth_status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 \
-  -H "Authorization: Bearer $HA_TOKEN" "$HA_URL/api/" || true)
-
-if [[ "$auth_status" != "200" ]]; then
-  echo
-  echo "ERROR: Home Assistant answered, but rejected the token (HTTP $auth_status)."
-  echo
-  echo "This is a TOKEN problem — the network is fine. Usually one of:"
-  echo "  - The token was truncated when copied. They are very long; make sure"
-  echo "    the whole string is inside the quotes."
-  echo "  - The token was revoked or belongs to a different HA instance."
-  echo "  - You created a 'Refresh token' rather than a LONG-LIVED access token."
-  echo
-  echo "Create a new one: your username (bottom-left) -> Security tab ->"
-  echo "Long-lived access tokens -> Create Token."
-  echo
-  exit 1
-fi
-echo "  Token accepted."
+HA_URL="$FOUND_URL"
+echo "Using: $HA_URL"
 
 # --- Verify the garage cover actually exists ---------------------------------
 if ! curl -sf -H "Authorization: Bearer $HA_TOKEN" \
