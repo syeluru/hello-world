@@ -1,0 +1,59 @@
+# =============================================================================
+# Garage manual controls — phone widget / button targets
+# =============================================================================
+# Two one-tap scripts designed to be added as home-screen widgets, Apple Watch
+# complications, Siri shortcuts, or Android Quick Settings tiles.
+#
+# Why scripts instead of pointing widgets straight at cover.garage_door_door:
+#   - Scripts show up as a clean single-purpose button ("Garage: Open") instead
+#     of a toggle whose behavior depends on current state.
+#   - Closing routes through the obstruction-aware safe-close logic rather than
+#     slamming the door blindly.
+#   - The logic can change later without anyone re-making their widgets.
+#
+# Requires garage.yaml (for script.garage_close_safely).
+# =============================================================================
+
+script:
+  garage_open_now:
+    alias: "Garage: Open"
+    icon: mdi:garage-open-variant
+    description: "One-tap open. Safe to run when already open — does nothing."
+    mode: single
+    sequence:
+      - if:
+          - condition: state
+            entity_id: cover.garage_door_door
+            state: "closed"
+        then:
+          - action: cover.open_cover
+            target:
+              entity_id: cover.garage_door_door
+
+  garage_close_now:
+    alias: "Garage: Close"
+    icon: mdi:garage-variant
+    description: >-
+      One-tap close. Refuses to close over a tripped safety beam and sends a
+      critical alert if the door does not confirm closed.
+    mode: single
+    sequence:
+      # Runs the full safe-close routine from garage.yaml: obstruction check,
+      # ratgdo warning beeper, then verification that it actually closed.
+      - action: script.garage_close_safely
+
+  # Optional third button: useful on a watch face or car dashboard where you
+  # want one control rather than two. Left here but not required.
+  garage_toggle:
+    alias: "Garage: Toggle"
+    icon: mdi:garage-alert-variant
+    mode: single
+    sequence:
+      - if:
+          - condition: state
+            entity_id: cover.garage_door_door
+            state: "closed"
+        then:
+          - action: script.garage_open_now
+        else:
+          - action: script.garage_close_now
