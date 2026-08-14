@@ -1,0 +1,147 @@
+# =============================================================================
+# Recurring staples + list delivery — no inventory tracking required
+# =============================================================================
+# Solves "always have a current shopping list" and "know when to reorder"
+# without a single sensor, by working the purchase cycle instead of stock
+# levels. See ../no-inventory-approach.md for the reasoning.
+#
+# SETUP (once, ~30 minutes):
+#
+# 1. Add the Local Calendar integration:
+#      Settings > Devices & Services > Add Integration > Local Calendar
+#      Name it "Groceries"  ->  creates calendar.groceries
+#
+# 2. In the Calendar panel, add ONE recurring event per staple. The event
+#    SUMMARY is what lands on the shopping list, so name it exactly what you
+#    want to see: "Milk", "Eggs", "Coffee beans".
+#    Set the repeat interval to your real cadence (every 6 days, every 2 weeks).
+#    All-day events work best.
+#
+# 3. Seed 20-30 items you genuinely run out of. Do not inventory your spices.
+#
+# TUNING: if something shows up too early, drag the recurrence out a day. The
+# system tunes by hand, which is fast enough that it never needs to be smart.
+# =============================================================================
+
+# Optional grocery-store zones for the arrival push. Add your real stores;
+# radius in meters. Coordinates go in secrets.yaml so this file stays shareable.
+# zone:
+#   - name: Grocery Store
+#     icon: mdi:cart
+#     latitude: !secret grocery_latitude
+#     longitude: !secret grocery_longitude
+#     radius: 150
+
+automation:
+  # ---------------------------------------------------------------------------
+  # 1) A staple comes due -> it goes on the list.
+  #    This is the whole reorder-prediction system. No sensors involved.
+  # ---------------------------------------------------------------------------
+  - id: kitchen_staple_due
+    alias: "Kitchen: staple due, add to list"
+    description: >-
+      When a recurring grocery calendar event starts, add its name to the
+      shopping list. Skips silently if the item is already on the list, so an
+      unbought item never gets duplicated.
+    mode: queued
+    max: 10
+    triggers:
+      - trigger: calendar
+        entity_id: calendar.groceries
+        event: start
+    actions:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status: needs_action
+        response_variable: current
+
+      - variables:
+          existing: >-
+            {{ current['todo.shopping_list']['items']
+               | map(attribute='summary') | map('lower') | list }}
+          wanted: "{{ trigger.calendar_event.summary }}"
+
+      # Don't re-add something already sitting on the list unbought.
+      - condition: template
+        value_template: "{{ wanted | lower not in existing }}"
+
+      - action: todo.add_item
+        target:
+          entity_id: todo.shopping_list
+        data:
+          item: "{{ wanted }}"
+
+  # ---------------------------------------------------------------------------
+  # 2) Someone arrives at a store -> push them the list.
+  #    Most "we forgot to buy it" failures are delivery failures, not data
+  #    failures. Enable once you've defined the zone above.
+  # ---------------------------------------------------------------------------
+  - id: kitchen_list_on_store_arrival
+    alias: "Kitchen: push list on store arrival"
+    description: >-
+      Sends the current shopping list to whoever just walked into the store.
+      Silent when the list is empty.
+    mode: single
+    triggers:
+      - trigger: zone
+        entity_id:
+          - person.alice
+          - person.bob
+        zone: zone.grocery_store
+        event: enter
+    conditions:
+      # Remove this line once zone.grocery_store exists.
+      - condition: template
+        value_template: "false"
+    actions:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status: needs_action
+        response_variable: shopping
+
+      - variables:
+          items: >-
+            {{ shopping['todo.shopping_list']['items']
+               | map(attribute='summary') | list }}
+
+      - condition: template
+        value_template: "{{ items | count > 0 }}"
+
+      - action: notify.garage_household
+        data:
+          title: "🛒 You're at the store — {{ items | count }} items"
+          message: "{{ items | join(', ') }}"
+
+  # ---------------------------------------------------------------------------
+  # 3) Physical shelf buttons -> one press adds a specific staple.
+  #    Stick a cheap Zigbee button next to the coffee, the dog food, the paper
+  #    towels. Faster than a phone, and the one everyone actually uses.
+  #
+  #    Duplicate this block per button, changing the device trigger and item.
+  # ---------------------------------------------------------------------------
+  - id: kitchen_shelf_button_coffee
+    alias: "Kitchen: shelf button — coffee"
+    description: "Template for a physical add-to-list button. Copy per staple."
+    mode: single
+    triggers:
+      # Replace with your button's device trigger, or use an MQTT/event
+      # trigger. Left as a state trigger placeholder so the file loads cleanly.
+      - trigger: state
+        entity_id: input_boolean.REPLACE_WITH_BUTTON
+        to: "on"
+    conditions:
+      - condition: template
+        value_template: "false"   # remove once a real button is wired up
+    actions:
+      - action: todo.add_item
+        target:
+          entity_id: todo.shopping_list
+        data:
+          item: "Coffee beans"
+      - action: notify.garage_household
+        data:
+          message: "Coffee beans added to the list."
