@@ -1,0 +1,121 @@
+# =============================================================================
+# Grocery trips — geofence triggers that drive the macOS bridge
+# =============================================================================
+# Home Assistant supplies the triggers (phone location, kitchen button); the
+# macOS bridge does everything involving Reminders and Messages.
+#
+# SETUP:
+#   1. Set bridge_host below to the Mac's LAN IP (not homeassistant.local —
+#      that's the VM; you want the host machine).
+#   2. Define one zone per store you actually shop at, in configuration.yaml
+#      or via Settings > Areas & Zones. Name them anything; list them in the
+#      trigger below.
+#   3. Put your real person entities in the triggers.
+# =============================================================================
+
+rest_command:
+  grocery_trip_start:
+    url: "http://{{ bridge_host }}:8787/trip/start"
+    method: POST
+    content_type: "application/json"
+    payload: '{"person": "{{ person }}"}'
+    timeout: 30
+
+  grocery_trip_end:
+    url: "http://{{ bridge_host }}:8787/trip/end"
+    method: POST
+    content_type: "application/json"
+    payload: "{}"
+    timeout: 30
+
+  grocery_add_item:
+    url: "http://{{ bridge_host }}:8787/add"
+    method: POST
+    content_type: "application/json"
+    payload: '{"item": "{{ item }}", "quantity": {{ (quantity | tojson) if quantity else "null" }}}'
+    timeout: 30
+
+automation:
+  # ---------------------------------------------------------------------------
+  # Arrival: five minutes inside a store before anything fires.
+  #
+  # The dwell time is what makes this usable — a bare zone-enter trigger goes
+  # off when you drive past, park at the pharmacy in the same plaza, or stop
+  # for gas next door. Five minutes inside means you're actually shopping.
+  # ---------------------------------------------------------------------------
+  - id: grocery_trip_arrival
+    alias: "Grocery: trip started"
+    description: >-
+      Fires once someone has genuinely been inside a grocery store for five
+      minutes. The bridge then sweeps recent messages for requests, merges them
+      into the Reminders list, and texts the list to the family thread.
+    mode: single
+    max_exceeded: silent
+    triggers:
+      # A person entity's state is the zone name while they're inside one.
+      # List every store zone you create.
+      - trigger: state
+        entity_id:
+          - person.alice
+          - person.bob
+        to: "Grocery Store"
+        for: "00:05:00"
+      # - trigger: state
+      #   entity_id: [person.alice, person.bob]
+      #   to: "Costco"
+      #   for: "00:05:00"
+    actions:
+      - action: rest_command.grocery_trip_start
+        data:
+          bridge_host: !secret mac_bridge_host
+          person: "{{ trigger.to_state.attributes.friendly_name }}"
+
+  # ---------------------------------------------------------------------------
+  # Departure: wait before asking anything.
+  #
+  # Leaving the geofence means loading the trunk or pulling into traffic.
+  # Nobody answers a text there, and asking while someone drives is worse than
+  # useless. Ten minutes costs nothing — the list isn't urgent, accuracy is.
+  # ---------------------------------------------------------------------------
+  - id: grocery_trip_departure
+    alias: "Grocery: trip ended"
+    description: >-
+      Ten minutes after leaving the store, the bridge asks about anything still
+      unchecked — and stays silent if the list was already cleared while
+      shopping, so nobody does the same work twice.
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id:
+          - person.alice
+          - person.bob
+        from: "Grocery Store"
+        for: "00:10:00"
+      # - trigger: state
+      #   entity_id: [person.alice, person.bob]
+      #   from: "Costco"
+      #   for: "00:10:00"
+    actions:
+      - action: rest_command.grocery_trip_end
+        data:
+          bridge_host: !secret mac_bridge_host
+
+# =============================================================================
+# Voice intents rewired to Reminders
+# =============================================================================
+# Replaces the todo.shopping_list versions in kitchen_inventory.yaml — the
+# kitchen button now writes straight into Reminders, so there is exactly one
+# list and it is the one the family actually looks at.
+# =============================================================================
+intent_script:
+  WeAreOutOf:
+    description: "Adds an item to the shared Reminders list."
+    action:
+      - action: rest_command.grocery_add_item
+        data:
+          bridge_host: !secret mac_bridge_host
+          item: "{{ item }}"
+          quantity: "{{ quantity | default('', true) }}"
+    speech:
+      text: "Got it — {{ item }} is on the list."

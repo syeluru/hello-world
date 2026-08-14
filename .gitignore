@@ -1,0 +1,4 @@
+macos-bridge/config.json
+*.pyc
+__pycache__/
+secrets.yaml

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Keeps the bridge running and restarts it if it dies or the Mac reboots.
+
+  Install:
+    cp com.household.bridge.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.household.bridge.plist
+
+  Update the two paths below to match where you cloned the repo.
+  Logs land in /tmp/household-bridge.log.
+
+  NOTE: LaunchAgents get their own permission context. The first time it runs
+  you may need to grant Full Disk Access to /usr/bin/python3 specifically,
+  even if your terminal already has it.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.household.bridge</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/CHANGEME/hello-world/macos-bridge/bridge.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/CHANGEME/hello-world/macos-bridge</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/household-bridge.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/household-bridge.log</string>
+</dict>
+</plist>

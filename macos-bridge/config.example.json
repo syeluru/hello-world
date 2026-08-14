@@ -1,0 +1,52 @@
+{
+  "_comment": "Copy to config.json and fill in. config.json is gitignored.",
+
+  "reminders_list": "Groceries",
+
+  "listen_port": 8787,
+
+  "send_to": {
+    "_comment": "Where the shopping list gets texted. Use --list-chats to find the id.",
+    "kind": "chat",
+    "id": "iMessage;+;chat000000000000000000"
+  },
+
+  "watch_threads": [
+    {
+      "label": "Family",
+      "kind": "chat",
+      "id": "iMessage;+;chat000000000000000000"
+    },
+    {
+      "label": "Dad",
+      "kind": "handle",
+      "id": "+15555550101"
+    },
+    {
+      "label": "Mom",
+      "kind": "handle",
+      "id": "+15555550102"
+    },
+    {
+      "label": "Sister",
+      "kind": "handle",
+      "id": "+15555550103"
+    }
+  ],
+
+  "lookback_minutes": 30,
+
+  "anthropic_api_key": "sk-ant-REPLACE-ME",
+  "model": "claude-sonnet-5",
+
+  "keyword_prefilter": [
+    "grocery", "groceries", "store", "shop", "shopping", "pick up", "pickup",
+    "grab", "get some", "buy", "need", "out of", "we're out", "running low",
+    "add to list", "list", "costco", "trader", "safeway", "kroger", "aldi",
+    "milk", "eggs", "bread", "butter", "cheese", "yogurt", "coffee", "sugar",
+    "flour", "rice", "pasta", "chicken", "beef", "fish", "fruit", "produce",
+    "banana", "apple", "onion", "garlic", "tomato", "potato", "lettuce",
+    "cereal", "snack", "juice", "water", "soda", "paper towel", "toilet paper",
+    "detergent", "soap", "trash bag", "foil", "diapers", "formula"
+  ]
+}
