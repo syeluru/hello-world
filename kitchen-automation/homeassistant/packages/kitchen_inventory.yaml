@@ -34,6 +34,41 @@ intent_script:
     speech:
       text: "Got it — {{ item }} is on the list."
 
+  WeHaveItem:
+    description: >-
+      Marks an item as bought / no longer needed. The other half of the button:
+      standing at the pantry you can correct the list in both directions
+      without opening anything.
+    action:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status: needs_action
+        response_variable: current
+      - variables:
+          on_list: >-
+            {{ current['todo.shopping_list']['items']
+               | selectattr('summary', 'search', item, ignorecase=True)
+               | map(attribute='summary') | list }}
+      - if:
+          - condition: template
+            value_template: "{{ on_list | count > 0 }}"
+        then:
+          - action: todo.update_item
+            target:
+              entity_id: todo.shopping_list
+            data:
+              item: "{{ on_list | first }}"
+              status: completed
+    speech:
+      text: >-
+        {% if on_list | count > 0 %}
+          Crossed {{ on_list | first }} off the list.
+        {% else %}
+          {{ item }} wasn't on the list, but good to know.
+        {% endif %}
+
   WhatDoWeNeed:
     description: "Reads back the current shopping list."
     action:
@@ -56,6 +91,42 @@ intent_script:
 # -----------------------------------------------------------------------------
 # Reminders
 # -----------------------------------------------------------------------------
+script:
+  # Called by the kitchen button's double-click. Speaks the list on whichever
+  # satellite asked, so you hear it where you're standing.
+  speak_shopping_list:
+    alias: "Speak the shopping list"
+    mode: single
+    fields:
+      target_device:
+        description: "ESPHome device name that requested the readback"
+        example: kitchen-button
+    sequence:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status: needs_action
+        response_variable: shopping
+      - variables:
+          items: >-
+            {{ shopping['todo.shopping_list']['items']
+               | map(attribute='summary') | list }}
+          phrase: >-
+            {% if items | count == 0 %}
+              The shopping list is empty.
+            {% else %}
+              {{ items | count }} item{{ 's' if items | count != 1 }}:
+              {{ items | join(', ') }}.
+            {% endif %}
+      - action: tts.speak
+        target:
+          # Replace with your TTS entity (Piper for local, or Cloud TTS).
+          entity_id: tts.piper
+        data:
+          media_player_entity_id: media_player.{{ target_device | replace('-', '_') }}
+          message: "{{ phrase }}"
+
 automation:
   # Nudge before the usual shopping run so nobody leaves without the list.
   # Adjust the day and time to your actual routine.

@@ -26,6 +26,19 @@ intents:
           - "buy (more |){item}"
           - "get (more |){item}"
 
+  WeHaveItem:
+    data:
+      - sentences:
+          - "we have {item}"
+          - "we've got {item}"
+          - "we got {item}"
+          - "I (got|bought) {item}"
+          - "we (already |)(have|bought) {item}"
+          - "(take|cross|check) {item} off (the list|)"
+          - "remove {item} from the (shopping |grocery |)list"
+          - "don't need {item}"
+          - "we don't need {item}"
+
   WhatDoWeNeed:
     data:
       - sentences:

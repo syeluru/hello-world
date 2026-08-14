@@ -1,0 +1,171 @@
+# =============================================================================
+# Kitchen push-to-talk shopping button — M5Stack Atom Echo (~$13)
+# =============================================================================
+# A physical button you hold, speak into, and release:
+#
+#   HOLD + speak  ->  "we're out of eggs"      -> eggs go on the list
+#                     "we have milk"            -> milk comes off the list
+#                     "add paper towels"        -> added
+#   DOUBLE CLICK  ->  reads the current list back out loud
+#
+# Why push-to-talk instead of a wake word: no "hey Nabu" to remember, no false
+# triggers from kitchen noise, no always-listening microphone, and it works
+# reliably with a running tap and a hood fan going. Holding a button is also
+# the one interaction guests and kids get right the first time.
+#
+# Hardware: M5Stack Atom Echo, USB-C powered, stuck to the side of a cabinet
+# or the fridge. Any ESP32 with a mic and a button works the same way.
+#
+# NOTE ON PINS: these match the official Home Assistant Atom Echo config. If
+# ESPHome changes its audio components, adopt the current official Atom Echo
+# voice-assistant config and paste in ONLY the binary_sensor block below —
+# that block is the entire push-to-talk behavior.
+# =============================================================================
+
+substitutions:
+  device_name: kitchen-button
+  friendly: "Kitchen Button"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly}
+  # Announce readiness so you know it booted without checking a dashboard.
+  on_boot:
+    - priority: -100
+      then:
+        - light.turn_on:
+            id: status_led
+            brightness: 40%
+            red: 0%
+            green: 100%
+            blue: 0%
+        - delay: 1s
+        - light.turn_off: status_led
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: esp-idf
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${device_name}-setup"
+
+captive_portal:
+logger:
+
+# --- Audio hardware ----------------------------------------------------------
+i2s_audio:
+  - id: i2s_bus
+    i2s_lrclk_pin: GPIO33
+    i2s_bclk_pin: GPIO19
+
+microphone:
+  - platform: i2s_audio
+    id: echo_mic
+    i2s_audio_id: i2s_bus
+    i2s_din_pin: GPIO23
+    adc_type: external
+    pdm: true
+
+speaker:
+  - platform: i2s_audio
+    id: echo_speaker
+    i2s_audio_id: i2s_bus
+    i2s_dout_pin: GPIO22
+    dac_type: external
+    mode: mono
+
+# --- Voice pipeline ----------------------------------------------------------
+# Deliberately no wake word: this device only listens while the button is held.
+voice_assistant:
+  id: assistant
+  microphone: echo_mic
+  speaker: echo_speaker
+  # Speak the result so you get confirmation without looking at anything.
+  use_wake_word: false
+
+  on_listening:
+    - light.turn_on:
+        id: status_led
+        brightness: 60%
+        red: 0%
+        green: 40%
+        blue: 100%      # blue = listening
+
+  on_stt_vad_end:
+    - light.turn_on:
+        id: status_led
+        brightness: 60%
+        red: 80%
+        green: 0%
+        blue: 100%      # purple = thinking
+
+  on_end:
+    - light.turn_off: status_led
+
+  on_error:
+    - light.turn_on:
+        id: status_led
+        brightness: 100%
+        red: 100%
+        green: 0%
+        blue: 0%        # red = something failed
+    - delay: 2s
+    - light.turn_off: status_led
+
+# --- The button --------------------------------------------------------------
+binary_sensor:
+  - platform: gpio
+    id: talk_button
+    pin:
+      number: GPIO39
+      inverted: true
+    on_multi_click:
+      # Double click -> read the shopping list back.
+      - timing:
+          - ON for at most 400ms
+          - OFF for at most 400ms
+          - ON for at most 400ms
+          - OFF for at least 200ms
+        then:
+          - homeassistant.action:
+              action: script.speak_shopping_list
+              data:
+                target_device: ${device_name}
+
+      # Press and hold -> listen for as long as it's held.
+      - timing:
+          - ON for at least 400ms
+        then:
+          - voice_assistant.start:
+          - wait_until:
+              not:
+                binary_sensor.is_on: talk_button
+          - voice_assistant.stop:
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "Status"
+    pin: GPIO27
+    num_leds: 1
+    rmt_channel: 0
+    chipset: SK6812
+    rgb_order: GRB
+    default_transition_length: 0s
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 120s
