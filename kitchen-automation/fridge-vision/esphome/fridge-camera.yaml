@@ -1,0 +1,139 @@
+# =============================================================================
+# Fridge doorway camera — Seeed XIAO ESP32-S3 Sense
+# =============================================================================
+# Mount this OUTSIDE the cold zone: on the door frame or the cabinet above,
+# angled down into the door opening. The lens stays at room temperature and
+# therefore never fogs — which is the failure that ruins cameras mounted
+# inside the fridge.
+#
+# Wiring:
+#   Reed switch  -> GPIO2 and GND   (magnet on the fridge door)
+#   Power        -> USB-C, permanently powered
+#
+# Build the second doorway unit from this same file, changing only
+# `device_name` and `friendly` in the substitutions below. Only the FIRST
+# unit needs the reed switch — the second listens for the door state over
+# the network (see the binary_sensor at the bottom).
+# =============================================================================
+
+substitutions:
+  device_name: fridge-cam-left
+  friendly: "Fridge Camera Left"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly}
+
+esp32:
+  board: seeed_xiao_esp32s3
+  framework:
+    type: esp-idf
+
+# The camera needs PSRAM. The XIAO ESP32-S3 Sense has 8 MB.
+psram:
+  mode: octal
+  speed: 80MHz
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${device_name}-setup"
+
+captive_portal:
+
+logger:
+  level: INFO
+
+# --- Camera ------------------------------------------------------------------
+# Pinout is fixed by the XIAO ESP32-S3 Sense camera module.
+esp32_camera:
+  name: "Doorway"
+  id: doorway_cam
+  external_clock:
+    pin: GPIO10
+    frequency: 20MHz
+  i2c_pins:
+    sda: GPIO40
+    scl: GPIO39
+  data_pins: [GPIO15, GPIO17, GPIO18, GPIO16, GPIO14, GPIO12, GPIO11, GPIO48]
+  vsync_pin: GPIO38
+  href_pin: GPIO47
+  pixel_clock_pin: GPIO13
+
+  # Resolution trade-off: vision models do not need 5 MP to identify a carton
+  # of milk, and smaller frames mean faster capture and cheaper inference.
+  # 1024x768 is a good balance; drop to 800x600 if captures feel slow.
+  resolution: 1024x768
+  jpeg_quality: 12
+
+  # Idle framerate is deliberately near-zero — this camera only exists to
+  # produce stills on demand. Home Assistant raises it while streaming.
+  max_framerate: 10 fps
+  idle_framerate: 0.1 fps
+
+  # Slight exposure bump: hands in a doorway are often backlit by the
+  # interior light behind them.
+  ae_level: 1
+
+# --- Door sensor: the master trigger -----------------------------------------
+binary_sensor:
+  - platform: gpio
+    id: fridge_door
+    name: "Fridge Door"
+    device_class: door
+    pin:
+      number: GPIO2
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    filters:
+      # Debounce the reed switch without adding perceptible latency — the
+      # first frames after opening are the most valuable ones.
+      - delayed_on: 20ms
+      - delayed_off: 200ms
+
+  # Second unit only: mirror the door state from the unit that has the reed
+  # switch, so both cameras capture the same event. Comment out on unit one.
+  # - platform: homeassistant
+  #   id: fridge_door_remote
+  #   entity_id: binary_sensor.fridge_cam_left_fridge_door
+
+# --- Optional: capture illumination ------------------------------------------
+# A brief warm LED pulse improves color accuracy for the vision model when
+# the kitchen itself is dim. Skip if your fridge interior light is adequate.
+output:
+  - platform: ledc
+    pin: GPIO21
+    id: capture_light_output
+
+light:
+  - platform: monochromatic
+    name: "Capture Light"
+    output: capture_light_output
+    id: capture_light
+    default_transition_length: 0s
+    restore_mode: ALWAYS_OFF
+
+# --- Diagnostics -------------------------------------------------------------
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 120s
+  - platform: internal_temperature
+    name: "Board Temperature"
+    update_interval: 300s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"

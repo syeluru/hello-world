@@ -1,0 +1,162 @@
+# =============================================================================
+# Fridge vision pipeline — turn door events into an inventory ledger
+# =============================================================================
+# Requires:
+#   - An AI Task entity (Settings > Devices & Services > add OpenAI / Anthropic
+#     / Google Generative AI / Ollama, which exposes an ai_task entity).
+#     Replace ai_task.REPLACE_ME below with yours.
+#   - camera.fridge_cam_left_doorway from the ESPHome config.
+#   - binary_sensor.fridge_cam_left_fridge_door as the trigger.
+#
+# START HERE: run this in "observe only" mode for a week. It logs what the
+# model saw and notifies you, but writes to no inventory. Read the results
+# before trusting them with real stock levels — vision accuracy varies a lot
+# with camera placement, and you want to tune placement first.
+# =============================================================================
+
+input_boolean:
+  fridge_vision_observe_only:
+    name: "Fridge vision: observe only (no inventory writes)"
+    icon: mdi:eye-outline
+    initial: true
+
+input_text:
+  fridge_last_seen:
+    name: "Fridge: last detected change"
+    max: 255
+    icon: mdi:fridge-alert
+
+automation:
+  # ---------------------------------------------------------------------------
+  # Capture on door close, analyze what crossed the doorway.
+  #
+  # Why on close rather than open: the door being closed means the transaction
+  # is finished. Capturing mid-event gives you half a decision.
+  # ---------------------------------------------------------------------------
+  - id: fridge_vision_analyze_door_event
+    alias: "Fridge: analyze door event"
+    description: >-
+      When the fridge door closes, ask a vision model what was taken out or put
+      in, and record it. Deliberately does NOT try to inventory the shelves —
+      see fridge-vision/README.md for why the doorway is the right target.
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.fridge_cam_left_fridge_door
+        from: "on"
+        to: "off"
+    conditions:
+      # Ignore momentary opens — nobody retrieved anything in under 2 seconds.
+      - condition: template
+        value_template: >-
+          {{ (trigger.to_state.last_changed
+              - trigger.from_state.last_changed).total_seconds() > 2 }}
+    actions:
+      - action: ai_task.generate_data
+        data:
+          task_name: fridge_door_event
+          entity_id: ai_task.REPLACE_ME
+          instructions: >-
+            This image is of a refrigerator doorway, taken as someone finished
+            using it. Identify any food or drink items visible being carried in
+            or out. For each item give a short common name (for example "milk",
+            "eggs", "orange juice"), whether it was going in or out if you can
+            tell, and your confidence. If you cannot see any item being handled,
+            return an empty list rather than guessing. Do not describe people.
+          structure:
+            items:
+              description: "Food items being carried in or out"
+              required: true
+              selector:
+                object:
+              # Each entry: {name, direction: in|out|unknown, confidence: 0-1}
+          attachments:
+            media_content_id: media-source://camera/camera.fridge_cam_left_doorway
+            media_content_type: image/jpeg
+        response_variable: seen
+
+      - variables:
+          detected: "{{ seen.data.get('items', []) if seen is defined else [] }}"
+
+      # Nothing recognizable — stay silent. A system that announces "I saw
+      # nothing" fifteen times a day gets muted within a day.
+      - condition: template
+        value_template: "{{ detected | count > 0 }}"
+
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.fridge_last_seen
+        data:
+          value: >-
+            {{ detected | map(attribute='name') | join(', ') | truncate(250) }}
+
+      # Observe-only mode: report, don't write.
+      - if:
+          - condition: state
+            entity_id: input_boolean.fridge_vision_observe_only
+            state: "on"
+        then:
+          - action: notify.garage_household
+            data:
+              title: "🧊 Fridge saw"
+              message: >-
+                {% for i in detected %}
+                {{ i.name }}{{ ' (' ~ i.direction ~ ')' if i.get('direction') }}
+                {%- if not loop.last %}, {% endif %}
+                {%- endfor %}
+        else:
+          # Phase 2: decrement Grocy stock / add to the shopping list here.
+          # Left unimplemented until observation shows the detections are
+          # trustworthy enough to act on automatically.
+          - action: logbook.log
+            data:
+              name: "Fridge vision"
+              message: >-
+                {{ detected | map(attribute='name') | join(', ') }}
+
+  # ---------------------------------------------------------------------------
+  # Nightly shelf snapshot — the drift correction and the "what do we have"
+  # lookup you can check from the grocery store.
+  # ---------------------------------------------------------------------------
+  - id: fridge_vision_nightly_snapshot
+    alias: "Fridge: nightly contents snapshot"
+    description: >-
+      Once a day, describe the actual shelves. This is the ground truth that
+      corrects accumulated error in the doorway ledger.
+    mode: single
+    triggers:
+      - trigger: time
+        at: "03:00:00"
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.fridge_cam_left_fridge_door
+        state: "off"
+    actions:
+      - action: ai_task.generate_data
+        data:
+          task_name: fridge_contents
+          entity_id: ai_task.REPLACE_ME
+          instructions: >-
+            List the food and drink items visible on these refrigerator
+            shelves. Use short common names. Note anything that appears to be
+            spoiling or nearly empty. Items may be partially hidden behind
+            others — only list what you can actually see, and do not guess at
+            what might be behind them.
+          structure:
+            contents:
+              description: "Visible items on the shelves"
+              required: true
+              selector:
+                object:
+          attachments:
+            media_content_id: media-source://camera/camera.fridge_shelf_top_shelf
+            media_content_type: image/jpeg
+        response_variable: snapshot
+
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.fridge_last_seen
+        data:
+          value: >-
+            {{ (snapshot.data.get('contents', []) | join(', ')) | truncate(250) }}
