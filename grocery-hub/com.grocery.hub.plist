@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.grocery.hub</string>
+
+    <!-- Edit these paths to match your checkout -->
+    <key>WorkingDirectory</key>
+    <string>/Users/YOURNAME/grocery-hub</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/YOURNAME/grocery-hub/.venv/bin/uvicorn</string>
+        <string>server:app</string>
+        <string>--host</string>
+        <string>0.0.0.0</string>
+        <string>--port</string>
+        <string>8765</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ANTHROPIC_API_KEY</key>
+        <string>REPLACE_ME</string>
+        <key>GROCERY_TOKEN</key>
+        <string>REPLACE_ME</string>
+        <key>REMINDERS_LIST</key>
+        <string>Groceries</string>
+        <key>WHISPER_MODEL</key>
+        <string>small.en</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/grocery-hub.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/grocery-hub.log</string>
+</dict>
+</plist>
