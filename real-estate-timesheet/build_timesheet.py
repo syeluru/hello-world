@@ -14,6 +14,8 @@ So spouse hours help the 500-hour material participation test and do nothing for
 the 750-hour test. The Dashboard reflects that asymmetry.
 """
 
+import os
+
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.formatting.rule import CellIsRule, FormulaRule
@@ -94,17 +96,24 @@ PROPERTIES = [
 MONTHS = ["January", "February", "March", "April", "May", "June",
           "July", "August", "September", "October", "November", "December"]
 
-# row geometry
+# Row geometry. Overridable so the same code can be built at a small size and
+# evaluated end to end in tests (see verify_timesheet.py).
+LOG_ROWS = int(os.environ.get("TS_LOG_ROWS", 1000))
+N_PROPS = int(os.environ.get("TS_N_PROPS", 30))
+N_CATS = int(os.environ.get("TS_N_CATS", 25))
+OUT_PATH = os.environ.get("TS_OUT", "Real_Estate_Professional_Timesheet.xlsx")
+
 LOG_HDR = 4
 LOG_FIRST = 5
-LOG_LAST = 1004
+LOG_LAST = LOG_FIRST + LOG_ROWS - 1
 SETUP_FIRST = 4
-PROP_LAST = SETUP_FIRST + 29
-CAT_LAST = SETUP_FIRST + 24
+PROP_LAST = SETUP_FIRST + N_PROPS - 1
+CAT_LAST = SETUP_FIRST + N_CATS - 1
 MO_FIRST = 4
 MO_LAST = 15
-N_PROPS = 30
-N_CATS = 25
+
+CATEGORIES = CATEGORIES[:N_CATS]
+PROPERTIES = PROPERTIES[:N_PROPS]
 
 LOG = "'Time Log'"
 R_HRS = f"{LOG}!$F${LOG_FIRST}:$F${LOG_LAST}"
@@ -717,5 +726,5 @@ c.font = NOTE
 db.merge_cells(start_row=r, start_column=1, end_row=r, end_column=5)
 
 wb.move_sheet("Dashboard", offset=-2)   # Instructions, Dashboard, Time Log, Setup
-wb.save("Real_Estate_Professional_Timesheet.xlsx")
-print("written")
+wb.save(OUT_PATH)
+print(f"written {OUT_PATH} (log rows {LOG_ROWS}, props {N_PROPS}, cats {N_CATS})")
