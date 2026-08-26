@@ -1,0 +1,24 @@
+# systemd user service for Trackline.
+# Install: cp deploy/trackline.service ~/.config/systemd/user/
+#          systemctl --user daemon-reload && systemctl --user enable --now trackline
+# Keep running while logged out: loginctl enable-linger $USER
+#
+# Edit WorkingDirectory to your clone path. The service runs as your user, so
+# `claude -p` (meal analysis) uses the same Claude subscription login as your
+# shell. Environment is read from .env.local in the working directory by Next.
+
+[Unit]
+Description=Trackline fitness & nutrition tracker
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/fitness-nutrition-tracker
+ExecStart=/usr/bin/env npm run start
+Restart=on-failure
+RestartSec=5
+# npm/node/claude are often installed per-user (nvm, ~/.local/bin) — make sure
+# they're on PATH for the service:
+Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=default.target

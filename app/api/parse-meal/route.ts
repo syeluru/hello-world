@@ -46,7 +46,7 @@ The user ate: """${description}"""`;
     const e = err as NodeJS.ErrnoException;
     if (e.code === "ENOENT") {
       throw new UserFacingError(
-        "The `claude` CLI isn't available here. On Vercel, set ANTHROPIC_API_KEY (and MEAL_PARSER=api); on your own machine, install Claude Code and sign in with your subscription.",
+        "The `claude` CLI isn't available on this server. Install Claude Code and sign in with your subscription, or set ANTHROPIC_API_KEY with MEAL_PARSER=api.",
       );
     }
     throw new UserFacingError(
@@ -79,7 +79,7 @@ The user ate: """${description}"""`;
 async function parseWithApi(description: string): Promise<MealAnalysis> {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new UserFacingError(
-      "ANTHROPIC_API_KEY isn't set. Add it in Vercel project settings (or use MEAL_PARSER=cli locally with your Claude subscription).",
+      "ANTHROPIC_API_KEY isn't set. Set it, or use MEAL_PARSER=cli on a machine with Claude Code signed in.",
     );
   }
   const client = new Anthropic();
