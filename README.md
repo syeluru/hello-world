@@ -99,7 +99,14 @@ and reach it from your phone/laptop anywhere through your tailnet.
    systemctl --user enable --now trackline
    loginctl enable-linger $USER   # keep it alive when logged out
    ```
-   (On a Mac, use `brew services`, a LaunchAgent, or just tmux instead.)
+   On a **Mac**, use the provided LaunchAgent instead:
+   ```bash
+   cp deploy/com.trackline.app.plist ~/Library/LaunchAgents/
+   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.trackline.app.plist
+   ```
+   (Edit the `cd` path inside the plist if your clone isn't at
+   `~/fitness-nutrition-tracker`. Restart after a redeploy with
+   `launchctl kickstart -k gui/$(id -u)/com.trackline.app`.)
 
 Because the server runs on your own machine, the meal analyzer uses the
 `claude` CLI you're already signed into — your subscription, no API key. The
