@@ -1,139 +1,113 @@
-# Trackline — personal fitness & nutrition tracker
+# Hevy Clone — workout tracker
 
-A simple web app for two daily habits:
+A self-hosted, mobile-first workout tracker that mirrors the Hevy app: log
+workouts set by set, build routines, tick sets off as you go, run rest timers,
+and track personal records, charts and body measurements.
 
-1. **Fitness** — log what you trained on a given day (multi-select: chest,
-   triceps, shoulders, biceps, back, abs/core, quads, hamstrings, calves,
-   plyometrics, flexibility, recovery), with optional notes and per-day history.
-2. **Nutrition** — type **or speak** what you just ate; Claude breaks it into
-   items and estimates calories, protein, carbs, and fat. Log it and watch
-   today's totals.
+Everything runs in your browser. Data is stored locally (and optionally synced
+through Supabase so your phone and laptop share one history). No account, no
+subscription.
 
-**One codebase, three designs.** The theme switcher in the header swaps the
-entire look, each inspired by a different deck:
+## What's in it
 
-| Theme | Inspiration | Look |
-|---|---|---|
-| **Pulse** | [Google Cloud: AI Trends 2025](https://www.deck.gallery/google-cloud-ai-trends/) | White, data-forward, Google blue with red/yellow/green accents, crisp hairline borders, Inter |
-| **Bloom** | [APAC Beauty 2024](https://www.deck.gallery/apac-beauty-2024/) | Warm editorial: cream + blush + rose, Fraunces serif display, gold details, soft shadows |
-| **Hexa** | [Hexaware Brand Guidelines 2024](https://www.deck.gallery/hexaware-brand-guidelines-2024/) | Deep navy, Manrope light headlines + Heebo body, electric blue→cyan gradients, geometric |
+**Home**
+- Weekly bar chart (workouts / duration / volume / reps) for the last 8 weeks
+- Workout history feed: title, duration, volume, records, per-exercise best set
+- Per-workout menu: repeat, save as routine, edit, delete
 
-Your theme choice persists in the browser.
+**Workout tab**
+- Start Empty Workout
+- My Routines with folders (create, rename, delete, collapse), routine cards
+  with Start Routine, and a menu to edit, duplicate, move, reorder, delete
+- New Routine editor (title, notes, exercises, default sets and rest timer)
+- Explore: 10 sample programs (Full Body, Push/Pull/Legs, Upper/Lower, Home,
+  Arms & Abs) you can save to My Routines or start directly
+
+**Logging a workout**
+- Live duration, volume, set count and record count in the header
+- Set table per exercise: SET · PREVIOUS · KG · REPS · ✓ (columns adapt to the
+  exercise type: reps only, duration, distance, weighted or assisted bodyweight)
+- Previous column shows what you did last time; tap it to copy the values, and
+  blank sets are auto-filled from previous when you check them off
+- Set types: warm-up (W), normal, failure (F), drop set (D); remove set
+- Per-exercise notes, rest timer, supersets, replace, reorder, remove
+- Rest timer starts automatically when a set is completed, with -15s / +15s /
+  Skip, a beep and vibration at the end, and a manual quick-start timer
+- Minimize the workout and keep browsing; a banner brings you back
+- PR detection while you lift (heaviest weight, best 1RM, best set volume,
+  most reps, longest duration/distance)
+- Finish → Workout Complete summary; discard with confirmation
+- If you changed a routine's exercises mid-workout you're offered to update it
+- Edit any past workout after the fact
+
+**Exercises**
+- 280+ built-in exercises with primary/secondary muscles, equipment and type
+- Search, filter by body part and category, create and edit custom exercises
+- Exercise page: About, History (every set, PRs flagged), Charts (heaviest
+  weight, one rep max, best set volume, session volume), Records (incl. per-rep
+  records with estimated 1RM)
+
+**Profile**
+- Workouts count, week streak, 12-week chart
+- Statistics: totals, period filters, muscle group set counts, most performed
+- Calendar: month view with workout days and a per-day list
+- Measures: body weight and body fat log with chart
+- Settings: kg/lb, km/mi, default rest timer, sound, keep screen awake, show
+  previous values, dark/light theme, first day of week, export/import JSON,
+  delete all data
+
+Installable as a PWA (Add to Home Screen) with safe-area support.
 
 ## Stack
 
-- **Frontend**: Next.js (App Router, TypeScript) — self-hosted on your own
-  machine, reachable from your devices over **Tailscale**
-- **Backend**: **Supabase** (Postgres) for workouts & meals
-- **AI**: meal → macros analysis via **Claude Code headless mode**
-  (`claude -p`) using your Claude **subscription** — no API key. (An
-  Anthropic-API backend also exists via `MEAL_PARSER=api` if you ever host
-  somewhere without the `claude` CLI.)
-- **Voice**: browser Web Speech API (Chrome / Edge / Safari)
+- Next.js (App Router) + React + TypeScript, no UI framework, plain CSS
+- All state in one client-side document persisted to `localStorage`
+- Optional Supabase sync of that document (`supabase/schema.sql`)
 
-No Supabase yet? The app runs in **demo mode** and stores data in
-`localStorage` so you can try everything immediately.
-
-## Quick start (local, uses your Claude subscription)
+## Run it
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
 ```
 
-That's it for the nutrition AI: with no `ANTHROPIC_API_KEY` set, the API route
-shells out to `claude -p` (Claude Code headless mode), which uses whatever
-subscription your local `claude` CLI is signed into. Requires
-[Claude Code](https://claude.com/claude-code) installed and logged in.
-
-## Supabase setup (persistence)
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run the contents of [`supabase/schema.sql`](supabase/schema.sql).
-3. Copy `.env.example` to `.env.local` and fill in from **Settings → API**:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=...
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-   ```
-4. Restart `npm run dev`. The demo-mode banner disappears.
-
-> Single-user setup: the schema enables RLS with permissive anon policies, so
-> anyone with your URL + anon key can write. Keep them private; add Supabase
-> Auth later if you want real protection.
-
-## Host it on your own machine (via Tailscale)
-
-Run the app on any always-on machine that has Node and Claude Code signed in,
-and reach it from your phone/laptop anywhere through your tailnet.
-
-1. **Build and start the server** on the host machine:
-   ```bash
-   npm install
-   npm run build
-   npm run start          # serves on http://localhost:3000
-   ```
-   `npm run start` deliberately binds to `127.0.0.1` only — the app is never
-   exposed to your LAN or the internet directly; Tailscale is the front door.
-2. **Expose it over Tailscale with HTTPS** (on the same machine):
-   ```bash
-   tailscale serve --bg http://localhost:3000
-   ```
-   Tailscale prints your URL, e.g. `https://mybox.tail1234.ts.net`. Open that
-   from any device on your tailnet. If certs were never enabled, first run
-   `tailscale cert` or enable **HTTPS Certificates** in the Tailscale admin
-   console (MagicDNS required).
-
-   > **Why `tailscale serve` and not just `http://100.x.y.z:3000`?** Browsers
-   > only allow microphone access on HTTPS origins — voice logging would
-   > silently stop working over plain HTTP. `serve` gives you a real cert,
-   > and the app stays tailnet-only (don't use `tailscale funnel` unless you
-   > deliberately want it public).
-
-3. **Keep it running** after you log out — either a tmux session, or the
-   provided systemd user service:
-   ```bash
-   mkdir -p ~/.config/systemd/user
-   cp deploy/trackline.service ~/.config/systemd/user/
-   # edit WorkingDirectory in the file to where you cloned this repo, then:
-   systemctl --user daemon-reload
-   systemctl --user enable --now trackline
-   loginctl enable-linger $USER   # keep it alive when logged out
-   ```
-   On a **Mac**, use the provided LaunchAgent instead:
-   ```bash
-   cp deploy/com.trackline.app.plist ~/Library/LaunchAgents/
-   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.trackline.app.plist
-   ```
-   (Edit the `cd` path inside the plist if your clone isn't at
-   `~/fitness-nutrition-tracker`. Restart after a redeploy with
-   `launchctl kickstart -k gui/$(id -u)/com.trackline.app`.)
-
-Because the server runs on your own machine, the meal analyzer uses the
-`claude` CLI you're already signed into — your subscription, no API key. The
-`claude -p` call runs as the same user that runs the server, so make sure that
-user has run `claude` interactively once to log in.
-
-**Redeploying after changes:** `git pull && npm install && npm run build &&
-systemctl --user restart trackline`.
-
-## Configuration reference
-
-| Variable | Purpose |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase persistence (omit → browser-local demo mode) |
-| `MEAL_PARSER` | `cli` = Claude Code headless (subscription), `api` = Anthropic API. Unset → auto (`api` if key present, else `cli`) |
-| `ANTHROPIC_API_KEY` | Only for `MEAL_PARSER=api` |
-
-## Moving this to its own repository
-
-This project was built on a branch of `hello-world` because the Claude GitHub
-integration couldn't create a new repository. To give it its own home:
+Production:
 
 ```bash
-# 1. Create an empty repo on GitHub (e.g. fitness-nutrition-tracker), then:
-git clone --branch claude/fitness-nutrition-tracker-do8v3k \
-  https://github.com/syeluru/hello-world.git fitness-nutrition-tracker
-cd fitness-nutrition-tracker
-git remote set-url origin https://github.com/syeluru/fitness-nutrition-tracker.git
-git push -u origin HEAD:main
+npm run build
+npm run start      # binds to 127.0.0.1:3000
 ```
+
+## Sync across devices (optional)
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Open **SQL Editor** and run [`supabase/schema.sql`](supabase/schema.sql).
+3. Copy `.env.example` to `.env.local` and fill in the URL and anon key from
+   **Settings → API**.
+4. Restart the server. Settings → Data → Sync shows **On**.
+
+The full document is pushed 1.5 s after any change and pulled whenever the tab
+becomes visible. Newest `updatedAt` wins.
+
+## Host on your own machine (Tailscale)
+
+```bash
+npm install && npm run build
+npm run start                         # 127.0.0.1:3000 only
+tailscale serve --bg http://localhost:3000
+```
+
+Open the printed `https://<host>.<tailnet>.ts.net` URL from your phone and add
+it to the home screen. Keep it running with the provided service files:
+
+- Linux: `deploy/workout.service` (systemd user unit)
+- macOS: `deploy/com.workout.app.plist` (LaunchAgent)
+
+Edit the working directory path inside whichever you use.
+
+## Data
+
+Settings → Export writes a JSON file with everything (workouts, routines,
+custom exercises, measurements, settings). Import replaces the current data
+with a previously exported file. Weights are stored in kg and distances in
+metres regardless of display units.

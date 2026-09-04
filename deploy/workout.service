@@ -1,0 +1,20 @@
+# systemd user service for the workout tracker.
+# Install: cp deploy/workout.service ~/.config/systemd/user/
+#          systemctl --user daemon-reload && systemctl --user enable --now workout
+# Keep running while logged out: loginctl enable-linger $USER
+#
+# Edit WorkingDirectory to your clone path.
+
+[Unit]
+Description=Workout tracker (Hevy-style)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/hevy-clone
+ExecStart=/usr/bin/env npm run start
+Restart=on-failure
+RestartSec=5
+Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=default.target

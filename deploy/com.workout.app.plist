@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- macOS LaunchAgent for the workout tracker.
+       Install:
+         cp deploy/com.workout.app.plist ~/Library/LaunchAgents/
+         launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.workout.app.plist
+       Assumes the repo is cloned at ~/hevy-clone; edit the cd path if not.
+       Restart after a redeploy: launchctl kickstart -k gui/$(id -u)/com.workout.app -->
+  <key>Label</key>
+  <string>com.workout.app</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>cd "$HOME/hevy-clone" &amp;&amp; exec npm run start</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/workout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/workout.err.log</string>
+</dict>
+</plist>

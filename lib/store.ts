@@ -1,181 +1,147 @@
 "use client";
 
-import { getSupabase, supabaseConfigured } from "./supabaseClient";
-import type { MealItem, MealLog, WorkoutLog } from "./types";
+import { useSyncExternalStore } from "react";
+import type { AppData, Settings } from "./types";
 
-// Data layer: uses Supabase when configured, otherwise falls back to
-// localStorage ("demo mode") so the app is usable before any setup.
+export const STORAGE_KEY = "hevyclone:v1";
 
-export const usingSupabase = supabaseConfigured;
+export const DEFAULT_SETTINGS: Settings = {
+  name: "You",
+  weightUnit: "kg",
+  distanceUnit: "km",
+  theme: "dark",
+  defaultRestSec: 90,
+  firstWeekday: 1,
+  restTimerSound: true,
+  keepScreenOn: false,
+  showPreviousInWorkout: true,
+};
 
-const LS_WORKOUTS = "fnt_workouts";
-const LS_MEALS = "fnt_meals";
-
-function lsRead<T>(key: string): T[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(window.localStorage.getItem(key) ?? "[]") as T[];
-  } catch {
-    return [];
-  }
-}
-
-function lsWrite<T>(key: string, rows: T[]) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(rows));
-  } catch {
-    // storage unavailable (private mode etc.) — demo mode just won't persist
-  }
-}
-
-function uid(): string {
-  return (
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
-}
-
-// ---------- Workouts ----------
-
-export async function listWorkouts(limit = 14): Promise<WorkoutLog[]> {
-  const sb = getSupabase();
-  if (sb) {
-    const { data, error } = await sb
-      .from("workouts")
-      .select("id, workout_date, muscle_groups, notes")
-      .order("workout_date", { ascending: false })
-      .limit(limit);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as WorkoutLog[];
-  }
-  return lsRead<WorkoutLog>(LS_WORKOUTS)
-    .sort((a, b) => b.workout_date.localeCompare(a.workout_date))
-    .slice(0, limit);
-}
-
-export async function getWorkout(date: string): Promise<WorkoutLog | null> {
-  const sb = getSupabase();
-  if (sb) {
-    const { data, error } = await sb
-      .from("workouts")
-      .select("id, workout_date, muscle_groups, notes")
-      .eq("workout_date", date)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return (data as WorkoutLog) ?? null;
-  }
-  return (
-    lsRead<WorkoutLog>(LS_WORKOUTS).find((w) => w.workout_date === date) ?? null
-  );
-}
-
-export async function upsertWorkout(
-  date: string,
-  muscleGroups: string[],
-  notes: string,
-): Promise<WorkoutLog> {
-  const sb = getSupabase();
-  if (sb) {
-    const { data, error } = await sb
-      .from("workouts")
-      .upsert(
-        {
-          workout_date: date,
-          muscle_groups: muscleGroups,
-          notes: notes || null,
-        },
-        { onConflict: "workout_date" },
-      )
-      .select("id, workout_date, muscle_groups, notes")
-      .single();
-    if (error) throw new Error(error.message);
-    return data as WorkoutLog;
-  }
-  const rows = lsRead<WorkoutLog>(LS_WORKOUTS);
-  const existing = rows.find((w) => w.workout_date === date);
-  const row: WorkoutLog = {
-    id: existing?.id ?? uid(),
-    workout_date: date,
-    muscle_groups: muscleGroups,
-    notes: notes || null,
+export function emptyData(): AppData {
+  return {
+    version: 1,
+    customExercises: [],
+    workouts: [],
+    routines: [],
+    folders: [],
+    measurements: [],
+    settings: { ...DEFAULT_SETTINGS },
+    activeWorkout: null,
+    updatedAt: 0,
   };
-  lsWrite(
-    LS_WORKOUTS,
-    [...rows.filter((w) => w.workout_date !== date), row],
-  );
-  return row;
 }
 
-// ---------- Meals ----------
-
-export async function listMeals(limit = 25): Promise<MealLog[]> {
-  const sb = getSupabase();
-  if (sb) {
-    const { data, error } = await sb
-      .from("meals")
-      .select(
-        "id, description, items, calories, protein_g, carbs_g, fat_g, eaten_at",
-      )
-      .order("eaten_at", { ascending: false })
-      .limit(limit);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as MealLog[];
-  }
-  return lsRead<MealLog>(LS_MEALS)
-    .sort((a, b) => b.eaten_at.localeCompare(a.eaten_at))
-    .slice(0, limit);
-}
-
-export async function addMeal(
-  description: string,
-  items: MealItem[],
-  totals: { calories: number; protein_g: number; carbs_g: number; fat_g: number },
-): Promise<MealLog> {
-  const row = {
-    description,
-    items,
-    calories: totals.calories,
-    protein_g: totals.protein_g,
-    carbs_g: totals.carbs_g,
-    fat_g: totals.fat_g,
-    eaten_at: new Date().toISOString(),
+/** Fill in any missing fields from an older / partial document. */
+export function normalize(input: unknown): AppData {
+  const base = emptyData();
+  if (!input || typeof input !== "object") return base;
+  const d = input as Partial<AppData>;
+  return {
+    version: 1,
+    customExercises: Array.isArray(d.customExercises) ? d.customExercises : [],
+    workouts: Array.isArray(d.workouts) ? d.workouts : [],
+    routines: Array.isArray(d.routines) ? d.routines : [],
+    folders: Array.isArray(d.folders) ? d.folders : [],
+    measurements: Array.isArray(d.measurements) ? d.measurements : [],
+    settings: { ...DEFAULT_SETTINGS, ...(d.settings ?? {}) },
+    activeWorkout: d.activeWorkout ?? null,
+    updatedAt: typeof d.updatedAt === "number" ? d.updatedAt : 0,
   };
-  const sb = getSupabase();
-  if (sb) {
-    const { data, error } = await sb
-      .from("meals")
-      .insert(row)
-      .select(
-        "id, description, items, calories, protein_g, carbs_g, fat_g, eaten_at",
-      )
-      .single();
-    if (error) throw new Error(error.message);
-    return data as MealLog;
-  }
-  const withId: MealLog = { id: uid(), ...row };
-  lsWrite(LS_MEALS, [withId, ...lsRead<MealLog>(LS_MEALS)]);
-  return withId;
 }
 
-export async function deleteMeal(id: string): Promise<void> {
-  const sb = getSupabase();
-  if (sb) {
-    const { error } = await sb.from("meals").delete().eq("id", id);
-    if (error) throw new Error(error.message);
-    return;
+let state: AppData = emptyData();
+let hydrated = false;
+const listeners = new Set<() => void>();
+const serverSnapshot = emptyData();
+
+function emit() {
+  for (const l of listeners) l();
+}
+
+export function getState(): AppData {
+  return state;
+}
+
+export function isHydrated(): boolean {
+  return hydrated;
+}
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn("Failed to save", e);
+    }
+  }, 150);
+}
+
+/** Replace state (touches updatedAt) and persist. */
+export function setState(updater: (s: AppData) => AppData): void {
+  const next = updater(state);
+  if (next === state) return;
+  state = { ...next, updatedAt: Date.now() };
+  emit();
+  scheduleSave();
+}
+
+/** Replace state with an externally-sourced document without bumping updatedAt. */
+export function replaceState(doc: AppData, persist = true): void {
+  state = doc;
+  emit();
+  if (persist) scheduleSave();
+}
+
+export function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** Load from localStorage. Safe to call multiple times. */
+export function hydrate(): void {
+  if (hydrated || typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = normalize(JSON.parse(raw));
+  } catch (e) {
+    console.warn("Failed to load saved data", e);
   }
-  lsWrite(
-    LS_MEALS,
-    lsRead<MealLog>(LS_MEALS).filter((m) => m.id !== id),
+  hydrated = true;
+  emit();
+}
+
+export function useStore<T>(selector: (s: AppData) => T): T {
+  return useSyncExternalStore(
+    subscribe,
+    () => selector(state),
+    () => selector(serverSnapshot)
   );
 }
 
-export function isToday(iso: string): boolean {
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => hydrated,
+    () => false
   );
+}
+
+export function useSettings(): Settings {
+  return useStore((s) => s.settings);
+}
+
+// Cross-tab sync: another tab saved → reload it here.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== STORAGE_KEY || !e.newValue) return;
+    try {
+      const doc = normalize(JSON.parse(e.newValue));
+      if (doc.updatedAt > state.updatedAt) replaceState(doc, false);
+    } catch {
+      /* ignore */
+    }
+  });
 }
