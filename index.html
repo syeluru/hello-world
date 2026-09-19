@@ -1,0 +1,1113 @@
+<title>Tender Stack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#F1F3F1; --surface:#FFFFFF; --surface-2:#E8ECE9; --sunk:#E2E7E4;
+  --ink:#131817; --ink-2:#48534F; --ink-3:#79857F;
+  --line:#D3DAD6; --line-2:#C0C9C4;
+  --accent:#0E7C4F; --accent-ink:#FFFFFF; --accent-soft:#DCEFE4; --accent-line:#A9D4BF;
+  --warn:#835B00; --warn-soft:#F5E9C9;
+  --alert:#A3331B; --alert-soft:#F6DFD8;
+  --shadow:0 1px 2px rgba(19,24,23,.05), 0 10px 28px -16px rgba(19,24,23,.28);
+  --shadow-lift:0 2px 4px rgba(19,24,23,.06), 0 20px 44px -20px rgba(19,24,23,.34);
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1110; --surface:#161B19; --surface-2:#1E2522; --sunk:#121716;
+    --ink:#E7ECE9; --ink-2:#A4B0AB; --ink-3:#76827D;
+    --line:#293230; --line-2:#36403C;
+    --accent:#35C287; --accent-ink:#04140C; --accent-soft:#12291F; --accent-line:#1F5140;
+    --warn:#D6A23C; --warn-soft:#2A2312;
+    --alert:#E0745C; --alert-soft:#2E1913;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -16px rgba(0,0,0,.7);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.45), 0 20px 44px -20px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1110; --surface:#161B19; --surface-2:#1E2522; --sunk:#121716;
+  --ink:#E7ECE9; --ink-2:#A4B0AB; --ink-3:#76827D;
+  --line:#293230; --line-2:#36403C;
+  --accent:#35C287; --accent-ink:#04140C; --accent-soft:#12291F; --accent-line:#1F5140;
+  --warn:#D6A23C; --warn-soft:#2A2312;
+  --alert:#E0745C; --alert-soft:#2E1913;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -16px rgba(0,0,0,.7);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.45), 0 20px 44px -20px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Archivo","Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+.lbl{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.655rem;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.018em}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ---------- shell ---------- */
+.wrap{max-width:660px;margin:0 auto;padding:0 16px 64px}
+.topbar{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:30;
+  background:color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter:saturate(1.6) blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-in{max-width:660px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:9px;margin-right:auto;min-width:0}
+.mark{position:relative;width:19px;height:19px;flex:none}
+.mark i{position:absolute;display:block;width:15px;height:9px;border-radius:2.5px;border:1.5px solid var(--ink)}
+.mark i:nth-child(1){top:0;left:4px;background:var(--accent);border-color:var(--accent)}
+.mark i:nth-child(2){bottom:0;left:0;background:var(--surface)}
+.wordmark{font-weight:700;font-size:.97rem;letter-spacing:-.02em;white-space:nowrap}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;flex:none;
+  padding:6px 11px;border-radius:999px;border:1px solid var(--line-2);
+  background:var(--surface);font-size:.7rem;letter-spacing:.04em;font-weight:500;color:var(--ink-2);
+}
+.chip[data-on="1"]{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--ink-3);flex:none}
+.chip[data-on="1"] .dot{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+
+.tabs{display:flex;gap:2px;padding:4px;margin:14px 0 18px;background:var(--sunk);border:1px solid var(--line);border-radius:11px}
+.tabs button{
+  flex:1;border:0;background:transparent;border-radius:8px;padding:8px 4px;
+  font-size:.815rem;font-weight:600;color:var(--ink-3);letter-spacing:-.01em;transition:background .14s,color .14s;
+}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.07)}
+
+.stackv{display:flex;flex-direction:column;gap:14px}
+.sec-head{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px}
+.sec-head h3{font-size:.95rem;font-weight:600}
+.sec-head .lbl{margin-left:auto}
+
+/* ---------- verdict ---------- */
+.verdict{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.verdict.hero{box-shadow:var(--shadow-lift);border-color:var(--line-2)}
+.v-head{padding:15px 16px 13px}
+.v-eyebrow{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.v-name{font-size:clamp(1.35rem,5.6vw,1.85rem);font-weight:700;line-height:1.14}
+.verdict:not(.hero) .v-name{font-size:1.12rem}
+.v-meta{margin-top:5px;font-size:.7rem;color:var(--ink-3);letter-spacing:.03em}
+
+.banner{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  padding:12px 16px;background:var(--accent);color:var(--accent-ink);
+}
+.banner .amt{font-size:1.45rem;font-weight:600;letter-spacing:-.02em}
+.banner .cap{font-size:.665rem;letter-spacing:.11em;text-transform:uppercase;opacity:.82;font-weight:500}
+.banner.none{background:var(--surface-2);color:var(--ink-2)}
+.banner.none .amt{font-size:.92rem;font-weight:500;letter-spacing:0}
+
+.grp{padding:13px 16px 0}
+.grp + .grp{padding-top:14px;margin-top:2px;border-top:1px solid var(--line)}
+.grp .lbl{display:block;margin-bottom:9px}
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+ol.steps li{display:flex;gap:11px;align-items:flex-start}
+.n{
+  flex:none;width:21px;height:21px;border-radius:5px;margin-top:1px;
+  display:grid;place-items:center;font-size:.72rem;font-weight:600;
+  background:var(--accent);color:var(--accent-ink);
+}
+.n.sec{background:var(--surface-2);color:var(--ink-2)}
+.n.plus{background:transparent;border:1px dashed var(--line-2);color:var(--ink-3)}
+.step-b{min-width:0;flex:1}
+.step-t{font-weight:600;font-size:.92rem;line-height:1.3;display:flex;flex-wrap:wrap;gap:7px;align-items:baseline}
+.step-d{font-size:.745rem;color:var(--ink-2);margin-top:2px;letter-spacing:.01em}
+.step-n{font-size:.775rem;color:var(--ink-3);margin-top:5px;line-height:1.45}
+.tag{font-family:"IBM Plex Mono",Menlo,monospace;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;padding:2.5px 6px;border-radius:4px;font-weight:600;white-space:nowrap}
+.tag.good{background:var(--accent-soft);color:var(--accent)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--alert-soft);color:var(--alert)}
+.tag.mute{background:var(--surface-2);color:var(--ink-3)}
+.why{margin:14px 16px 15px;padding:11px 12px;background:var(--sunk);border-radius:9px;font-size:.795rem;color:var(--ink-2);line-height:1.5}
+.why b{color:var(--ink);font-weight:600}
+.v-actions{display:flex;gap:8px;padding:0 16px 14px;flex-wrap:wrap}
+
+/* ---------- rows / cards ---------- */
+.row{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+}
+button.row{transition:border-color .14s,transform .08s}
+button.row:hover{border-color:var(--line-2)}
+button.row:active{transform:scale(.995)}
+.row-b{min-width:0;flex:1}
+.row-t{font-weight:600;font-size:.895rem;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
+.row-d{font-size:.715rem;color:var(--ink-3);margin-top:2px;letter-spacing:.02em}
+.row-r{flex:none;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.row-amt{font-family:"IBM Plex Mono",Menlo,monospace;font-size:.86rem;font-weight:600;font-variant-numeric:tabular-nums}
+.row-amt.zero{color:var(--ink-3);font-weight:400}
+
+.note{background:var(--surface);border:1px dashed var(--line-2);border-radius:10px;padding:13px 14px;font-size:.815rem;color:var(--ink-2);line-height:1.5}
+.note b{color:var(--ink);font-weight:600}
+
+.btn{
+  border:1px solid var(--line-2);background:var(--surface);border-radius:8px;
+  padding:7px 12px;font-size:.795rem;font-weight:600;color:var(--ink);letter-spacing:-.01em;
+}
+.btn:hover{border-color:var(--ink-3)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{padding:5px 9px;font-size:.73rem;font-weight:500}
+.btn.danger{color:var(--alert);border-color:var(--alert-soft)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+input,select,textarea{
+  font:inherit;width:100%;background:var(--surface);color:var(--ink);
+  border:1px solid var(--line-2);border-radius:8px;padding:9px 11px;font-size:.875rem;
+}
+textarea{resize:vertical;min-height:62px;line-height:1.45}
+input::placeholder,textarea::placeholder{color:var(--ink-3)}
+.field{display:flex;flex-direction:column;gap:5px}
+.field > .lbl{color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:11px}
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.checks label{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;
+  border:1px solid var(--line-2);background:var(--surface);font-size:.755rem;cursor:pointer;
+}
+.checks input{width:auto;accent-color:var(--accent);margin:0}
+.checks label:has(input:checked){background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:500}
+
+.search{position:relative}
+.search input{padding-left:33px}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3)}
+
+.toggle{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 13px}
+.toggle .tg-b{flex:1;min-width:0}
+.toggle input{width:auto;accent-color:var(--accent);flex:none;width:19px;height:19px}
+
+/* ---------- sheet ---------- */
+.scrim{position:fixed;inset:0;background:rgba(10,14,13,.45);z-index:40;backdrop-filter:blur(2px)}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:var(--paper);border-top:1px solid var(--line-2);
+  border-radius:16px 16px 0 0;box-shadow:var(--shadow-lift);
+  max-height:88vh;display:flex;flex-direction:column;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (min-width:620px){
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-50%);width:560px;border-radius:14px;border:1px solid var(--line-2);max-height:86vh}
+}
+.sheet-head{display:flex;align-items:center;gap:12px;padding:15px 16px 12px;border-bottom:1px solid var(--line)}
+.sheet-head h3{font-size:1.02rem;font-weight:700;flex:1}
+.sheet-body{overflow-y:auto;padding:15px 16px;display:flex;flex-direction:column;gap:13px}
+.sheet-foot{display:flex;gap:9px;padding:12px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.sheet-foot .btn{flex:1;padding:10px}
+.sheet-foot .btn.danger{flex:none}
+.x{border:0;background:var(--surface-2);width:28px;height:28px;border-radius:7px;display:grid;place-items:center;flex:none;color:var(--ink-2);font-size:1rem;line-height:1}
+
+.empty{text-align:center;padding:30px 18px;color:var(--ink-3)}
+.empty .big{font-size:.95rem;color:var(--ink-2);font-weight:600;margin-bottom:5px}
+.hr{height:1px;background:var(--line);margin:4px 0}
+.foot{margin-top:28px;font-size:.735rem;color:var(--ink-3);line-height:1.6}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><i></i><i></i></span>
+      <span class="wordmark">Tender Stack</span>
+    </div>
+    <button id="locBtn" class="chip mono" type="button"><span class="dot"></span><span id="locTxt">Locate me</span></button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button role="tab" id="tab-near" aria-controls="view-near" aria-selected="true">Near me</button>
+    <button role="tab" id="tab-lookup" aria-controls="view-lookup" aria-selected="false">Look up</button>
+    <button role="tab" id="tab-wallet" aria-controls="view-wallet" aria-selected="false">Wallet</button>
+  </nav>
+
+  <section id="view-near" role="tabpanel" aria-labelledby="tab-near"></section>
+  <section id="view-lookup" role="tabpanel" aria-labelledby="tab-lookup" hidden></section>
+  <section id="view-wallet" role="tabpanel" aria-labelledby="tab-wallet" hidden></section>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<div id="scrim" class="scrim" hidden></div>
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-head"><h3 id="sheetTitle"></h3><button class="x" id="sheetX" type="button" aria-label="Close">&times;</button></div>
+  <div class="sheet-body" id="sheetBody"></div>
+  <div class="sheet-foot" id="sheetFoot"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ======================= constants ======================= */
+var CATS = [
+  ["coffee","Coffee"],["dining","Restaurants"],["grocery","Grocery"],["drugstore","Drugstore"],
+  ["retail","Retail"],["travel","Travel"],["gas","Gas"],["other","Other"]
+];
+var KINDS = [
+  ["giftcard","Gift card",    "Stored value at one place. Spend it down."],
+  ["credit",  "House credit", "A balance inside a program's app — inKind, hotel credit, a tab."],
+  ["cashback","Cashback program","Rakuten and friends. Not a payment method — a layer on top."],
+  ["card",    "Credit card",  "Your fallback. Earns a rate on whatever's left."]
+];
+var CHANNELS = [
+  ["any","Anywhere"],["in_store","In store only"],["app","In the program's app"],
+  ["online","Online / order ahead only"],["linked","Linked card, pays automatically"]
+];
+var CATNAME = {}; CATS.forEach(function(c){CATNAME[c[0]]=c[1];});
+var KINDNAME = {}; KINDS.forEach(function(k){KINDNAME[k[0]]=k[1];});
+var CHANNAME = {}; CHANNELS.forEach(function(c){CHANNAME[c[0]]=c[1];});
+
+/* ======================= state ======================= */
+var S = {
+  merchants: [], instruments: [],
+  prefs: { radiusM: 400, alerts: false },
+  view: "near", pos: null, posErr: null, locating: false,
+  openMerchant: null, query: "", db: null, dbState: "connecting", watchId: null, inside: {}
+};
+var CACHE = "tenderstack.v1";
+
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+function loadCache(){
+  var raw = lsGet(CACHE); if(!raw) return;
+  try{
+    var d = JSON.parse(raw);
+    if(Array.isArray(d.merchants)) S.merchants = d.merchants;
+    if(Array.isArray(d.instruments)) S.instruments = d.instruments;
+    if(d.prefs) S.prefs = Object.assign(S.prefs, d.prefs);
+  }catch(e){}
+}
+function saveCache(){
+  lsSet(CACHE, JSON.stringify({merchants:S.merchants, instruments:S.instruments, prefs:S.prefs}));
+}
+
+/* ======================= helpers ======================= */
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function uid(p){ return p + "_" + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-3); }
+function money(n){
+  if(n == null || isNaN(n)) return "—";
+  return "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function money0(n){
+  if(n == null || isNaN(n)) return "—";
+  return "$" + Number(n).toLocaleString("en-US",{maximumFractionDigits:0});
+}
+function pct(n){ return (Math.round(Number(n)*100)/100) + "%"; }
+function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
+
+function haversine(a, b){
+  var R = 6371000, t = Math.PI/180;
+  var dLat = (b.lat-a.lat)*t, dLng = (b.lng-a.lng)*t;
+  var s = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return 2*R*Math.asin(Math.min(1, Math.sqrt(s)));
+}
+function fmtDist(m){
+  if(m == null) return "";
+  if(m < 950) return Math.round(m/5)*5 + " m";
+  var mi = m/1609.34;
+  return (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + " mi";
+}
+function daysTo(iso){
+  if(!iso) return null;
+  var d = new Date(iso + "T12:00:00");
+  if(isNaN(d)) return null;
+  return Math.round((d - new Date())/86400000);
+}
+function expiryTag(inst){
+  var d = daysTo(inst.expires);
+  if(d == null) return null;
+  if(d < 0) return {cls:"bad", txt:"expired"};
+  if(d <= 30) return {cls:"bad", txt:d + "d left"};
+  if(d <= 120) return {cls:"warn", txt:d + "d left"};
+  return {cls:"mute", txt:"exp " + inst.expires};
+}
+
+/* ======================= data writes ======================= */
+function upsert(coll, obj){
+  var arr = S[coll], i = -1;
+  for(var k=0;k<arr.length;k++){ if(arr[k].id === obj.id){ i = k; break; } }
+  if(i >= 0) arr[i] = obj; else arr.push(obj);
+  saveCache(); render();
+  if(S.db){
+    var body = Object.assign({}, obj); delete body.id;
+    S.db.doc(coll + "/" + obj.id).set(body).catch(function(e){ flagDb(e); });
+  }
+}
+function removeDoc(coll, id){
+  S[coll] = S[coll].filter(function(x){ return x.id !== id; });
+  saveCache(); render();
+  if(S.db) S.db.doc(coll + "/" + id).delete().catch(function(e){ flagDb(e); });
+}
+function savePrefs(patch){
+  S.prefs = Object.assign({}, S.prefs, patch);
+  saveCache(); render();
+  if(S.db) S.db.doc("settings/prefs").set(S.prefs).catch(function(e){ flagDb(e); });
+}
+function flagDb(e){
+  S.dbState = (e && e.code === "revoked") ? "revoked" : "error";
+  renderFoot();
+}
+
+/* ======================= the engine ======================= */
+function isStored(i){ return i.kind === "giftcard" || i.kind === "credit"; }
+
+function applies(inst, m){
+  if(inst.active === false) return false;
+  if(isStored(inst) && inst.balance != null && inst.balance <= 0) return false;
+  if(daysTo(inst.expires) != null && daysTo(inst.expires) < 0) return false;
+  var mode = inst.mode || "any";
+  if(mode === "any") return true;
+  if(mode === "merchant") return (inst.merchantIds || []).indexOf(m.id) >= 0;
+  if(mode === "category") return (inst.categories || []).indexOf(m.category) >= 0;
+  return false;
+}
+// What this instrument earns here, as a percentage of the amount it covers.
+function rateAt(inst, m){
+  if(inst.kind === "card"){
+    var bonus = (inst.categories || []).indexOf(m.category) >= 0;
+    return bonus ? (num(inst.rate) || 0) : (num(inst.baseRate) || 0);
+  }
+  return num(inst.rate) || 0;
+}
+// Stored value bought at a discount is worth more than its face.
+function premium(inst){
+  var b = num(inst.balance), f = num(inst.faceValue);
+  if(b == null || f == null || f <= 0) return 1;
+  return b / f;
+}
+
+function stackFor(m){
+  var app = S.instruments.filter(function(i){ return applies(i, m); });
+
+  var stored = app.filter(isStored).sort(function(a,b){
+    var da = daysTo(a.expires), db_ = daysTo(b.expires);
+    if(da != null && db_ == null) return -1;
+    if(db_ != null && da == null) return 1;
+    if(da != null && db_ != null && da !== db_) return da - db_;
+    var pa = premium(a), pb = premium(b);
+    if(pa !== pb) return pb - pa;
+    return (num(b.balance) || 0) - (num(a.balance) || 0);
+  });
+
+  var cards = app.filter(function(i){ return i.kind === "card"; })
+    .map(function(i){ return {inst:i, rate:rateAt(i,m)}; })
+    .sort(function(a,b){ return b.rate - a.rate; });
+
+  var layers = app.filter(function(i){ return i.kind === "cashback"; })
+    .map(function(i){ return {inst:i, rate:rateAt(i,m)}; })
+    .sort(function(a,b){ return b.rate - a.rate; });
+
+  var waiting = 0, anyUnknown = false;
+  stored.forEach(function(i){
+    if(i.balance == null) anyUnknown = true; else waiting += Number(i.balance);
+  });
+
+  return {merchant:m, stored:stored, cards:cards, layers:layers, waiting:waiting, unknownBalance:anyUnknown, count:app.length};
+}
+
+function whyLine(st){
+  var m = st.merchant, top = st.cards[0];
+  if(st.stored.length){
+    var s = st.stored[0], d = daysTo(s.expires);
+    var lead = st.waiting > 0
+      ? "<b>" + money(st.waiting) + "</b> is already spent here — it only becomes money again when you use it."
+      : "<b>" + esc(s.program) + "</b> is prepaid here. Spend it before anything else.";
+    if(d != null && d >= 0 && d <= 60) lead += " <b>" + d + " days</b> until " + esc(s.program) + " expires.";
+    if(top && top.rate > 0) lead += " Card rewards top out at " + pct(top.rate) + " — not worth protecting a balance for.";
+    return lead;
+  }
+  if(top){
+    var others = st.cards.slice(1,3).map(function(c){ return esc(c.inst.program) + " " + pct(c.rate); }).join(", ");
+    return "Nothing stored at " + esc(m.name) + ". <b>" + esc(top.inst.program) + "</b> at " + pct(top.rate) +
+           " is the best rate you carry" + (others ? " (next: " + others + ")" : "") + ".";
+  }
+  return "No instrument in your wallet covers " + esc(m.name) + " yet. Add one, or add a flat-rate card set to <b>Anywhere</b> so this screen always has an answer.";
+}
+
+/* ======================= rendering ======================= */
+function tagHTML(t){ return t ? '<span class="tag ' + t.cls + '">' + esc(t.txt) + "</span>" : ""; }
+
+function stepHTML(n, cls, title, detail, tag, note){
+  return '<li><span class="n mono ' + cls + '">' + esc(n) + '</span><div class="step-b">' +
+    '<div class="step-t">' + esc(title) + (tag ? tagHTML(tag) : "") + "</div>" +
+    (detail ? '<div class="step-d mono">' + esc(detail) + "</div>" : "") +
+    (note ? '<div class="step-n">' + esc(note) + "</div>" : "") +
+    "</div></li>";
+}
+
+function verdictHTML(st, opts){
+  opts = opts || {};
+  var m = st.merchant, h = "";
+  var cls = "verdict" + (opts.hero ? " hero" : "");
+  h += '<article class="' + cls + '">';
+
+  h += '<div class="v-head"><div class="v-eyebrow"><span class="lbl">' +
+       esc(opts.eyebrow || (CATNAME[m.category] || "Place")) + "</span>" +
+       (opts.distance != null ? '<span class="lbl">· ' + esc(fmtDist(opts.distance)) + " away</span>" : "") +
+       "</div>";
+  h += '<h2 class="v-name">' + esc(m.name) + "</h2>";
+  var meta = [CATNAME[m.category] || m.category];
+  if(m.address) meta.push(m.address);
+  if(m.lat == null) meta.push("not pinned");
+  h += '<div class="v-meta mono">' + esc(meta.join("  ·  ")) + "</div></div>";
+
+  if(st.waiting > 0){
+    h += '<div class="banner"><span class="amt mono">' + esc(money(st.waiting)) + '</span>' +
+         '<span class="cap">stored value waiting here</span></div>';
+  } else if(st.unknownBalance){
+    h += '<div class="banner none"><span class="amt">Credit here, balance not filled in</span></div>';
+  } else if(st.cards.length && st.cards[0].rate > 0){
+    h += '<div class="banner none"><span class="amt">Earn ' + esc(pct(st.cards[0].rate)) + " — no stored value here</span></div>";
+  } else {
+    h += '<div class="banner none"><span class="amt">Nothing stored here</span></div>';
+  }
+
+  var n = 1, pay = "";
+  st.stored.forEach(function(i){
+    var bal = i.balance == null ? "balance not set" : money(i.balance) + " balance";
+    var prem = premium(i);
+    var d = [bal, CHANNAME[i.channel] || "Anywhere"];
+    if(prem > 1.01) d.push("cost you " + money(i.faceValue) + " — worth " + Math.round((prem-1)*100) + "% more than you paid");
+    var t = expiryTag(i) || (n === 1 ? {cls:"good", txt:"lead with this"} : null);
+    pay += stepHTML(n++, "", i.program + (i.label ? " · " + i.label : ""), d.join("  ·  "), t, i.note);
+  });
+  if(st.cards.length){
+    var c = st.cards[0];
+    pay += stepHTML(n++, "sec", c.inst.program + (c.inst.label ? " · " + c.inst.label : ""),
+      pct(c.rate) + " back" + (c.rate > (num(c.inst.baseRate)||0) ? " (bonus category)" : " (flat rate)"),
+      {cls:"mute", txt: st.stored.length ? "on the remainder" : "primary"}, c.inst.note);
+  }
+  if(pay) h += '<div class="grp"><span class="lbl">Pay with — in this order</span><ol class="steps">' + pay + "</ol></div>";
+
+  if(st.layers.length){
+    var lay = "";
+    st.layers.forEach(function(l){
+      var d = [l.rate > 0 ? pct(l.rate) + " back" : "rate varies — check before you buy", CHANNAME[l.inst.channel] || "Anywhere"];
+      var tg = (l.inst.channel === "online" || l.inst.channel === "app")
+        ? {cls:"warn", txt:"order ahead only"} : {cls:"mute", txt:"stacks"};
+      lay += stepHTML("+", "plus", l.inst.program + (l.inst.label ? " · " + l.inst.label : ""), d.join("  ·  "), tg, l.inst.note);
+    });
+    h += '<div class="grp"><span class="lbl">Stack on top</span><ol class="steps">' + lay + "</ol></div>";
+  }
+
+  if(!pay && !st.layers.length){
+    h += '<div class="grp"><p class="step-n" style="margin:0 0 4px">Nothing in your wallet is set to cover this place.</p></div>';
+  }
+
+  h += '<p class="why">' + whyLine(st) + "</p>";
+  h += '<div class="v-actions">' +
+       '<button class="btn sm" data-edit-merchant="' + esc(m.id) + '" type="button">Edit place</button>' +
+       (m.lat == null ? '<button class="btn sm pri" data-pin="' + esc(m.id) + '" type="button">Pin here</button>' : "") +
+       "</div>";
+  h += "</article>";
+  return h;
+}
+
+function rowHTML(st, distance){
+  var m = st.merchant;
+  var right = st.waiting > 0
+    ? '<span class="row-amt">' + esc(money0(st.waiting)) + "</span>"
+    : (st.cards.length && st.cards[0].rate > 0
+        ? '<span class="row-amt zero">' + esc(pct(st.cards[0].rate)) + "</span>"
+        : '<span class="row-amt zero">—</span>');
+  var sub = [];
+  if(distance != null) sub.push(fmtDist(distance));
+  sub.push(CATNAME[m.category] || m.category);
+  if(st.stored.length) sub.push(st.stored[0].program);
+  else if(st.cards.length) sub.push(st.cards[0].inst.program);
+  return '<button class="row" type="button" data-open="' + esc(m.id) + '">' +
+    '<div class="row-b"><div class="row-t">' + esc(m.name) + "</div>" +
+    '<div class="row-d mono">' + esc(sub.join("  ·  ")) + "</div></div>" +
+    '<div class="row-r">' + right + "</div></button>";
+}
+
+/* ---------- view: near me ---------- */
+function renderNear(){
+  var el = document.getElementById("view-near"), h = "";
+
+  if(!S.merchants.length){
+    el.innerHTML = '<div class="note"><b>No places yet.</b> Add the coffee shop first — then pin it while you\'re standing in it, ' +
+      'and this screen starts answering on its own.<div class="btn-row" style="margin-top:11px">' +
+      '<button class="btn pri" data-edit-merchant="new" type="button">Add a place</button></div></div>';
+    return;
+  }
+
+  var pinned = S.merchants.filter(function(m){ return m.lat != null && m.lng != null; });
+  var unpinned = S.merchants.length - pinned.length;
+
+  if(!S.pos){
+    h += '<div class="note"><b>' + (S.locating ? "Finding you…" : "Location is off.") + "</b> " +
+      (S.posErr ? esc(S.posErr) : "Turn it on and this page tells you what's in reach and what to pay with.") +
+      '<div class="btn-row" style="margin-top:11px"><button class="btn pri" id="locBtn2" type="button">' +
+      (S.locating ? "Locating…" : "Use my location") + "</button></div></div>";
+    h += '<div class="sec-head"><h3>Your places</h3><span class="lbl">' + S.merchants.length + " saved</span></div>";
+    h += '<div class="stackv">' + S.merchants.map(function(m){ return rowHTML(stackFor(m), null); }).join("") + "</div>";
+    el.innerHTML = h;
+    return;
+  }
+
+  var scored = pinned.map(function(m){
+    return {m:m, d:haversine(S.pos, {lat:m.lat, lng:m.lng}), st:stackFor(m)};
+  }).sort(function(a,b){ return a.d - b.d; });
+
+  var R = S.prefs.radiusM || 400;
+  var within = scored.filter(function(x){ return x.d <= R; });
+  var hero = within.length ? within[0] : (scored.length ? scored[0] : null);
+
+  if(!hero){
+    h += '<div class="note"><b>Nothing pinned yet.</b> Open a place and tap <b>Pin here</b> while you\'re standing in it. ' +
+      "One tap per shop, then you never think about it again.</div>";
+  } else {
+    h += verdictHTML(hero.st, {
+      hero: true, distance: hero.d,
+      eyebrow: hero.d <= R ? "You are here" : "Nearest place"
+    });
+  }
+
+  var rest = scored.slice(1, 6);
+  if(rest.length){
+    var allNear = rest.every(function(x){ return x.d <= R; });
+    h += '<div class="sec-head"><h3>' + (allNear ? "Also within reach" : "Further out") +
+         '</h3><span class="lbl">' + rest.length + "</span></div>";
+    h += '<div class="stackv">' + rest.map(function(x){ return rowHTML(x.st, x.d); }).join("") + "</div>";
+  }
+
+  h += '<div class="sec-head"><h3>Reminders</h3></div><div class="stackv">';
+  h += '<div class="toggle"><div class="tg-b"><div class="row-t">Alert me when I walk into range</div>' +
+       '<div class="row-d">Works while this page is open. Browsers cannot wake a web page from your pocket — for a true background nudge, see the note at the bottom.</div></div>' +
+       '<input type="checkbox" id="alertsOn" ' + (S.prefs.alerts ? "checked" : "") + ' aria-label="Alert me when I walk into range"></div>';
+  h += '<div class="toggle"><div class="tg-b"><div class="row-t">Range</div>' +
+       '<div class="row-d">How close counts as "here".</div></div>' +
+       '<select id="radius" style="width:auto">' +
+       [150,300,400,800,1600].map(function(v){
+         return '<option value="' + v + '"' + (Number(S.prefs.radiusM) === v ? " selected" : "") + ">" + fmtDist(v) + "</option>";
+       }).join("") + "</select></div>";
+  if(unpinned){
+    h += '<div class="note">' + unpinned + " place" + (unpinned > 1 ? "s aren't" : " isn't") +
+         " pinned, so " + (unpinned > 1 ? "they" : "it") + " can't show up here. Open " +
+         (unpinned > 1 ? "them" : "it") + " in <b>Look up</b> and tap <b>Pin here</b>.</div>";
+  }
+  h += "</div>";
+  el.innerHTML = h;
+}
+
+/* ---------- view: look up ---------- */
+function renderLookup(){
+  var el = document.getElementById("view-lookup"), h = "";
+  h += '<div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">' +
+       '<circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>' +
+       '<input id="q" type="search" placeholder="Where are you spending?" value="' + esc(S.query) + '" autocomplete="off"></div>';
+
+  var q = S.query.trim().toLowerCase();
+  var hits = S.merchants.filter(function(m){
+    if(!q) return true;
+    return (m.name || "").toLowerCase().indexOf(q) >= 0 ||
+           (CATNAME[m.category] || "").toLowerCase().indexOf(q) >= 0 ||
+           (m.address || "").toLowerCase().indexOf(q) >= 0;
+  });
+
+  if(S.openMerchant){
+    var m = S.merchants.filter(function(x){ return x.id === S.openMerchant; })[0];
+    if(m){
+      var d = (S.pos && m.lat != null) ? haversine(S.pos, {lat:m.lat, lng:m.lng}) : null;
+      h += '<div style="margin-top:14px">' + verdictHTML(stackFor(m), {distance:d, eyebrow:"Best tender"}) + "</div>";
+      h += '<div class="btn-row" style="margin-top:12px"><button class="btn sm" id="closeOpen" type="button">Back to the list</button></div>';
+      el.innerHTML = h;
+      wireLookup();
+      return;
+    }
+  }
+
+  h += '<div class="sec-head"><h3>' + (q ? "Matches" : "Your places") + '</h3><span class="lbl">' + hits.length + "</span></div>";
+  if(hits.length){
+    h += '<div class="stackv">' + hits.map(function(m){
+      var d = (S.pos && m.lat != null) ? haversine(S.pos, {lat:m.lat, lng:m.lng}) : null;
+      return rowHTML(stackFor(m), d);
+    }).join("") + "</div>";
+  } else {
+    h += '<div class="empty"><div class="big">No place called that yet</div>Add it and the wallet answers for it from then on.</div>';
+  }
+  h += '<div class="btn-row" style="margin-top:13px"><button class="btn pri" data-edit-merchant="new" type="button">Add a place</button></div>';
+
+  var universal = S.instruments.filter(function(i){ return i.active !== false && (i.mode || "any") === "any"; });
+  if(universal.length){
+    h += '<div class="sec-head"><h3>When all else fails</h3><span class="lbl">works anywhere</span></div><div class="stackv">';
+    universal.sort(function(a,b){ return (num(b.baseRate)||num(b.rate)||0) - (num(a.baseRate)||num(a.rate)||0); })
+      .forEach(function(i){
+        var r = i.kind === "card" ? (num(i.baseRate) || 0) : (num(i.rate) || 0);
+        h += '<button class="row" type="button" data-edit-instrument="' + esc(i.id) + '">' +
+          '<div class="row-b"><div class="row-t">' + esc(i.program) + "</div>" +
+          '<div class="row-d mono">' + esc(KINDNAME[i.kind] + "  ·  " + (CHANNAME[i.channel] || "Anywhere")) + "</div></div>" +
+          '<div class="row-r"><span class="row-amt' + (r ? "" : " zero") + '">' + esc(r ? pct(r) : "—") + "</span></div></button>";
+      });
+    h += "</div>";
+  }
+  el.innerHTML = h;
+  wireLookup();
+}
+function wireLookup(){
+  var q = document.getElementById("q");
+  if(q) q.addEventListener("input", function(){ S.query = q.value; S.openMerchant = null; renderLookup();
+    var f = document.getElementById("q"); if(f){ f.focus(); f.setSelectionRange(f.value.length, f.value.length); } });
+  var c = document.getElementById("closeOpen");
+  if(c) c.addEventListener("click", function(){ S.openMerchant = null; renderLookup(); });
+}
+
+/* ---------- view: wallet ---------- */
+function renderWallet(){
+  var el = document.getElementById("view-wallet"), h = "";
+
+  var totalStored = 0;
+  S.instruments.forEach(function(i){
+    if(isStored(i) && i.active !== false && i.balance != null && (daysTo(i.expires) == null || daysTo(i.expires) >= 0))
+      totalStored += Number(i.balance);
+  });
+  h += '<div class="verdict"><div class="banner"><span class="amt mono">' + esc(money(totalStored)) +
+       '</span><span class="cap">prepaid and unspent, across everything</span></div></div>';
+
+  KINDS.forEach(function(k){
+    var list = S.instruments.filter(function(i){ return i.kind === k[0]; });
+    h += '<div class="sec-head"><h3>' + esc(k[1]) + '</h3><span class="lbl">' + list.length + "</span></div>";
+    if(!list.length){
+      h += '<div class="note">' + esc(k[2]) + "</div>";
+      return;
+    }
+    h += '<div class="stackv">';
+    list.forEach(function(i){
+      var sub = [];
+      if(i.kind === "card"){
+        var bon = (i.categories || []).map(function(c){ return CATNAME[c] || c; });
+        sub.push(bon.length ? pct(num(i.rate) || 0) + " on " + bon.join(", ") : "no bonus categories");
+        sub.push(pct(num(i.baseRate) || 0) + " everywhere else");
+      }
+      else if((i.mode || "any") === "any") sub.push("anywhere");
+      else if(i.mode === "merchant"){
+        var names = (i.merchantIds || []).map(function(id){
+          var m = S.merchants.filter(function(x){ return x.id === id; })[0];
+          return m ? m.name : "?";
+        });
+        sub.push(names.length ? names.join(", ") : "no place picked");
+      } else sub.push((i.categories || []).map(function(c){ return CATNAME[c] || c; }).join(", ") || "no category picked");
+      if(i.kind !== "card") sub.push(CHANNAME[i.channel] || "Anywhere");
+      var right = isStored(i)
+        ? (i.balance == null ? "set balance" : money(i.balance))
+        : (i.kind === "card"
+            ? pct(Math.max(num(i.rate) || 0, num(i.baseRate) || 0))
+            : (num(i.rate) ? pct(i.rate) : "varies"));
+      var et = expiryTag(i);
+      h += '<button class="row" type="button" data-edit-instrument="' + esc(i.id) + '">' +
+        '<div class="row-b"><div class="row-t">' + esc(i.program) + (i.label ? " · " + esc(i.label) : "") +
+        (i.active === false ? ' <span class="tag mute">off</span>' : "") + "</div>" +
+        '<div class="row-d mono">' + esc(sub.join("  ·  ")) + "</div></div>" +
+        '<div class="row-r"><span class="row-amt' + (right === "set balance" ? " zero" : "") + '">' + esc(right) + "</span>" +
+        (et ? tagHTML(et) : "") + "</div></button>";
+    });
+    h += "</div>";
+  });
+
+  h += '<div class="btn-row" style="margin-top:14px"><button class="btn pri" data-edit-instrument="new" type="button">Add to wallet</button></div>';
+
+  h += '<div class="sec-head"><h3>Places</h3><span class="lbl">' + S.merchants.length + "</span></div>";
+  h += '<div class="stackv">';
+  S.merchants.forEach(function(m){
+    h += '<button class="row" type="button" data-edit-merchant="' + esc(m.id) + '">' +
+      '<div class="row-b"><div class="row-t">' + esc(m.name) + "</div>" +
+      '<div class="row-d mono">' + esc((CATNAME[m.category] || m.category) + "  ·  " + (m.lat != null ? "pinned" : "not pinned")) +
+      '</div></div><div class="row-r"><span class="tag ' + (m.lat != null ? "good" : "warn") + '">' +
+      (m.lat != null ? "pinned" : "pin it") + "</span></div></button>";
+  });
+  h += '</div><div class="btn-row" style="margin-top:12px"><button class="btn" data-edit-merchant="new" type="button">Add a place</button></div>';
+
+  el.innerHTML = h;
+}
+
+/* ======================= editor sheet ======================= */
+var sheetSave = null;
+function openSheet(title, body, footHTML, onSave){
+  document.getElementById("sheetTitle").textContent = title;
+  document.getElementById("sheetBody").innerHTML = body;
+  document.getElementById("sheetFoot").innerHTML = footHTML;
+  sheetSave = onSave;
+  document.getElementById("sheet").hidden = false;
+  document.getElementById("scrim").hidden = false;
+  var first = document.querySelector("#sheetBody input, #sheetBody select");
+  if(first) setTimeout(function(){ first.focus(); }, 30);
+}
+function closeSheet(){
+  document.getElementById("sheet").hidden = true;
+  document.getElementById("scrim").hidden = true;
+  sheetSave = null;
+}
+function val(id){ var e = document.getElementById(id); return e ? e.value.trim() : ""; }
+function checked(name){
+  return Array.prototype.slice.call(document.querySelectorAll('input[data-group="' + name + '"]:checked'))
+    .map(function(e){ return e.value; });
+}
+function field(label, inner, hint){
+  return '<div class="field"><span class="lbl">' + esc(label) + "</span>" + inner +
+    (hint ? '<span class="row-d">' + hint + "</span>" : "") + "</div>";
+}
+function checkGroup(group, opts, selected){
+  return '<div class="checks">' + opts.map(function(o){
+    return "<label><input type=\"checkbox\" data-group=\"" + group + "\" value=\"" + esc(o[0]) + "\"" +
+      (selected.indexOf(o[0]) >= 0 ? " checked" : "") + ">" + esc(o[1]) + "</label>";
+  }).join("") + "</div>";
+}
+
+function editMerchant(id){
+  var isNew = (id === "new");
+  var m = isNew
+    ? {id:uid("m"), name:"", category:"coffee", address:"", lat:null, lng:null, note:""}
+    : Object.assign({}, S.merchants.filter(function(x){ return x.id === id; })[0]);
+  if(!m) return;
+
+  var b = "";
+  b += field("Name", '<input id="f_name" value="' + esc(m.name) + '" placeholder="Blue Bottle — Ferry Building">');
+  b += field("Category", '<select id="f_cat">' + CATS.map(function(c){
+        return '<option value="' + c[0] + '"' + (m.category === c[0] ? " selected" : "") + ">" + c[1] + "</option>";
+      }).join("") + "</select>", "Decides which category-wide cards and credits apply here.");
+  b += field("Address or cross street", '<input id="f_addr" value="' + esc(m.address || "") + '" placeholder="1 Ferry Building">');
+  b += field("Coordinates",
+    '<div class="grid2"><input id="f_lat" inputmode="decimal" value="' + (m.lat == null ? "" : m.lat) + '" placeholder="latitude">' +
+    '<input id="f_lng" inputmode="decimal" value="' + (m.lng == null ? "" : m.lng) + '" placeholder="longitude"></div>' +
+    '<div class="btn-row" style="margin-top:7px"><button class="btn sm" id="f_here" type="button">Use my current location</button></div>',
+    "Stand in the shop and tap the button. That single tap is what makes the reminder work.");
+  b += field("Note to yourself", '<textarea id="f_note" placeholder="Cards are in the glove box">' + esc(m.note || "") + "</textarea>");
+
+  var foot = '<button class="btn pri" id="sv" type="button">Save place</button>' +
+    (isNew ? "" : '<button class="btn danger" id="del" type="button">Delete</button>');
+
+  openSheet(isNew ? "Add a place" : "Edit place", b, foot, function(){
+    var name = val("f_name");
+    if(!name){ document.getElementById("f_name").focus(); return false; }
+    m.name = name;
+    m.category = val("f_cat");
+    m.address = val("f_addr");
+    m.lat = num(val("f_lat"));
+    m.lng = num(val("f_lng"));
+    m.note = val("f_note");
+    upsert("merchants", m);
+    return true;
+  });
+
+  document.getElementById("f_here").addEventListener("click", function(){
+    var btn = this; btn.textContent = "Reading GPS…";
+    navigator.geolocation.getCurrentPosition(function(p){
+      document.getElementById("f_lat").value = p.coords.latitude.toFixed(6);
+      document.getElementById("f_lng").value = p.coords.longitude.toFixed(6);
+      btn.textContent = "Pinned — accurate to " + Math.round(p.coords.accuracy) + " m";
+    }, function(e){ btn.textContent = "Couldn't read location: " + e.message; }, {enableHighAccuracy:true, timeout:12000});
+  });
+  if(!isNew) document.getElementById("del").addEventListener("click", function(){
+    removeDoc("merchants", m.id); closeSheet();
+  });
+}
+
+function editInstrument(id){
+  var isNew = (id === "new");
+  var i = isNew
+    ? {id:uid("i"), kind:"giftcard", program:"", label:"", mode:"merchant", merchantIds:[], categories:[],
+       balance:null, faceValue:null, rate:null, baseRate:null, expires:"", channel:"any", note:"", active:true}
+    : Object.assign({}, S.instruments.filter(function(x){ return x.id === id; })[0]);
+  if(!i) return;
+
+  var b = "";
+  b += field("What kind", '<select id="f_kind">' + KINDS.map(function(k){
+        return '<option value="' + k[0] + '"' + (i.kind === k[0] ? " selected" : "") + ">" + k[1] + "</option>";
+      }).join("") + "</select>");
+  b += field("Program", '<input id="f_prog" value="' + esc(i.program) + '" placeholder="inKind, Rakuten, Chase Freedom Unlimited…">');
+  b += field("Label (optional)", '<input id="f_label" value="' + esc(i.label || "") + '" placeholder="the four physical cards">');
+
+  b += '<div class="hr"></div>';
+  b += field("Where it works", '<select id="f_mode">' +
+        ['<option value="merchant"' + (i.mode === "merchant" ? " selected" : "") + ">One or more specific places</option>",
+         '<option value="category"' + (i.mode === "category" ? " selected" : "") + ">A whole category</option>",
+         '<option value="any"' + ((i.mode || "any") === "any" ? " selected" : "") + ">Anywhere</option>"].join("") + "</select>");
+  b += '<div id="w_merchant" class="field"><span class="lbl">Places</span>' +
+       (S.merchants.length ? checkGroup("merchants", S.merchants.map(function(m){ return [m.id, m.name]; }), i.merchantIds || [])
+                           : '<span class="row-d">No places saved yet — add one first.</span>') + "</div>";
+  b += '<div id="w_cats" class="field"><span class="lbl" id="catsLabel">Categories</span>' +
+       checkGroup("cats", CATS, i.categories || []) + '<span class="row-d" id="catsHint"></span></div>';
+  b += field("How you actually use it", '<select id="f_chan">' + CHANNELS.map(function(c){
+        return '<option value="' + c[0] + '"' + ((i.channel || "any") === c[0] ? " selected" : "") + ">" + c[1] + "</option>";
+      }).join("") + "</select>", "Rakuten in-store needs a linked card; inKind wants you to pay inside its app. Say so here and the stack will remind you.");
+
+  b += '<div class="hr"></div>';
+  b += '<div id="w_stored">' +
+    '<div class="grid2">' +
+      '<div class="field"><span class="lbl">Balance left</span><input id="f_bal" inputmode="decimal" value="' + (i.balance == null ? "" : i.balance) + '" placeholder="300"></div>' +
+      '<div class="field"><span class="lbl">What you paid</span><input id="f_face" inputmode="decimal" value="' + (i.faceValue == null ? "" : i.faceValue) + '" placeholder="optional"></div>' +
+    '</div><span class="row-d">Paid less than face value? Fill both and the stack will say how much more it\'s worth than it cost.</span></div>';
+  b += '<div id="w_rates" class="grid2">' +
+      '<div class="field"><span class="lbl" id="rateLabel">Rate back</span><input id="f_rate" inputmode="decimal" value="' + (i.rate == null ? "" : i.rate) + '" placeholder="3"></div>' +
+      '<div class="field" id="w_base"><span class="lbl">Flat rate everywhere else</span><input id="f_base" inputmode="decimal" value="' + (i.baseRate == null ? "" : i.baseRate) + '" placeholder="1.5"></div>' +
+    "</div>";
+  b += field("Expires", '<input id="f_exp" type="date" value="' + esc(i.expires || "") + '">');
+  b += field("Note", '<textarea id="f_inote" placeholder="Load it in the app before you order">' + esc(i.note || "") + "</textarea>");
+  b += '<div class="checks"><label><input type="checkbox" id="f_active" ' +
+       (i.active === false ? "" : "checked") + "> Counts in recommendations</label></div>";
+
+  var foot = '<button class="btn pri" id="sv" type="button">Save</button>' +
+    (isNew ? "" : '<button class="btn danger" id="del" type="button">Delete</button>');
+
+  openSheet(isNew ? "Add to wallet" : "Edit " + (i.program || "entry"), b, foot, function(){
+    var prog = val("f_prog");
+    if(!prog){ document.getElementById("f_prog").focus(); return false; }
+    i.kind = val("f_kind");
+    i.program = prog;
+    i.label = val("f_label");
+    i.mode = (i.kind === "card") ? "any" : val("f_mode");
+    i.merchantIds = checked("merchants");
+    i.categories = checked("cats");
+    i.channel = val("f_chan");
+    i.balance = isStored(i) ? num(val("f_bal")) : null;
+    i.faceValue = isStored(i) ? num(val("f_face")) : null;
+    i.rate = isStored(i) ? null : num(val("f_rate"));
+    i.baseRate = (i.kind === "card") ? num(val("f_base")) : null;
+    i.expires = val("f_exp");
+    i.note = val("f_inote");
+    i.active = document.getElementById("f_active").checked;
+    upsert("instruments", i);
+    return true;
+  });
+
+  function sync(){
+    var kind = val("f_kind"), mode = val("f_mode");
+    var isCard = kind === "card", stored = (kind === "giftcard" || kind === "credit");
+    document.getElementById("w_stored").hidden = !stored;
+    document.getElementById("w_rates").hidden = stored;
+    document.getElementById("w_base").hidden = !isCard;
+    document.getElementById("rateLabel").textContent = isCard ? "Bonus rate %" : "Rate back %";
+    // A card always applies somewhere; its categories are bonus categories, not a gate.
+    document.getElementById("f_mode").closest(".field").hidden = isCard;
+    document.getElementById("w_merchant").hidden = isCard || mode !== "merchant";
+    document.getElementById("w_cats").hidden = !isCard && mode !== "category";
+    document.getElementById("catsLabel").textContent = isCard ? "Bonus categories" : "Categories";
+    document.getElementById("catsHint").textContent = isCard
+      ? "Where this card pays the higher rate. Everywhere else falls back to the flat rate."
+      : "";
+  }
+  document.getElementById("f_kind").addEventListener("change", sync);
+  document.getElementById("f_mode").addEventListener("change", sync);
+  sync();
+
+  if(!isNew) document.getElementById("del").addEventListener("click", function(){
+    removeDoc("instruments", i.id); closeSheet();
+  });
+}
+
+/* ======================= geolocation ======================= */
+function setLocChip(){
+  var chip = document.getElementById("locBtn"), t = document.getElementById("locTxt");
+  if(S.locating){ t.textContent = "Locating…"; chip.dataset.on = "0"; return; }
+  if(!S.pos){ t.textContent = "Locate me"; chip.dataset.on = "0"; return; }
+  chip.dataset.on = "1";
+  var nearest = null;
+  S.merchants.forEach(function(m){
+    if(m.lat == null) return;
+    var d = haversine(S.pos, {lat:m.lat, lng:m.lng});
+    if(!nearest || d < nearest.d) nearest = {d:d, m:m};
+  });
+  t.textContent = nearest ? fmtDist(nearest.d) + " away" : "Located";
+}
+
+function locate(){
+  if(!navigator.geolocation){ S.posErr = "This browser has no location support."; render(); return; }
+  S.locating = true; S.posErr = null; render();
+  navigator.geolocation.getCurrentPosition(function(p){
+    S.locating = false;
+    S.pos = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
+    lsSet("tenderstack.geo", "1");
+    render();
+    if(S.prefs.alerts) startWatch();
+  }, function(e){
+    S.locating = false;
+    S.posErr = e.code === 1 ? "You blocked location for this page — allow it in your browser's site settings." : e.message;
+    render();
+  }, {enableHighAccuracy:true, timeout:15000, maximumAge:30000});
+}
+
+function startWatch(){
+  if(S.watchId != null || !navigator.geolocation) return;
+  S.watchId = navigator.geolocation.watchPosition(function(p){
+    S.pos = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy};
+    checkProximity();
+    if(S.view === "near") renderNear();
+    setLocChip();
+  }, function(){}, {enableHighAccuracy:true, maximumAge:20000, timeout:30000});
+}
+function stopWatch(){
+  if(S.watchId != null){ navigator.geolocation.clearWatch(S.watchId); S.watchId = null; }
+}
+function checkProximity(){
+  if(!S.pos) return;
+  var R = S.prefs.radiusM || 400;
+  S.merchants.forEach(function(m){
+    if(m.lat == null) return;
+    var d = haversine(S.pos, {lat:m.lat, lng:m.lng});
+    var was = !!S.inside[m.id];
+    var now = d <= R;
+    S.inside[m.id] = now;
+    if(now && !was) notify(m, d);
+  });
+}
+function notify(m, d){
+  var st = stackFor(m);
+  if(st.waiting <= 0 && !st.unknownBalance) return;
+  var lead = st.stored.length ? st.stored[0] : null;
+  var body = (st.waiting > 0 ? money(st.waiting) + " waiting. " : "") +
+             (lead ? "Pay with " + lead.program + "." : "");
+  try{
+    if(typeof Notification !== "undefined" && Notification.permission === "granted"){
+      new Notification(m.name + " — " + fmtDist(d) + " away", {body:body, tag:"ts-" + m.id});
+      return;
+    }
+  }catch(e){}
+  banner(m.name + " — " + body);
+}
+var bannerTimer = null;
+function banner(text){
+  var el = document.getElementById("liveBanner");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "liveBanner";
+    el.setAttribute("role", "status");
+    el.style.cssText = "position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:60;" +
+      "background:var(--accent);color:var(--accent-ink);padding:12px 14px;border-radius:11px;font-weight:600;" +
+      "font-size:.86rem;box-shadow:var(--shadow-lift);max-width:628px;margin:0 auto";
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.hidden = false;
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(function(){ el.hidden = true; }, 9000);
+}
+
+/* ======================= render / wiring ======================= */
+function renderFoot(){
+  var msgs = [];
+  if(S.dbState === "on") msgs.push("Synced — your wallet follows you to every device you open this on.");
+  else if(S.dbState === "local") msgs.push("Saved in this browser only. Opened somewhere else, it starts empty.");
+  else if(S.dbState === "revoked") msgs.push("Sync access ended mid-session. Changes are staying in this browser.");
+  else if(S.dbState === "error") msgs.push("Sync hit an error. Changes are staying in this browser for now.");
+  else msgs.push("Connecting…");
+  msgs.push("A web page can only check your location while it is open, so the alert fires when you open this in range — not from your pocket. For a nudge that arrives on its own, point an iOS Shortcuts arrival automation at this page's URL.");
+  document.getElementById("foot").innerHTML = msgs.map(esc).join("<br>");
+}
+
+function render(){
+  document.getElementById("view-near").hidden = S.view !== "near";
+  document.getElementById("view-lookup").hidden = S.view !== "lookup";
+  document.getElementById("view-wallet").hidden = S.view !== "wallet";
+  ["near","lookup","wallet"].forEach(function(v){
+    document.getElementById("tab-" + v).setAttribute("aria-selected", S.view === v ? "true" : "false");
+  });
+  if(S.view === "near") renderNear();
+  else if(S.view === "lookup") renderLookup();
+  else renderWallet();
+  setLocChip();
+  renderFoot();
+}
+
+function setView(v){
+  S.view = v; S.openMerchant = null;
+  lsSet("tenderstack.view", v);
+  render();
+  window.scrollTo({top:0, behavior:"instant"});
+}
+
+["near","lookup","wallet"].forEach(function(v){
+  document.getElementById("tab-" + v).addEventListener("click", function(){ setView(v); });
+});
+document.getElementById("locBtn").addEventListener("click", locate);
+document.getElementById("sheetX").addEventListener("click", closeSheet);
+document.getElementById("scrim").addEventListener("click", closeSheet);
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape" && !document.getElementById("sheet").hidden) closeSheet();
+});
+
+document.addEventListener("click", function(e){
+  var t = e.target.closest ? e.target.closest("[data-edit-merchant],[data-edit-instrument],[data-open],[data-pin],#sv,#locBtn2") : null;
+  if(!t) return;
+  if(t.id === "sv"){ if(sheetSave && sheetSave() !== false) closeSheet(); return; }
+  if(t.id === "locBtn2"){ locate(); return; }
+  if(t.dataset.editMerchant){ editMerchant(t.dataset.editMerchant); return; }
+  if(t.dataset.editInstrument){ editInstrument(t.dataset.editInstrument); return; }
+  if(t.dataset.pin){
+    var mid = t.dataset.pin;
+    if(S.pos){
+      var m = Object.assign({}, S.merchants.filter(function(x){ return x.id === mid; })[0]);
+      if(m.id){ m.lat = S.pos.lat; m.lng = S.pos.lng; upsert("merchants", m); banner("Pinned " + m.name + " where you're standing."); }
+    } else { locate(); }
+    return;
+  }
+  if(t.dataset.open){ S.openMerchant = t.dataset.open; setViewKeepOpen("lookup"); return; }
+});
+function setViewKeepOpen(v){
+  S.view = v; lsSet("tenderstack.view", v); render();
+  window.scrollTo({top:0, behavior:"instant"});
+}
+
+document.addEventListener("change", function(e){
+  if(e.target.id === "alertsOn"){
+    var on = e.target.checked;
+    if(on){
+      if(typeof Notification !== "undefined" && Notification.permission === "default"){
+        try{ Notification.requestPermission(); }catch(err){}
+      }
+      savePrefs({alerts:true});
+      if(!S.pos) locate(); else startWatch();
+    } else { savePrefs({alerts:false}); stopWatch(); }
+  }
+  if(e.target.id === "radius"){ savePrefs({radiusM: Number(e.target.value)}); }
+});
+
+/* ======================= db ======================= */
+function hydrate(coll, snap){
+  S[coll] = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+  saveCache();
+  if(S.prefs.alerts) checkProximity();
+  render();
+}
+function connect(){
+  if(!window.claude || !window.claude.use){ S.dbState = "local"; renderFoot(); return; }
+  window.claude.use("db").then(function(db){
+    if(!db){ S.dbState = "local"; renderFoot(); return; }
+    S.db = db; S.dbState = "on";
+    db.collection("merchants").onSnapshot(function(s){ hydrate("merchants", s); }, flagDb);
+    db.collection("instruments").onSnapshot(function(s){ hydrate("instruments", s); }, flagDb);
+    db.doc("settings/prefs").onSnapshot(function(s){
+      if(s.exists){ S.prefs = Object.assign({}, S.prefs, s.data()); saveCache(); render(); }
+    }, flagDb);
+    renderFoot();
+  }).catch(function(){ S.dbState = "local"; renderFoot(); });
+}
+
+/* ======================= boot ======================= */
+loadCache();
+var savedView = lsGet("tenderstack.view");
+if(savedView === "lookup" || savedView === "wallet") S.view = savedView;
+render();
+connect();
+
+if(navigator.permissions && navigator.permissions.query){
+  navigator.permissions.query({name:"geolocation"}).then(function(p){
+    if(p.state === "granted") locate();
+  }).catch(function(){});
+} else if(lsGet("tenderstack.geo") === "1"){
+  locate();
+}
+})();
+</script>
