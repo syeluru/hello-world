@@ -330,6 +330,17 @@ input { font: inherit; color: inherit; user-select: text; }
 .voice-transcript { min-height: 1.4em; margin: 0 0 28px; font-size: 24px; color: var(--ink); }
 .voice-examples { margin: 0 0 20px; color: var(--ink-soft); font-size: 16px; line-height: 1.5; }
 
+/* ---------- screen off ---------- */
+
+.sleep {
+  position: fixed; inset: 0;
+  background: #000;
+  cursor: none;
+  z-index: 30;
+  animation: fade 1.2s ease-in;
+}
+.sleep[hidden] { display: none; }
+
 /* ---------- toast ---------- */
 
 .toast {

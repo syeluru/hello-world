@@ -2,7 +2,7 @@ import { toDateStr } from './parser.js';
 import { startVoice } from './voice.js';
 
 const state = { groceries: [], todos: [], events: [] };
-let config = { weather: null, clock24: false };
+let config = { weather: null, clock24: false, screenOffMinutes: 10 };
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const cards = Object.fromEntries(
@@ -290,12 +290,35 @@ async function updateWeather() {
   }
 }
 
-// ---------- keep the screen on ----------
+// ---------- screen on / off ----------
+//
+// Windows is set to never turn the display off, because on most touch PCs a
+// dark display means standby: touch and the microphone stop working. Instead
+// the dashboard blacks itself out after a few idle minutes and wakes on a tap
+// or on "Hello assistant".
 
+const sleepEl = $('#sleep');
+let idleTimer;
+
+export function wakeScreen() {
+  sleepEl.hidden = true;
+  clearTimeout(idleTimer);
+  if (config.screenOffMinutes > 0) {
+    idleTimer = setTimeout(() => { sleepEl.hidden = false; }, config.screenOffMinutes * 60000);
+  }
+}
+
+// The waking tap lands on the black overlay, so it can't press a button underneath.
+sleepEl.addEventListener('pointerdown', (e) => { e.preventDefault(); wakeScreen(); });
+for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, wakeScreen, { passive: true });
+
+// Hold a screen wake lock so the browser never lets the display turn off.
+// With SCREEN_OFF_MINUTES=0 the dashboard leaves screen timing to Windows instead.
 async function keepAwake() {
+  if (!(config.screenOffMinutes > 0)) return;
   try {
     if ('wakeLock' in navigator && document.visibilityState === 'visible') await navigator.wakeLock.request('screen');
-  } catch { /* not supported or not allowed; the OS power settings are the fallback */ }
+  } catch { /* not supported or not allowed; the Windows power settings are the fallback */ }
 }
 document.addEventListener('visibilitychange', keepAwake);
 
@@ -307,5 +330,6 @@ setInterval(tick, 1000);
 updateWeather();
 setInterval(updateWeather, 20 * 60 * 1000);
 keepAwake();
+wakeScreen();
 connect();
-startVoice({ api, getState, toast, dayPhrase, formatTime });
+startVoice({ api, getState, toast, dayPhrase, formatTime, wakeScreen });

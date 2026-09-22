@@ -133,6 +133,8 @@ async function handleApi(req, res, url) {
         ? { lat: Number(process.env.LAT), lon: Number(process.env.LON), units: process.env.UNITS === 'celsius' ? 'celsius' : 'fahrenheit' }
         : null,
       clock24: process.env.CLOCK_24H === '1',
+      // Minutes of no touch before the dashboard blacks out the screen (0 = never).
+      screenOffMinutes: process.env.SCREEN_OFF_MINUTES === undefined ? 10 : Math.max(0, Number(process.env.SCREEN_OFF_MINUTES) || 0),
     });
   }
 

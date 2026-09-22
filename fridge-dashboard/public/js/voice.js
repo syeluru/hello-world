@@ -107,6 +107,7 @@ function onResult(event) {
       // In command mode, drop any wake phrase that's still in this utterance.
       const spoken = findWakePhrase(text)?.rest ?? text;
       transcriptEl.textContent = spoken;
+      deps.wakeScreen();
       resetCommandTimer();
       if (result.isFinal && spoken) handleCommand(spoken);
     }
@@ -114,6 +115,7 @@ function onResult(event) {
 }
 
 function enterCommandMode() {
+  deps.wakeScreen();
   mode = 'command';
   overlay.hidden = false;
   overlay.dataset.state = 'listening';

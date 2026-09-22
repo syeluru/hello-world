@@ -7,6 +7,7 @@ An always-on family dashboard for a tablet mounted on the fridge door.
 - **Coming up**: events grouped by day (Today / Tomorrow / Thursday …); past events drop off on their own.
 - **"Hello assistant"** voice commands for adding to, crossing off, or reading back any list.
 - Clock, greeting, optional weather, and an automatic **night mode** from 9pm to 6am.
+- **Screen off without sleeping**: goes black after 10 idle minutes and wakes on a tap or "Hello assistant".
 - **Live sync**: open the same address on a phone on your Wi-Fi to add things from the store or the couch.
 
 The design borrows from Skylight, Hearth, and DAKboard: a warm, calm palette, one large clock, three big touch-friendly cards, and no clutter.
@@ -35,6 +36,7 @@ Data is saved to `data/db.json`. Back that file up to keep your lists.
 | `LAT`, `LON` | `40.71`, `-74.01` | Shows current weather via [Open-Meteo](https://open-meteo.com) (free, no key) |
 | `UNITS` | `celsius` | Weather units (default: fahrenheit) |
 | `CLOCK_24H` | `1` | 24-hour clock |
+| `SCREEN_OFF_MINUTES` | `10` | Minutes without a tap before the screen goes black (`0` = never) |
 | `DATA_DIR` | `D:\fridge` | Where to keep `db.json` |
 
 ## Setting up the tablet
@@ -43,13 +45,7 @@ Data is saved to `data/db.json`. Back that file up to keep your lists.
 
 ### Windows tablet (recommended)
 
-1. Install Node.js LTS and copy this folder to the tablet, e.g. `C:\fridge-dashboard`.
-2. Double-click `start-kiosk.bat`. It starts the server and opens Chrome (or Edge) full-screen in kiosk mode, with the microphone pre-approved.
-3. To start it at boot, press `Win+R`, type `shell:startup`, and drop a shortcut to `start-kiosk.bat` in that folder.
-4. Settings → System → Power: set the screen to **never** turn off. The page also asks the browser to keep the screen awake.
-5. If Windows asks, allow Chrome/Edge to use the microphone (Settings → Privacy → Microphone).
-
-To exit kiosk mode, press `Alt+F4`.
+Follow **[docs/WINDOWS-SETUP.md](docs/WINDOWS-SETUP.md)**. In short: install Node.js and Chrome, run `setup-windows.bat` as administrator, set up automatic sign-in, and put `start-kiosk.bat` in `shell:startup`.
 
 ### Android tablet
 
