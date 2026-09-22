@@ -1,0 +1,14 @@
+{
+  "name": "fridge-dashboard",
+  "version": "0.1.0",
+  "description": "Always-on family dashboard for a fridge-mounted tablet: groceries, to-dos, upcoming events, and a \"hello assistant\" voice command.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
