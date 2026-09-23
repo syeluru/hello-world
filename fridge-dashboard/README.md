@@ -45,7 +45,7 @@ Data is saved to `data/db.json`. Back that file up to keep your lists.
 
 ### Windows tablet (recommended)
 
-Follow **[docs/WINDOWS-SETUP.md](docs/WINDOWS-SETUP.md)**. In short: install Node.js and Chrome, run `setup-windows.bat` as administrator, set up automatic sign-in, and put `start-kiosk.bat` in `shell:startup`.
+Follow **[docs/WINDOWS-SETUP.md](docs/WINDOWS-SETUP.md)**, which goes from a freshly reset PC to a mounted fridge display. Most of it is one double-click: `setup-windows.bat` installs Node.js and Chrome, copies the dashboard to `C:\fridge-dashboard`, applies the power and quiet-Windows settings, starts it at sign-in, sets up automatic sign-in, and opens it to phones on your Wi-Fi. Running it again later updates the dashboard and keeps your lists.
 
 ### Android tablet
 
