@@ -1,0 +1,36 @@
+# Paste into https://api.slack.com/apps → Create New App → From a manifest.
+# Replace https://your-server.example.com with your server's public HTTPS URL.
+display_information:
+  name: Slash Expander
+  description: Type a /command, get an LLM-drafted message (e.g. your availability).
+features:
+  bot_user:
+    display_name: Slash Expander
+  slash_commands:
+    - command: /availability-tomorrow
+      url: https://your-server.example.com/slack/commands
+      description: Draft a message with my free time tomorrow
+      should_escape: false
+    - command: /availability-today
+      url: https://your-server.example.com/slack/commands
+      description: Draft a message with my free time today
+      should_escape: false
+    - command: /draft
+      url: https://your-server.example.com/slack/commands
+      description: Draft a message from any Slash Expander command
+      usage_hint: availability-tomorrow
+      should_escape: false
+oauth_config:
+  scopes:
+    bot:
+      - commands
+      - users:read   # read your Slack time zone
+    user:
+      - chat:write   # lets "Send" post the draft as you, not as the app
+settings:
+  interactivity:
+    is_enabled: true
+    request_url: https://your-server.example.com/slack/interactions
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

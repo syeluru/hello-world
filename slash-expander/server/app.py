@@ -1,4 +1,4 @@
-"""HTTP endpoint the iOS keyboard / Shortcut calls to expand a /command.
+"""HTTP endpoints for expanding a /command: the iOS keyboard or Shortcut (/expand) and Slack (/slack/*).
 
 Run:  uvicorn app:app --host 0.0.0.0 --port 8000
 """
@@ -12,9 +12,11 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
+import slack
 from commands import COMMANDS
 
 app = FastAPI(title="Slash Expander")
+app.include_router(slack.router)
 
 
 def require_token(authorization: str = Header(default="")) -> None:

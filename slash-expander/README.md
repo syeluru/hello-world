@@ -33,6 +33,44 @@ iPhone (any app)                       Your server                      APIs
 Two parts are needed because an iOS keyboard shouldn't hold your Google and Anthropic
 credentials, and the calendar math is easier to test on a server.
 
+## Slack MVP (works on desktop and in the Slack iPhone app)
+
+Type `/availability-tomorrow` in any Slack message box. Only you see a preview of the draft,
+with **Send**, **Regenerate** and **Cancel**. **Send** posts it to the conversation as you.
+
+```
+/availability-tomorrow
+  ┌──────────────────────────────────────────────────────────────┐
+  │ I'm free tomorrow (Thu, Sep 25) 9–11am, 1–2:30pm and after   │
+  │ 4pm ET. Happy to grab whichever works for you!               │
+  │ [Send]  [Regenerate]  [Cancel]      Only you can see this.   │
+  └──────────────────────────────────────────────────────────────┘
+```
+
+`/draft availability-tomorrow` works too, so a new server-side command doesn't need a new
+Slack command registered.
+
+### Slack setup
+
+1. Do **Google Calendar access** and **Run the server** below first. Slack needs a public
+   HTTPS URL for the server.
+2. Go to <https://api.slack.com/apps>, then **Create New App › From a manifest**. Pick your
+   workspace, paste `slack/manifest.yml`, and replace `your-server.example.com` with your URL.
+3. **Install to Workspace**. Then copy these into `server/.env`:
+   - **Basic Information › Signing Secret** → `SLACK_SIGNING_SECRET`
+   - **OAuth & Permissions › Bot User OAuth Token** (`xoxb-…`) → `SLACK_BOT_TOKEN`
+   - **OAuth & Permissions › User OAuth Token** (`xoxp-…`) → `SLACK_USER_TOKEN`
+   - Your member ID (Slack profile › ⋯ › Copy member ID) → `SLACK_ALLOWED_USER_IDS`
+4. Restart the server and type `/availability-tomorrow` in any DM.
+
+Set `SLACK_ALLOWED_USER_IDS`. The calendar belongs to whoever set up the server, so without
+this, anyone in the workspace could draft *your* availability.
+
+### Microsoft Teams
+
+Not built yet. Teams uses a *message extension* (a Bot Framework bot registered in Azure),
+which can call the same `commands.py`. Only the adapter changes, the same way `slack.py` does it.
+
 ## Commands
 
 | Command                  | Output                                   |
@@ -41,7 +79,8 @@ credentials, and the calendar math is easier to test on a server.
 | `/availability-today`    | Same, for today                          |
 
 To add a command, add an entry to `COMMANDS` in `server/commands.py`. It's a function
-that gathers facts and calls `llm.draft(...)`.
+that gathers facts and calls `llm.draft(...)`. It works right away in the iOS keyboard and via
+`/draft <name>` in Slack. Add it to `slack/manifest.yml` if you want its own slash command.
 
 ## Setup
 
@@ -88,7 +127,7 @@ The phone sends its own time zone with each request, so the output follows you w
 Model: `claude-opus-5` with low effort by default, with server-side refusal fallbacks
 turned on. For lower latency, set `CLAUDE_MODEL=claude-haiku-4-5`.
 
-### 3. Install the keyboard (needs a Mac with Xcode)
+### 3. iPhone keyboard (optional, needs a Mac with Xcode)
 
 1. In Xcode, create a new **iOS App** (e.g. "SlashExpander"). The container app can
    stay empty.
